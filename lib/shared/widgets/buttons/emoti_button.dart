@@ -28,6 +28,7 @@ class EmotiButton extends StatelessWidget {
   final bool isFullWidth;
   final EdgeInsetsGeometry? padding;
   final bool isDisabled;
+  final Color? textColor;
 
   const EmotiButton({
     super.key,
@@ -40,6 +41,7 @@ class EmotiButton extends StatelessWidget {
     this.isFullWidth = false,
     this.padding,
     this.isDisabled = false,
+    this.textColor,
   });
 
   @override
@@ -167,7 +169,7 @@ class EmotiButton extends StatelessWidget {
           Flexible(
             child: Text(
               text,
-              style: _getTextStyle(),
+              style: _getTextStyle().copyWith(color: textColor),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               softWrap: false,
@@ -180,7 +182,7 @@ class EmotiButton extends StatelessWidget {
     return Flexible(
       child: Text(
         text,
-        style: _getTextStyle(),
+        style: _getTextStyle().copyWith(color: textColor),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         softWrap: false,

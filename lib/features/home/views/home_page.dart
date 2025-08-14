@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:emoti_flow/core/providers/auth_provider.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
 import 'package:emoti_flow/shared/widgets/cards/emoti_card.dart';
 import 'package:emoti_flow/shared/widgets/buttons/emoti_button.dart';
@@ -67,6 +69,7 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildTodayMoodSection(BuildContext context) {
+    final String userName = context.read<AuthProvider>().userName ?? '사용자';
     return EmotiCard(
       backgroundColor: AppTheme.primary.withOpacity(0.1),
       borderColor: AppTheme.primary,
@@ -96,7 +99,7 @@ class HomePage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '오늘의 감정',
+                      '$userName님의 오늘의 감정',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -118,7 +121,7 @@ class HomePage extends StatelessWidget {
             children: [
               Expanded(
                 child: EmotiButton(
-                  text: '일기 작성하기',
+                  text: '일기 작성',
                   onPressed: () => context.push('/diary/create'),
                   type: EmotiButtonType.primary,
                   size: EmotiButtonSize.medium,
@@ -135,6 +138,7 @@ class HomePage extends StatelessWidget {
                   size: EmotiButtonSize.medium,
                   icon: Icons.psychology,
                   isFullWidth: true,
+                  textColor: AppTheme.primary,
                 ),
               ),
             ],
@@ -348,7 +352,7 @@ class HomePage extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppTheme.secondary,
+                  color: AppTheme.secondaryDark,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -366,6 +370,7 @@ class HomePage extends StatelessWidget {
                       'AI 일일 조언',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -384,10 +389,11 @@ class HomePage extends StatelessWidget {
           EmotiButton(
             text: 'AI와 대화하기',
             onPressed: () => context.push('/ai'),
-            type: EmotiButtonType.secondary,
+            type: EmotiButtonType.outline,
             size: EmotiButtonSize.medium,
             icon: Icons.chat,
             isFullWidth: true,
+            textColor: AppTheme.primary,
           ),
         ],
       ),
