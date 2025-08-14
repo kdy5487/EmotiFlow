@@ -1038,3 +1038,218 @@ class _AnimatedCardState extends State<AnimatedCard>
   }
 }
 ```
+
+---
+
+## 🧩 공통 위젯 구현 가이드
+
+### **1. 감정 선택 위젯 (EmotionSelector)**
+```dart
+// 감정 선택 위젯
+class EmotionSelector extends StatelessWidget {
+  final Emotion selectedEmotion;
+  final ValueChanged<Emotion> onEmotionChanged;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      children: Emotion.values.map((emotion) {
+        return EmotionChip(
+          emotion: emotion,
+          isSelected: selectedEmotion == emotion,
+          onTap: () => onEmotionChanged(emotion),
+        );
+      }).toList(),
+    );
+  }
+}
+```
+
+### **2. 일기 카드 위젯 (DiaryCard)**
+```dart
+// 일기 카드 위젯
+class DiaryCard extends StatelessWidget {
+  final Diary diary;
+  final VoidCallback? onTap;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(diary.title, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              Text(diary.content, maxLines: 3, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  EmotionIcon(emotion: diary.emotion),
+                  const SizedBox(width: 8),
+                  Text(diary.createdAt.toString()),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+### **3. 감정 아이콘 위젯 (EmotionIcon)**
+```dart
+// 감정 아이콘 위젯
+class EmotionIcon extends StatelessWidget {
+  final Emotion emotion;
+  final double size;
+  final Color? color;
+  
+  const EmotionIcon({
+    super.key,
+    required this.emotion,
+    this.size = 24,
+    this.color,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
+      _getEmotionIcon(emotion),
+      size: size,
+      color: color ?? _getEmotionColor(emotion),
+    );
+  }
+  
+  IconData _getEmotionIcon(Emotion emotion) {
+    switch (emotion) {
+      case Emotion.joy:
+        return Icons.sentiment_very_satisfied;
+      case Emotion.sadness:
+        return Icons.sentiment_dissatisfied;
+      case Emotion.anger:
+        return Icons.whatshot;
+      case Emotion.fear:
+        return Icons.psychology;
+      case Emotion.surprise:
+        return Icons.emoji_emotions;
+      default:
+        return Icons.sentiment_neutral;
+    }
+  }
+  
+  Color _getEmotionColor(Emotion emotion) {
+    return AppColors.getEmotionPrimary(emotion.name);
+  }
+}
+```
+
+### **4. 감정 칩 위젯 (EmotionChip)**
+```dart
+// 감정 칩 위젯
+class EmotionChip extends StatelessWidget {
+  final Emotion emotion;
+  final bool isSelected;
+  final VoidCallback? onTap;
+  
+  const EmotionChip({
+    super.key,
+    required this.emotion,
+    this.isSelected = false,
+    this.onTap,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    final emotionColor = AppColors.getEmotionPrimary(emotion.name);
+    
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? emotionColor.withOpacity(0.2) : AppColors.surface,
+          border: Border.all(
+            color: isSelected ? emotionColor : AppColors.border,
+            width: 1.5,
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            EmotionIcon(emotion: emotion, size: 16),
+            const SizedBox(width: 6),
+            Text(
+              _getEmotionLabel(emotion),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? emotionColor : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  String _getEmotionLabel(Emotion emotion) {
+    const labels = {
+      Emotion.joy: '기쁨',
+      Emotion.sadness: '슬픔',
+      Emotion.anger: '분노',
+      Emotion.fear: '두려움',
+      Emotion.surprise: '놀람',
+      Emotion.neutral: '중립',
+    };
+    return labels[emotion] ?? emotion.name;
+  }
+}
+```
+
+### **5. 위젯 사용 예시**
+```dart
+// 감정 선택기 사용 예시
+class DiaryWritePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('일기 작성')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // 감정 선택기
+            EmotionSelector(
+              selectedEmotion: selectedEmotion,
+              onEmotionChanged: (emotion) {
+                setState(() {
+                  selectedEmotion = emotion;
+                });
+              },
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // 일기 입력 필드
+            TextField(
+              decoration: InputDecoration(
+                hintText: '오늘 하루는 어땠나요?',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 5,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```

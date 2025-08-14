@@ -418,6 +418,464 @@ class DiaryWritePage extends ConsumerWidget {
 
 ---
 
+## 📱 기술 요구사항 상세
+
+### **기능명: Flutter 앱 개발**
+- **기술 ID**: TECH-001
+- **설명**: Flutter SDK 3.16+ 기반 크로스 플랫폼 앱 개발
+- **구현 방법**:
+  - Flutter 3.16+ SDK 사용
+  - Dart 언어로 비즈니스 로직 구현
+  - Material Design 3 컴포넌트 활용
+  - 반응형 UI 및 적응형 레이아웃 구현
+
+### **기능명: Firebase 연동**
+- **기술 ID**: TECH-002
+- **설명**: Firebase Auth, Firestore, Storage 연동
+- **구현 방법**:
+  - Firebase Authentication으로 사용자 인증
+  - Cloud Firestore로 실시간 데이터베이스
+  - Firebase Storage로 미디어 파일 저장
+  - Firebase Cloud Messaging으로 푸시 알림
+
+### **기능명: OpenAI API 연동**
+- **기술 ID**: TECH-003
+- **설명**: OpenAI GPT-4 API, 감정 분석
+- **구현 방법**:
+  - GPT-4 API로 일기 내용 분석 및 피드백
+  - DALL-E API로 감정 이미지 생성
+  - 감정 키워드 추출 및 패턴 분석
+  - 맞춤형 조언 및 위로 메시지 생성
+
+### **기능명: 차트 및 데이터 시각화**
+- **기술 ID**: TECH-004
+- **설명**: fl_chart, syncfusion_flutter_charts 활용
+- **구현 방법**:
+  - fl_chart로 기본 차트 구현
+  - syncfusion_flutter_charts로 고급 차트
+  - 인터랙티브 차트 및 애니메이션
+  - 실시간 데이터 업데이트
+
+### **기능명: 그림 그리기 기능**
+- **기술 ID**: TECH-005
+- **설명**: Custom Paint, Canvas API 활용
+- **구현 방법**:
+  - CustomPainter로 브러시 도구 구현
+  - Canvas API로 그림 그리기 기능
+  - 레이어 시스템 및 편집 기능
+  - 감정별 색상 팔레트 및 가이드
+
+### **기능명: 음원 재생**
+- **기술 ID**: TECH-006
+- **설명**: audioplayers, just_audio 패키지 활용
+- **구현 방법**:
+  - audioplayers로 기본 음원 재생
+  - just_audio로 고급 오디오 기능
+  - 플레이리스트 및 재생 모드
+  - 백그라운드 재생 및 컨트롤
+
+### **기능명: 이미지 생성**
+- **기술 ID**: TECH-007
+- **설명**: OpenAI DALL-E API 연동
+- **구현 방법**:
+  - DALL-E API로 감정 기반 이미지 생성
+  - 이미지 품질 및 스타일 조절
+  - 생성된 이미지 저장 및 관리
+  - 이미지 편집 및 필터링
+
+### **기능명: 영상 제작**
+- **기술 ID**: TECH-008
+- **설명**: video_player, ffmpeg 활용
+- **구현 방법**:
+  - video_player로 영상 재생 및 편집
+  - ffmpeg로 영상 합성 및 효과
+  - 자동 전환 효과 및 애니메이션
+  - 영상 품질 조절 및 압축
+
+### **기능명: 로컬 저장소**
+- **기술 ID**: TECH-009
+- **설명**: SharedPreferences, Hive 활용
+- **구현 방법**:
+  - SharedPreferences로 간단한 설정 저장
+  - Hive로 구조화된 데이터 저장
+  - 오프라인 데이터 동기화
+  - 데이터 백업 및 복원
+
+### **기능명: HTTP 통신**
+- **기술 ID**: TECH-010
+- **설명**: Dio, http 패키지 활용
+- **구현 방법**:
+  - Dio로 고급 HTTP 클라이언트 구현
+  - http로 기본 HTTP 요청 처리
+  - 인터셉터 및 에러 핸들링
+  - 요청/응답 로깅 및 모니터링
+
+### **기능명: 보안 및 암호화**
+- **기술 ID**: TECH-011
+- **설명**: flutter_secure_storage, crypto 활용
+- **구현 방법**:
+  - flutter_secure_storage로 민감 데이터 저장
+  - crypto로 데이터 암호화/복호화
+  - SSL/TLS 인증서 검증
+  - 보안 키 관리 및 갱신
+
+### **기능명: 오프라인 지원**
+- **기술 ID**: TECH-012
+- **설명**: connectivity_plus, sqflite 활용
+- **구현 방법**:
+  - connectivity_plus로 네트워크 상태 모니터링
+  - sqflite로 로컬 데이터베이스 구현
+  - 오프라인 데이터 캐싱
+  - 네트워크 복구 시 자동 동기화
+
+### **기능명: 성능 모니터링**
+- **기술 ID**: TECH-013
+- **설명**: Firebase Performance, Sentry 활용
+- **구현 방법**:
+  - Firebase Performance로 앱 성능 추적
+  - Sentry로 에러 모니터링 및 리포팅
+  - 성능 병목 지점 식별
+  - 사용자 경험 개선 제안
+
+### **기능명: 접근성**
+- **기술 ID**: TECH-014
+- **설명**: flutter_semantics, accessibility_tools 활용
+- **구현 방법**:
+  - flutter_semantics로 스크린 리더 지원
+  - accessibility_tools로 접근성 테스트
+  - 색상 대비 및 터치 영역 최적화
+  - 키보드 네비게이션 지원
+
+### **기능명: 반응형 UI**
+- **기술 ID**: TECH-015
+- **설명**: flutter_responsive, adaptive_components 활용
+- **구현 방법**:
+  - flutter_responsive로 화면 크기별 레이아웃
+  - adaptive_components로 플랫폼별 컴포넌트
+  - 브레이크포인트 기반 반응형 디자인
+  - 다양한 디바이스 최적화
+
+### **기능명: 멀티 디바이스**
+- **기술 ID**: TECH-016
+- **설명**: device_info_plus, screen_util 활용
+- **구현 방법**:
+  - device_info_plus로 디바이스 정보 수집
+  - screen_util로 화면 크기 및 밀도 처리
+  - 디바이스별 기능 최적화
+  - 크로스 플랫폼 호환성 보장
+
+---
+
+## 🗃️ 데이터 모델 및 서비스 구현
+
+### **1. 데이터 모델**
+
+#### **일기 모델 (Diary)**
+```dart
+// 일기 모델
+class Diary {
+  final String id;
+  final String title;
+  final String content;
+  final Emotion emotion;
+  final DateTime createdAt;
+  final List<String> mediaUrls;
+  final Map<String, dynamic> aiAnalysis;
+  
+  Diary({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.emotion,
+    required this.createdAt,
+    this.mediaUrls = const [],
+    this.aiAnalysis = const {},
+  });
+  
+  factory Diary.fromJson(Map<String, dynamic> json) {
+    return Diary(
+      id: json['id'],
+      title: json['title'],
+      content: json['content'],
+      emotion: Emotion.values.firstWhere((e) => e.name == json['emotion']),
+      createdAt: DateTime.parse(json['createdAt']),
+      mediaUrls: List<String>.from(json['mediaUrls'] ?? []),
+      aiAnalysis: Map<String, dynamic>.from(json['aiAnalysis'] ?? {}),
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'content': content,
+      'emotion': emotion.name,
+      'createdAt': createdAt.toIso8601String(),
+      'mediaUrls': mediaUrls,
+      'aiAnalysis': aiAnalysis,
+    };
+  }
+}
+```
+
+#### **감정 열거형 (Emotion)**
+```dart
+// 감정 열거형
+enum Emotion {
+  joy,      // 기쁨
+  love,     // 사랑
+  calm,     // 평온
+  sadness,  // 슬픔
+  anger,    // 분노
+  fear,     // 두려움
+  surprise, // 놀람
+  neutral,  // 중립
+}
+```
+
+#### **사용자 모델 (User)**
+```dart
+// 사용자 모델
+class User {
+  final String id;
+  final String email;
+  final String displayName;
+  final String? photoURL;
+  final DateTime createdAt;
+  final Map<String, dynamic> preferences;
+  final EmotionProfile emotionProfile;
+  
+  User({
+    required this.id,
+    required this.email,
+    required this.displayName,
+    this.photoURL,
+    required this.createdAt,
+    this.preferences = const {},
+    required this.emotionProfile,
+  });
+  
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'],
+      email: json['email'],
+      displayName: json['displayName'],
+      photoURL: json['photoURL'],
+      createdAt: DateTime.parse(json['createdAt']),
+      preferences: Map<String, dynamic>.from(json['preferences'] ?? {}),
+      emotionProfile: EmotionProfile.fromJson(json['emotionProfile']),
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'email': email,
+      'displayName': displayName,
+      'photoURL': photoURL,
+      'createdAt': createdAt.toIso8601String(),
+      'preferences': preferences,
+      'emotionProfile': emotionProfile.toJson(),
+    };
+  }
+}
+```
+
+### **2. 서비스 구현**
+
+#### **일기 서비스 (DiaryService)**
+```dart
+// 일기 서비스
+class DiaryService {
+  final FirebaseFirestore _firestore;
+  final String userId;
+  
+  DiaryService(this._firestore, this.userId);
+  
+  Future<List<Diary>> getDiaries() async {
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('diaries')
+          .orderBy('createdAt', descending: true)
+          .get();
+      
+      return snapshot.docs.map((doc) => Diary.fromJson(doc.data())).toList();
+    } catch (e) {
+      throw DiaryException('일기 목록을 불러오는데 실패했습니다: $e');
+    }
+  }
+  
+  Future<void> createDiary(Diary diary) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('diaries')
+          .doc(diary.id)
+          .set(diary.toJson());
+    } catch (e) {
+      throw DiaryException('일기 저장에 실패했습니다: $e');
+    }
+  }
+  
+  Future<void> updateDiary(Diary diary) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('diaries')
+          .doc(diary.id)
+          .update(diary.toJson());
+    } catch (e) {
+      throw DiaryException('일기 수정에 실패했습니다: $e');
+    }
+  }
+  
+  Future<void> deleteDiary(String diaryId) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('diaries')
+          .doc(diaryId)
+          .delete();
+    } catch (e) {
+      throw DiaryException('일기 삭제에 실패했습니다: $e');
+    }
+  }
+}
+```
+
+#### **AI 서비스 (AIService)**
+```dart
+// AI 서비스
+class AIService {
+  final OpenAI _openAI;
+  
+  AIService(this._openAI);
+  
+  Future<String> analyzeEmotion(String content) async {
+    try {
+      final completion = await _openAI.chat.completions.create(
+        model: 'gpt-4',
+        messages: [
+          ChatMessage(
+            role: ChatMessageRole.system,
+            content: '당신은 감정 분석 전문가입니다. 주어진 텍스트의 감정을 분석하고 따뜻한 위로를 제공하세요.',
+          ),
+          ChatMessage(
+            role: ChatMessageRole.user,
+            content: content,
+          ),
+        ],
+      );
+      
+      return completion.choices.first.message.content ?? '분석을 완료할 수 없습니다.';
+    } catch (e) {
+      throw AIException('AI 분석에 실패했습니다: $e');
+    }
+  }
+  
+  Future<String> generateImage(String prompt) async {
+    try {
+      final response = await _openAI.images.generate(
+        model: 'dall-e-3',
+        prompt: prompt,
+        size: '1024x1024',
+        quality: 'standard',
+        n: 1,
+      );
+      
+      return response.data.first.url ?? '';
+    } catch (e) {
+      throw AIException('이미지 생성에 실패했습니다: $e');
+    }
+  }
+}
+```
+
+#### **인증 서비스 (AuthService)**
+```dart
+// 인증 서비스
+class AuthService {
+  final FirebaseAuth _auth;
+  
+  AuthService(this._auth);
+  
+  Future<UserCredential> signInWithEmailAndPassword(
+    String email, 
+    String password,
+  ) async {
+    try {
+      return await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } catch (e) {
+      throw AuthException('로그인에 실패했습니다: $e');
+    }
+  }
+  
+  Future<UserCredential> createUserWithEmailAndPassword(
+    String email, 
+    String password,
+  ) async {
+    try {
+      return await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } catch (e) {
+      throw AuthException('회원가입에 실패했습니다: $e');
+    }
+  }
+  
+  Future<void> signOut() async {
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      throw AuthException('로그아웃에 실패했습니다: $e');
+    }
+  }
+}
+```
+
+### **3. 예외 처리**
+
+#### **커스텀 예외 클래스들**
+```dart
+// 일기 관련 예외
+class DiaryException implements Exception {
+  final String message;
+  DiaryException(this.message);
+  
+  @override
+  String toString() => 'DiaryException: $message';
+}
+
+// AI 관련 예외
+class AIException implements Exception {
+  final String message;
+  AIException(this.message);
+  
+  @override
+  String toString() => 'AIException: $message';
+}
+
+// 인증 관련 예외
+class AuthException implements Exception {
+  final String message;
+  AuthException(this.message);
+  
+  @override
+  String toString() => 'AuthException: $message';
+}
+```
+
+---
+
 ## 📚 참고 문서
 
 - `emoti_flow_requirements.md`: 요구사항 정의서
