@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "671101750738",
+    "project_id": "emotiflow-b1ef1",
+    "storage_bucket": "emotiflow-b1ef1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:671101750738:android:b02c9cb5a465f450b8cc0b",
+        "android_client_info": {
+          "package_name": "com.example.emoti_flow"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "671101750738-c2pt66vbh3vhl9eb0sp5dtcd5ee7dp8a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.emoti_flow",
+            "certificate_hash": "9436121462c90a9838b9a4e4662ff73f65f0e1d3"
+          }
+        },
+        {
+          "client_id": "671101750738-cc7qr3n8gsr334agdjs635l3ihrrd91t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMnBUJIHt1OfNUHkrqnnFkIu0JsZPiLAM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "671101750738-cc7qr3n8gsr334agdjs635l3ihrrd91t.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "671101750738-3jl9hlrq129ooatrl0dpdcipbu9gaagt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.emotiFlow"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
