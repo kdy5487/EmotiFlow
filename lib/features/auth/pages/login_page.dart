@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/auth_provider.dart';
-import '../../../shared/widgets/buttons/emoti_button.dart';
 import '../../../theme/app_colors.dart';
-import '../../../theme/app_typography.dart';
+import 'widgets/login_header.dart';
+import 'widgets/login_welcome_message.dart';
+import 'widgets/login_google_button.dart';
+import 'widgets/login_terms_privacy.dart';
+import 'widgets/login_error_message.dart';
 
 /// Google 로그인 전용 페이지
 class LoginPage extends StatelessWidget {
@@ -29,22 +32,25 @@ class LoginPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // 로고 및 앱 제목
-                    _buildHeader(),
+                    const LoginHeader(),
                   
                     const SizedBox(height: 60),
                     
                     // 환영 메시지
-                    _buildWelcomeMessage(),
+                    const LoginWelcomeMessage(),
                     
                     const SizedBox(height: 40),
                     
                     // Google 로그인 버튼
-                    _buildGoogleSignInButton(context, authProvider),
+                    LoginGoogleButton(
+                      onPressed: () => _handleGoogleSignIn(context),
+                      isLoading: authProvider.isLoading,
+                    ),
                     
                     const SizedBox(height: 24),
                     
                     // 이용약관 및 개인정보처리방침
-                    _buildTermsAndPrivacy(),
+                    const LoginTermsPrivacy(),
                     
                     // 로딩 표시
                     if (authProvider.isLoading) ...[
@@ -55,20 +61,7 @@ class LoginPage extends StatelessWidget {
                     // 에러 메시지
                     if (authProvider.error != null) ...[
                       const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.error.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          authProvider.error!,
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppColors.error,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
+                      LoginErrorMessage(errorMessage: authProvider.error!),
                     ],
                   ],
                 ),
@@ -76,130 +69,6 @@ class LoginPage extends StatelessWidget {
             );
           },
         ),
-      ),
-    );
-  }
-  
-  /// 헤더 (로고 및 제목)
-  Widget _buildHeader() {
-    return Column(
-      children: [
-        // 로고
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.psychology,
-            size: 50,
-            color: Colors.white,
-          ),
-        ),
-        
-        const SizedBox(height: 24),
-        
-        // 제목
-        Text(
-          'EmotiFlow',
-          style: AppTypography.displayLarge.copyWith(
-            color: AppColors.primary,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        
-        const SizedBox(height: 8),
-        
-        // 부제목
-        Text(
-          'AI와 함께하는 감정 일기',
-          style: AppTypography.titleMedium.copyWith(
-            color: AppColors.textSecondary,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-  
-  /// 환영 메시지
-  Widget _buildWelcomeMessage() {
-    return Column(
-      children: [
-        Text(
-          '환영합니다! 👋',
-          style: AppTypography.headlineMedium.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        
-        const SizedBox(height: 12),
-        
-        Text(
-          'Google 계정으로 간편하게 로그인하고\n감정 일기를 시작해보세요',
-          style: AppTypography.bodyLarge.copyWith(
-            color: AppColors.textSecondary,
-            height: 1.5,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-  
-  /// Google 로그인 버튼
-  Widget _buildGoogleSignInButton(BuildContext context, AuthProvider authProvider) {
-    return EmotiButton(
-      onPressed: authProvider.isLoading ? null : () => _handleGoogleSignIn(context),
-      text: 'Google로 로그인',
-      type: EmotiButtonType.primary,
-      size: EmotiButtonSize.large,
-      icon: Icons.g_mobiledata,
-      isLoading: authProvider.isLoading,
-    );
-  }
-  
-  /// 이용약관 및 개인정보처리방침
-  Widget _buildTermsAndPrivacy() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Text.rich(
-        TextSpan(
-          text: '로그인하면 ',
-          style: AppTypography.bodySmall.copyWith(
-            color: AppColors.textTertiary,
-          ),
-          children: [
-            TextSpan(
-              text: '이용약관',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.primary,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-            const TextSpan(text: ' 및 '),
-            TextSpan(
-              text: '개인정보처리방침',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.primary,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-            const TextSpan(text: '에 동의하게 됩니다.'),
-          ],
-        ),
-        textAlign: TextAlign.center,
       ),
     );
   }
