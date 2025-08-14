@@ -876,6 +876,258 @@ class AuthException implements Exception {
 
 ---
 
+## 🏗️ 아키텍처 및 기술 구현
+
+### **1. 상태 관리 (Riverpod)**
+
+#### **상태 관리 구조**
+```dart
+// 상태 관리 구조
+final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+  return AuthNotifier(ref.read(authServiceProvider));
+});
+
+final diaryProvider = StateNotifierProvider<DiaryNotifier, DiaryState>((ref) {
+  return DiaryNotifier(ref.read(diaryServiceProvider));
+});
+
+final aiProvider = StateNotifierProvider<AINotifier, AIState>((ref) {
+  return AINotifier(ref.read(aiServiceProvider));
+});
+
+final userProvider = StateNotifierProvider<UserNotifier, UserState>((ref) {
+  return UserNotifier(ref.read(userServiceProvider));
+});
+
+final themeProvider = StateNotifierProvider<ThemeNotifier, ThemeState>((ref) {
+  return ThemeNotifier(ref.read(themeServiceProvider));
+});
+```
+
+#### **상태 관리 패턴**
+```dart
+// 인증 상태 관리
+class AuthNotifier extends StateNotifier<AuthState> {
+  final AuthService _authService;
+  
+  AuthNotifier(this._authService) : super(AuthState.initial());
+  
+  Future<void> signIn(String email, String password) async {
+    state = state.copyWith(isLoading: true);
+    
+    try {
+      final user = await _authService.signInWithEmailAndPassword(email, password);
+      state = state.copyWith(
+        user: user,
+        isLoading: false,
+        error: null,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+  
+  Future<void> signOut() async {
+    state = state.copyWith(isLoading: true);
+    
+    try {
+      await _authService.signOut();
+      state = AuthState.initial();
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+}
+
+// 상태 클래스
+class AuthState {
+  final User? user;
+  final bool isLoading;
+  final String? error;
+  
+  const AuthState({
+    this.user,
+    this.isLoading = false,
+    this.error,
+  });
+  
+  AuthState copyWith({
+    User? user,
+    bool? isLoading,
+    String? error,
+  }) {
+    return AuthState(
+      user: user ?? this.user,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+    );
+  }
+  
+  factory AuthState.initial() => const AuthState();
+}
+```
+
+### **2. 라우팅 (GoRouter)**
+
+#### **라우팅 설정**
+```dart
+// 라우팅 설정
+final router = GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const HomePage(),
+    ),
+    GoRoute(
+      path: '/diary',
+      builder: (context, state) => const DiaryPage(),
+    ),
+    GoRoute(
+      path: '/diary/:id',
+      builder: (context, state) {
+        final diaryId = state.pathParameters['id']!;
+        return DiaryDetailPage(diaryId: diaryId);
+      },
+    ),
+    GoRoute(
+      path: '/ai',
+      builder: (context, state) => const AIPage(),
+    ),
+    GoRoute(
+      path: '/analytics',
+      builder: (context, state) => const AnalyticsPage(),
+    ),
+    GoRoute(
+      path: '/music',
+      builder: (context, state) => const MusicPage(),
+    ),
+    GoRoute(
+      path: '/profile',
+      builder: (context, state) => const ProfilePage(),
+    ),
+    GoRoute(
+      path: '/settings',
+      builder: (context, state) => const SettingsPage(),
+    ),
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingPage(),
+    ),
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginPage(),
+    ),
+    GoRoute(
+      path: '/signup',
+      builder: (context, state) => const SignupPage(),
+    ),
+  ],
+);
+```
+
+#### **라우팅 가드 및 미들웨어**
+```dart
+// 인증이 필요한 라우트 보호
+final router = GoRouter(
+  initialLocation: '/',
+  redirect: (context, state) {
+    final authState = ref.read(authProvider);
+    final isLoggedIn = authState.user != null;
+    final isOnboarding = state.matchedLocation == '/onboarding';
+    final isAuth = state.matchedLocation == '/login' || 
+                   state.matchedLocation == '/signup';
+    
+    // 온보딩이 필요한 경우
+    if (!isLoggedIn && !isOnboarding && !isAuth) {
+      return '/onboarding';
+    }
+    
+    // 로그인이 필요한 경우
+    if (isLoggedIn && isAuth) {
+      return '/';
+    }
+    
+    // 로그인이 필요한 페이지 접근 시
+    if (!isLoggedIn && !isOnboarding && !isAuth) {
+      return '/login';
+    }
+    
+    return null;
+  },
+  routes: [
+    // ... 라우트 정의
+  ],
+);
+```
+
+#### **딥링크 및 웹 URL 지원**
+```dart
+// 딥링크 설정
+final router = GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(
+      path: '/diary/:id',
+      builder: (context, state) {
+        final diaryId = state.pathParameters['id']!;
+        return DiaryDetailPage(diaryId: diaryId);
+      },
+      // 웹 URL에서 직접 접근 가능
+      redirect: (context, state) {
+        // 특별한 처리 로직
+        return null;
+      },
+    ),
+  ],
+);
+
+// 딥링크 처리
+void handleDeepLink(String link) {
+  if (link.contains('/diary/')) {
+    final diaryId = link.split('/diary/').last;
+    router.go('/diary/$diaryId');
+  }
+}
+```
+
+### **3. 프로젝트 구조**
+
+#### **폴더 구조**
+```
+lib/
+├── main.dart                    # 앱 진입점
+├── app.dart                     # 앱 설정
+├── theme/                       # 테마 및 스타일
+│   ├── app_theme.dart
+│   ├── app_colors.dart
+│   └── app_typography.dart
+├── shared/                      # 공통 컴포넌트
+│   ├── widgets/                # 공통 위젯
+│   ├── models/                 # 공통 모델
+│   ├── services/               # 공통 서비스
+│   └── utils/                  # 유틸리티
+├── features/                    # 기능별 모듈
+│   ├── auth/                   # 인증
+│   ├── diary/                  # 일기
+│   ├── ai/                     # AI
+│   ├── analytics/              # 분석
+│   ├── music/                  # 음악
+│   └── profile/                # 프로필
+└── core/                        # 핵심 기능
+    ├── constants/               # 상수
+    ├── errors/                  # 에러 처리
+    └── network/                 # 네트워크 처리
+```
+
+---
+
 ## 📚 참고 문서
 
 - `emoti_flow_requirements.md`: 요구사항 정의서

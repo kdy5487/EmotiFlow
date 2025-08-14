@@ -1253,3 +1253,564 @@ class DiaryWritePage extends StatelessWidget {
   }
 }
 ```
+
+---
+
+## 🎨 UI 컴포넌트 구현 가이드
+
+### **1. AppBar 구현**
+
+#### **기본 AppBar (EmotiAppBar)**
+```dart
+class EmotiAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  final List<Widget>? actions;
+  final bool showBackButton;
+  
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: Text(title),
+      leading: showBackButton ? BackButton() : null,
+      actions: actions,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      elevation: 0,
+    );
+  }
+  
+  @override
+  Size get preferredSize => Size.fromHeight(kToolbarHeight);
+}
+```
+
+#### **페이지별 AppBar**
+```dart
+// 홈 페이지 AppBar
+class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: Text('EmotiFlow'),
+      actions: [
+        IconButton(
+          icon: Icon(Icons.notifications),
+          onPressed: () => Navigator.pushNamed(context, '/notifications'),
+        ),
+        IconButton(
+          icon: Icon(Icons.settings),
+          onPressed: () => Navigator.pushNamed(context, '/settings'),
+        ),
+      ],
+      backgroundColor: AppColors.surface,
+      elevation: 0,
+    );
+  }
+  
+  @override
+  Size get preferredSize => Size.fromHeight(kToolbarHeight);
+}
+
+// 일기 페이지 AppBar
+class DiaryAppBar extends StatelessWidget implements PreferredSizeWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: Text('일기 작성'),
+      leading: BackButton(),
+      actions: [
+        TextButton(
+          onPressed: () => _saveDraft(context),
+          child: Text('임시저장'),
+        ),
+      ],
+      backgroundColor: AppColors.surface,
+      elevation: 0,
+    );
+  }
+  
+  @override
+  Size get preferredSize => Size.fromHeight(kToolbarHeight);
+}
+```
+
+### **2. BottomNavigationBar 구현**
+
+#### **메인 BottomNavigationBar**
+```dart
+class EmotiBottomNavigationBar extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  
+  @override
+  Widget build(BuildContext context) {
+    return BottomNavigationBar(
+      currentIndex: currentIndex,
+      onTap: onTap,
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: AppColors.surface,
+      selectedItemColor: AppColors.primary,
+      unselectedItemColor: AppColors.textTertiary,
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home_outlined),
+          activeIcon: Icon(Icons.home),
+          label: '홈',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.edit_outlined),
+          activeIcon: Icon(Icons.edit),
+          label: '일기',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.psychology_outlined),
+          activeIcon: Icon(Icons.psychology),
+          label: 'AI',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.analytics_outlined),
+          activeIcon: Icon(Icons.analytics),
+          label: '분석',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.music_note_outlined),
+          activeIcon: Icon(Icons.music_note),
+          label: '음악',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline),
+          activeIcon: Icon(Icons.person),
+          label: '프로필',
+        ),
+      ],
+    );
+  }
+}
+```
+
+#### **음악 페이지 BottomNavigationBar**
+```dart
+class MusicBottomNavigationBar extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  
+  @override
+  Widget build(BuildContext context) {
+    return BottomNavigationBar(
+      currentIndex: currentIndex,
+      onTap: onTap,
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: AppColors.surface,
+      selectedItemColor: AppColors.secondary,
+      unselectedItemColor: AppColors.textTertiary,
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.playlist_play),
+          label: '재생목록',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.favorite),
+          label: '즐겨찾기',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.search),
+          label: '검색',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.settings),
+          label: '설정',
+        ),
+      ],
+    );
+  }
+}
+```
+
+### **3. FloatingActionButton 구현**
+
+#### **메인 FAB (일기 작성)**
+```dart
+class DiaryFAB extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton(
+      onPressed: () => Navigator.pushNamed(context, '/diary/write'),
+      backgroundColor: AppColors.primary,
+      foregroundColor: AppColors.textInverse,
+      child: Icon(Icons.edit),
+      elevation: 6,
+    );
+  }
+}
+
+// 확장된 FAB
+class ExtendedDiaryFAB extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.extended(
+      onPressed: () => Navigator.pushNamed(context, '/diary/write'),
+      backgroundColor: AppColors.primary,
+      foregroundColor: AppColors.textInverse,
+      icon: Icon(Icons.edit),
+      label: Text('일기 작성'),
+      elevation: 6,
+    );
+  }
+}
+```
+
+#### **AI 페이지 FAB**
+```dart
+class AIFAB extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton(
+      onPressed: () => _showAIChatDialog(context),
+      backgroundColor: AppColors.secondary,
+      foregroundColor: AppColors.textInverse,
+      child: Icon(Icons.chat),
+      elevation: 6,
+    );
+  }
+  
+  void _showAIChatDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AIChatDialog(),
+    );
+  }
+}
+```
+
+### **4. 카드 컴포넌트 구현**
+
+#### **감정 카드**
+```dart
+class EmotionCard extends StatelessWidget {
+  final String emotion;
+  final String title;
+  final String description;
+  final VoidCallback? onTap;
+  
+  const EmotionCard({
+    super.key,
+    required this.emotion,
+    required this.title,
+    required this.description,
+    this.onTap,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    final emotionColor = AppColors.getEmotionPrimary(emotion);
+    
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                emotionColor.withOpacity(0.1),
+                emotionColor.withOpacity(0.05),
+              ],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  EmotionIcon(
+                    emotion: emotion,
+                    size: 32,
+                    color: emotionColor,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: AppTypography.titleMedium.copyWith(
+                        color: emotionColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                description,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+#### **통계 카드**
+```dart
+class StatsCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String? subtitle;
+  final IconData? icon;
+  final Color? iconColor;
+  final VoidCallback? onTap;
+  
+  const StatsCard({
+    super.key,
+    required this.title,
+    required this.value,
+    this.subtitle,
+    this.icon,
+    this.iconColor,
+    this.onTap,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  if (icon != null) ...[
+                    Icon(
+                      icon,
+                      color: iconColor ?? AppColors.primary,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: AppTypography.labelLarge.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: AppTypography.headlineMedium.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle!,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+### **5. 다이얼로그 및 시트 구현**
+
+#### **감정 선택 다이얼로그**
+```dart
+class EmotionSelectionDialog extends StatelessWidget {
+  final String? selectedEmotion;
+  final ValueChanged<String> onEmotionSelected;
+  
+  const EmotionSelectionDialog({
+    super.key,
+    this.selectedEmotion,
+    required this.onEmotionSelected,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '감정을 선택해주세요',
+              style: AppTypography.titleLarge.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: AppColors.emotions.keys.map((emotion) {
+                final isSelected = selectedEmotion == emotion;
+                return EmotionChip(
+                  emotion: emotion,
+                  isSelected: isSelected,
+                  onTap: () {
+                    onEmotionSelected(emotion);
+                    Navigator.of(context).pop();
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+#### **하단 시트**
+```dart
+class BottomActionSheet extends StatelessWidget {
+  final List<SheetAction> actions;
+  
+  const BottomActionSheet({
+    super.key,
+    required this.actions,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.border,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 20),
+          ...actions.map((action) => ListTile(
+            leading: Icon(
+              action.icon,
+              color: action.iconColor ?? AppColors.textPrimary,
+            ),
+            title: Text(
+              action.title,
+              style: AppTypography.bodyLarge.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+            onTap: () {
+              action.onTap();
+              Navigator.of(context).pop();
+            },
+          )),
+        ],
+      ),
+    );
+  }
+}
+
+class SheetAction {
+  final IconData icon;
+  final String title;
+  final Color? iconColor;
+  final VoidCallback onTap;
+  
+  const SheetAction({
+    required this.icon,
+    required this.title,
+    this.iconColor,
+    required this.onTap,
+  });
+}
+```
+
+### **6. 컴포넌트 사용 예시**
+
+#### **홈 페이지에서 컴포넌트 사용**
+```dart
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: HomeAppBar(),
+      body: ListView.builder(
+        padding: EdgeInsets.all(16),
+        itemCount: 4,
+        itemBuilder: (context, index) {
+          switch (index) {
+            case 0:
+              return EmotionCard(
+                emotion: 'joy',
+                title: '오늘의 기분',
+                description: '기분 좋은 하루를 보내고 계시네요!',
+                onTap: () => _showEmotionDetail(context),
+              );
+            case 1:
+              return StatsCard(
+                title: '이번 주 감정',
+                value: '기쁨 5회',
+                subtitle: '지난 주보다 2회 증가',
+                icon: Icons.trending_up,
+                iconColor: AppColors.success,
+              );
+            case 2:
+              return RecentEntriesSection();
+            case 3:
+              return AIDailyTipCard();
+            default:
+              return SizedBox.shrink();
+          }
+        },
+      ),
+      bottomNavigationBar: EmotiBottomNavigationBar(
+        currentIndex: 0,
+        onTap: (index) => _onTabTapped(context, index),
+      ),
+      floatingActionButton: DiaryFAB(),
+    );
+  }
+}
+```

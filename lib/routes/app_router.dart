@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:emoti_flow/features/home/views/home_page.dart';
+// TODO: 각 뷰 생성 전까지는 라우트를 최소화 유지
+import 'package:emoti_flow/features/auth/pages/login_page.dart' as login;
 
 // 라우트 이름 상수
 class AppRoutes {
@@ -35,12 +37,12 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.auth,
         name: 'auth',
-        builder: (context, state) => const AuthPage(),
+         builder: (context, state) => const login.LoginPage(),
         routes: [
           GoRoute(
             path: 'login',
             name: 'login',
-            builder: (context, state) => const LoginPage(),
+             builder: (context, state) => const login.LoginPage(),
           ),
           GoRoute(
             path: 'signup',

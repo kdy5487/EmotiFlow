@@ -4,14 +4,16 @@ import 'app_typography.dart';
 
 class AppTheme {
   // Primary Brand Colors
-  static const Color primary = Color(0xFF6366F1);      // 인디고 - 신뢰와 안정감
-  static const Color primaryLight = Color(0xFF818CF8); // 밝은 인디고
-  static const Color primaryDark = Color(0xFF4F46E5);  // 어두운 인디고
+  // 연보라 컨셉에 맞춘 프라이머리
+  static const Color primary = Color(0xFF8B7FF6);
+  static const Color primaryLight = Color(0xFFA899FA);
+  static const Color primaryDark = Color(0xFF6E61E0);
   
   // Secondary Colors
-  static const Color secondary = Color(0xFF10B981);    // 에메랄드 - 성장과 활력
-  static const Color secondaryLight = Color(0xFF34D399);
-  static const Color secondaryDark = Color(0xFF059669);
+  // 보조색: 라벤더 핑크 계열
+  static const Color secondary = Color(0xFFDA77F2);
+  static const Color secondaryLight = Color(0xFFE7A6F7);
+  static const Color secondaryDark = Color(0xFFBE5BDD);
   
   // Emotion-based Colors
   static const Color joy = Color(0xFFFFD700);          // 기쁨 - 골드

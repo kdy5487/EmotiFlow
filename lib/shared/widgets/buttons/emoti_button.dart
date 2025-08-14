@@ -44,8 +44,8 @@ class EmotiButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
+    // final theme = Theme.of(context);
+
     Widget button;
     
     switch (type) {
@@ -159,21 +159,33 @@ class EmotiButton extends StatelessWidget {
 
     if (icon != null) {
       return Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: isFullWidth ? MainAxisSize.max : MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, size: _getIconSize()),
           const SizedBox(width: 8),
-          Text(
-            text,
-            style: _getTextStyle(),
+          Flexible(
+            child: Text(
+              text,
+              style: _getTextStyle(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+            ),
           ),
         ],
       );
     }
 
-    return Text(
-      text,
-      style: _getTextStyle(),
+    return Flexible(
+      child: Text(
+        text,
+        style: _getTextStyle(),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        softWrap: false,
+        textAlign: TextAlign.center,
+      ),
     );
   }
 

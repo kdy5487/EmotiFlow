@@ -88,14 +88,7 @@ Body:
   - 설정 메뉴 (SettingsMenu)
 ```
 
-### **공통 UI 컴포넌트**
-- **AppBar**: 각 페이지 상단의 앱바 (제목, 뒤로가기, 액션 버튼)
-- **BottomNavigationBar**: 하단 메인 네비게이션
-- **FloatingActionButton**: 주요 액션 버튼
-- **Card**: 정보 표시용 카드 컴포넌트
-- **Dialog**: 모달 다이얼로그
-- **SnackBar**: 간단한 알림 메시지
-- **BottomSheet**: 하단에서 올라오는 시트
+> **참고**: 공통 UI 컴포넌트는 `emoti_flow_uiux_guide.md` 문서를 참조하세요.
 
 ### **네비게이션 흐름**
 ```
@@ -973,18 +966,6 @@ SplashScreen → Onboarding → Login/Signup → MainApp
 
 ## 📋 문서 정보
 
-### **문서 버전 관리**
-| 버전 | 날짜 | 변경 내용 | 작성자 |
-|------|------|-----------|--------|
-| 1.0 | 2024년 12월 | 초기 작성 | AI Assistant |
-| 1.1 | 2024년 12월 | 누락 기능 추가 및 일관성 개선 | AI Assistant |
-
-### **검토 및 승인**
-| 단계 | 담당자 | 날짜 | 상태 |
-|------|--------|------|------|
-| 작성 | AI Assistant | 2024년 12월 | 완료 |
-| 검토 | - | - | 대기 |
-| 승인 | - | - | 대기 |
 
 ### **참고 문서**
 - `emoti_flow_requirements.md`: 프로젝트 요구사항 정의서
@@ -993,155 +974,16 @@ SplashScreen → Onboarding → Login/Signup → MainApp
 - `emoti_flow_uiux_guide.md`: UI/UX 상세 가이드
 - `emoti_flow_tech_summary.md`: 기술적 요약 및 기술 요구사항
 
----
 
-## 🔄 변경 이력
 
-### **v1.1 (2024년 12월)**
-- **추가된 기능**:
-  - 개인 프로필 설정 (REQ-002)
-  - 감정 프로필 설정 (REQ-003)
-  - AI 감정 시각화 (REQ-008)
-  - 일기 분석 및 위로 (REQ-009)
-  - 일기 관리 (REQ-010)
-  - 긍정 카드 추천 (REQ-012)
-  - 감정 패턴 챌린지 (REQ-013)
-  - 그림 그리기 (REQ-014)
-  - 기록 영상화 (REQ-016)
-  - 고민 공유 커뮤니티 (REQ-017)
-  - 감정 위기 대처 도구 (REQ-018)
-  - 알림 및 리마인더 (REQ-021)
-  - 데이터 관리 (REQ-022)
-  - 보안 및 개인정보 (REQ-023)
-  - 시스템 및 운영 기능 전체 (REQ-024 ~ REQ-028)
-  - 기술 요구사항 전체 (TECH-001 ~ TECH-016) → `emoti_flow_tech_summary.md`로 이동
-
-- **개선된 내용**:
-  - requirements 문서와의 일관성 확보
-  - 기능 ID 체계 정리
-  - 상세 동작 및 예외 처리 보완
-  - 설정 옵션 상세화
-
-- **수정된 내용**:
-  - AI 대화형 일기 설명 명확화
-  - 화면 구성 및 사용자 경험 특징 추가
 
 ---
 
-## 🛠️ Flutter 앱 구현 세부사항
+> **참고**: 상태 관리 (Riverpod)는 `emoti_flow_tech_summary.md` 문서를 참조하세요.
 
-### **앱 구조 및 아키텍처**
+> **참고**: 라우팅 (GoRouter)는 `emoti_flow_tech_summary.md` 문서를 참조하세요.
 
-#### **프로젝트 구조**
-```
-lib/
-├── main.dart                    # 앱 진입점
-├── app/                        # 앱 설정
-│   ├── app.dart               # 메인 앱 위젯
-│   ├── theme/                 # 테마 설정
-│   └── routes/                # 라우팅 설정
-├── features/                   # 기능별 모듈
-│   ├── home/                  # 홈 기능
-│   ├── diary/                 # 일기 기능
-│   ├── ai/                    # AI 기능
-│   ├── analytics/             # 분석 기능
-│   ├── music/                 # 음악 기능
-│   └── profile/               # 프로필 기능
-├── shared/                     # 공통 컴포넌트
-│   ├── widgets/               # 공통 위젯
-│   ├── models/                # 공통 모델
-│   ├── services/              # 공통 서비스
-│   └── utils/                 # 유틸리티
-└── core/                       # 핵심 기능
-    ├── constants/              # 상수
-    ├── errors/                 # 에러 처리
-    └── network/                # 네트워크 처리
-```
-
-#### **상태 관리 (Riverpod)**
-```dart
-// 상태 관리 구조
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(ref.read(authServiceProvider));
-});
-
-final diaryProvider = StateNotifierProvider<DiaryNotifier, DiaryState>((ref) {
-  return DiaryNotifier(ref.read(diaryServiceProvider));
-});
-
-final aiProvider = StateNotifierProvider<AINotifier, AIState>((ref) {
-  return AINotifier(ref.read(aiServiceProvider));
-});
-```
-
-#### **라우팅 (GoRouter)**
-```dart
-// 라우팅 설정
-final router = GoRouter(
-  initialLocation: '/',
-  routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const HomePage(),
-    ),
-    GoRoute(
-      path: '/diary',
-      builder: (context, state) => const DiaryPage(),
-    ),
-    // ... 기타 라우트
-  ],
-);
-```
-
-### **UI 컴포넌트 구현**
-
-#### **AppBar 구현**
-```dart
-class EmotiAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
-  final List<Widget>? actions;
-  final bool showBackButton;
-  
-  @override
-  Widget build(BuildContext context) {
-    return AppBar(
-      title: Text(title),
-      leading: showBackButton ? BackButton() : null,
-      actions: actions,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      elevation: 0,
-    );
-  }
-  
-  @override
-  Size get preferredSize => Size.fromHeight(kToolbarHeight);
-}
-```
-
-#### **BottomNavigationBar 구현**
-```dart
-class EmotiBottomNavigationBar extends StatelessWidget {
-  final int currentIndex;
-  final ValueChanged<int> onTap;
-  
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      onTap: onTap,
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-        BottomNavigationBarItem(icon: Icon(Icons.edit), label: '일기'),
-        BottomNavigationBarItem(icon: Icon(Icons.psychology), label: 'AI'),
-        BottomNavigationBarItem(icon: Icon(Icons.analytics), label: '분석'),
-        BottomNavigationBarItem(icon: Icon(Icons.music_note), label: '음악'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: '프로필'),
-      ],
-    );
-  }
-}
-```
+> **참고**: UI 컴포넌트 구현은 `emoti_flow_uiux_guide.md` 문서를 참조하세요.
 
 > **참고**: 공통 위젯 구현은 `emoti_flow_uiux_guide.md` 문서를 참조하세요.
 

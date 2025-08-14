@@ -7,14 +7,16 @@ class AppColors {
   AppColors._();
 
   // Primary Brand Colors (주요 브랜드 색상)
-  static const Color primary = Color(0xFF6366F1);      // 인디고 - 신뢰와 안정감
-  static const Color primaryLight = Color(0xFF818CF8); // 밝은 인디고
-  static const Color primaryDark = Color(0xFF4F46E5);  // 어두운 인디고
+  // 연보라 컨셉 (라일락 톤)
+  static const Color primary = Color(0xFF8B7FF6);      // 라일락 퍼플
+  static const Color primaryLight = Color(0xFFA899FA); // 밝은 라일락
+  static const Color primaryDark = Color(0xFF6E61E0);  // 딥 라일락
 
   // Secondary Brand Colors (보조 브랜드 색상)
-  static const Color secondary = Color(0xFFEC4899);    // 핑크 - 따뜻함과 공감
-  static const Color secondaryLight = Color(0xFFF472B6); // 밝은 핑크
-  static const Color secondaryDark = Color(0xFFDB2777);  // 어두운 핑크
+  // 보조색도 연보라와 자연스럽게 어울리도록 재조정 (보랏빛 핑크)
+  static const Color secondary = Color(0xFFDA77F2);
+  static const Color secondaryLight = Color(0xFFE7A6F7);
+  static const Color secondaryDark = Color(0xFFBE5BDD);
 
   // Semantic Colors (의미론적 색상)
   static const Color success = Color(0xFF10B981);      // 에메랄드 - 성장과 긍정
@@ -49,7 +51,7 @@ class AppColors {
 
   static const Color border = Color(0xFFE2E8F0);       // 테두리 기본
   static const Color borderSecondary = Color(0xFFCBD5E1); // 보조 테두리
-  static const Color borderFocus = Color(0xFF6366F1);   // 포커스 테두리
+  static const Color borderFocus = primary;   // 포커스 테두리
 
   // Dark Theme Colors (다크 테마 색상)
   static const Color darkBackground = Color(0xFF0F172A); // 다크 배경
