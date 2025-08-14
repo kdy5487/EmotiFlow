@@ -4,8 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
 import 'package:emoti_flow/core/services/firebase_service.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
-import 'package:emoti_flow/features/auth/pages/login_page.dart';
-import 'package:emoti_flow/features/home/views/home_page.dart';
+import 'package:emoti_flow/routes/app_router.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -40,29 +39,15 @@ class EmotiFlowApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    final router = AppRouter.createRouter(context);
+
+    return MaterialApp.router(
       title: 'EmotiFlow',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // 시스템 테마에 따라 자동 변경
-      home: Consumer<AuthProvider>(
-        builder: (context, authProvider, child) {
-          if (authProvider.isLoading) {
-            return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-          }
-          
-          if (authProvider.isLoggedIn) {
-            return const HomePage();
-          } else {
-            return const LoginPage();
-          }
-        },
-      ),
+      themeMode: ThemeMode.system,
+      routerConfig: router,
     );
   }
 }

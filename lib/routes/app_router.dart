@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:emoti_flow/features/home/views/home_page.dart';
+import 'package:emoti_flow/core/providers/auth_provider.dart';
 // TODO: 각 뷰 생성 전까지는 라우트를 최소화 유지
 import 'package:emoti_flow/features/auth/pages/login_page.dart' as login;
 
@@ -23,9 +25,27 @@ class AppRoutes {
 }
 
 class AppRouter {
-  static final GoRouter router = GoRouter(
-    initialLocation: AppRoutes.home,
-    routes: [
+  static GoRouter createRouter(BuildContext context) {
+    final auth = context.read<AuthProvider>();
+
+    return GoRouter(
+      initialLocation: AppRoutes.home,
+      refreshListenable: auth,
+      redirect: (context, state) {
+        final bool loggedIn = auth.isLoggedIn;
+        final String loc = state.uri.toString();
+
+        if (!loggedIn && loc != AppRoutes.login) {
+          // 미로그인 상태에서 보호된 경로 접근 시 로그인으로
+          return AppRoutes.login;
+        }
+        if (loggedIn && loc.startsWith(AppRoutes.auth)) {
+          // 로그인 후 인증 경로 접근 시 홈으로
+          return AppRoutes.home;
+        }
+        return null;
+      },
+      routes: [
       // 홈 페이지
       GoRoute(
         path: AppRoutes.home,
@@ -117,9 +137,10 @@ class AppRouter {
         name: 'profile',
         builder: (context, state) => const ProfilePage(),
       ),
-    ],
-    errorBuilder: (context, state) => const ErrorPage(),
-  );
+      ],
+      errorBuilder: (context, state) => const ErrorPage(),
+    );
+  }
 }
 
 
