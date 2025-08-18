@@ -89,6 +89,49 @@ class FirestoreProvider {
       return null;
     }
   }
+
+  /// 개발용 더미 데이터 시드
+  Future<void> seedDummyDiaries(String userId) async {
+    final col = _firestore.collection('diaries');
+    // 자유형
+    final free = DiaryEntry(
+      userId: userId,
+      title: '봄 산책의 기억',
+      content: '따뜻한 햇살 아래 공원을 산책했다. 벤치에 앉아 있자니 바람이 살짝 스쳤고, 마음이 한결 가벼워졌다.',
+      emotions: ['평온', '감사'],
+      emotionIntensities: {'평온': 8, '감사': 7},
+      createdAt: DateTime.now().subtract(const Duration(days: 1)),
+      diaryType: DiaryType.free,
+      mediaFiles: [
+        MediaFile(id: 'm1', url: 'https://picsum.photos/seed/park/800/600', type: MediaType.image),
+        MediaFile(id: 'm2', url: 'https://picsum.photos/seed/sketch/800/600', type: MediaType.drawing),
+      ],
+      tags: ['산책', '봄', '휴식'],
+    );
+
+    // AI 대화형
+    final ai = DiaryEntry(
+      userId: userId,
+      title: '면접 준비로 인한 긴장',
+      content: '다가오는 면접이 걱정되지만 스스로를 믿고 준비해나가기로 했다. 조금씩 정리하다 보니 설렘도 함께 느껴진다.',
+      emotions: ['걱정', '설렘'],
+      emotionIntensities: {'걱정': 7, '설렘': 6},
+      createdAt: DateTime.now(),
+      diaryType: DiaryType.aiChat,
+      mediaFiles: [
+        MediaFile(id: 'm3', url: 'https://picsum.photos/seed/office/800/600', type: MediaType.image),
+        MediaFile(id: 'm4', url: 'https://picsum.photos/seed/notes/800/600', type: MediaType.drawing),
+      ],
+      chatHistory: [
+        ChatMessage(id: 'c1', content: '면접이 다가오는데 떨리고 걱정돼요.', isFromAI: false, timestamp: DateTime.now()),
+        ChatMessage(id: 'c2', content: '그 마음 충분히 이해해요. 어떤 부분이 가장 걱정되나요?', isFromAI: true, timestamp: DateTime.now()),
+      ],
+      tags: ['면접', '준비', '목표'],
+    );
+
+    await col.doc(free.id).set(free.toFirestore());
+    await col.doc(ai.id).set(ai.toFirestore());
+  }
 }
 
 /// Firestore Provider 인스턴스

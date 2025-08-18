@@ -59,6 +59,20 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+          // DEV: 더미 데이터 시드
+          IconButton(
+            onPressed: () async {
+              final uid = ref.read(authProvider).user?.uid ?? 'demo_user';
+              await ref.read(firestoreProvider).seedDummyDiaries(uid);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('더미 데이터가 추가되었습니다.')),
+                );
+              }
+            },
+            icon: const Icon(Icons.data_object),
+            tooltip: '더미 데이터 추가',
+          ),
           // 검색 버튼
           IconButton(
             onPressed: _toggleSearch,

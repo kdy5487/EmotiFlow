@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/diary_provider.dart';
@@ -24,6 +25,7 @@ class DiaryDetailPage extends ConsumerStatefulWidget {
 }
 
 class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
+  double _mediaHeight = 180;
   @override
   Widget build(BuildContext context) {
     // Riverpod Provider를 사용해서 일기 데이터 가져오기
@@ -110,52 +112,17 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             ],
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 일기 헤더
                 _buildDiaryHeader(diaryEntry),
-                const SizedBox(height: 12),
-                
-                // 감정 정보
-                _buildEmotionInfo(diaryEntry),
-                const SizedBox(height: 12),
-                
-                // 일기 내용
-                _buildDiaryContent(diaryEntry),
-                const SizedBox(height: 12),
-                
-                // AI 분석 결과
-                if (diaryEntry.hasAIAnalysis) ...[
-                  _buildAIAnalysisSection(diaryEntry),
-                  const SizedBox(height: 12),
-                ],
-                
-                // AI 대화 히스토리
-                if (diaryEntry.hasChatHistory) ...[
-                  _buildChatHistorySection(diaryEntry),
-                  const SizedBox(height: 12),
-                ],
-                
-                // 미디어 섹션
+                const SizedBox(height: 8),
                 if (diaryEntry.mediaCount > 0) ...[
-                  _buildMediaSection(diaryEntry),
-                  const SizedBox(height: 12),
+                  _buildCompactMedia(diaryEntry),
+                  const SizedBox(height: 8),
                 ],
-                
-                // 태그 섹션
-                if (diaryEntry.tags.isNotEmpty) ...[
-                  _buildTagSection(diaryEntry),
-                  const SizedBox(height: 12),
-                ],
-                
-                // 메타데이터
-                _buildMetadataSection(diaryEntry),
-                const SizedBox(height: 12),
-                
-                // 액션 버튼들
-                _buildActionButtons(diaryEntry),
+                _buildDiaryContent(diaryEntry),
               ],
             ),
           ),
@@ -164,127 +131,44 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     );
   }
 
-  /// 일기 헤더
+  /// 헤더(날짜는 오른쪽, 제목은 크게)
   Widget _buildDiaryHeader(DiaryEntry entry) {
     return EmotiCard(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 날짜 및 시간
             Row(
               children: [
-                Icon(Icons.calendar_today, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  _formatDate(entry.createdAt),
-                  style: AppTypography.titleLarge.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                Expanded(
+                  child: Text(
+                    entry.title,
+                    style: AppTypography.titleLarge.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
-                const Spacer(),
-                Text(
-                  _formatTime(entry.createdAt),
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      _formatDate(entry.createdAt),
+                      style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                    ),
+                    Text(
+                      _formatTime(entry.createdAt),
+                      style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            
-            // 제목
-            Text(
-              entry.title,
-              style: AppTypography.titleLarge.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            
-            // 일기 타입
-            const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                entry.diaryType == DiaryType.aiChat ? 'AI 대화형' : '자유형',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 감정 정보
-  Widget _buildEmotionInfo(DiaryEntry entry) {
-    return EmotiCard(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '오늘의 감정',
-              style: AppTypography.titleMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 10),
-            
             if (entry.emotions.isNotEmpty) ...[
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: entry.emotions.map((emotion) {
-                  final intensity = entry.emotionIntensities[emotion] ?? 5;
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.primary),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          emotion,
-                          style: AppTypography.bodyMedium.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '$intensity',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ] else ...[
-              Text(
-                '감정이 선택되지 않았습니다.',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: Colors.grey[600],
-                ),
-              ),
+              const SizedBox(height: 6),
+              _buildInlineEmotions(entry),
             ],
           ],
         ),
@@ -292,345 +176,137 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     );
   }
 
-  /// 일기 내용
+  /// 간결한 미디어 섹션 (첫 1~3장 썸네일)
+  Widget _buildCompactMedia(DiaryEntry entry) {
+    final files = entry.mediaFiles.take(3).toList();
+    return EmotiCard(
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: _buildAnyImage(files.first.url, height: _mediaHeight),
+            ),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.remove),
+                  onPressed: () {
+                    setState(() {
+                      _mediaHeight = (_mediaHeight - 20).clamp(120, 300);
+                    });
+                  },
+                  tooltip: '작게',
+                ),
+                Text('${_mediaHeight.toInt()}px', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: () {
+                    setState(() {
+                      _mediaHeight = (_mediaHeight + 20).clamp(120, 300);
+                    });
+                  },
+                  tooltip: '크게',
+                ),
+                const Spacer(),
+                if (files.length > 1)
+                  Text('더 보기 ${files.length - 1}', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInlineEmotions(DiaryEntry entry) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: entry.emotions.map((e) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            e,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+              fontSize: 11,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildAnyImage(String url, {double? width, double? height}) {
+    final isNetwork = url.startsWith('http');
+    final isFile = url.startsWith('/') || url.startsWith('file:');
+    if (isNetwork) {
+      return Image.network(url, width: width, height: height, fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(color: Colors.grey[200], child: const Icon(Icons.image)),
+      );
+    }
+    if (isFile) {
+      return Image.file(File(url), width: width, height: height, fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(color: Colors.grey[200], child: const Icon(Icons.image)),
+      );
+    }
+    return Image.asset(url, width: width, height: height, fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Container(color: Colors.grey[200], child: const Icon(Icons.image)),
+    );
+  }
+
+  /// 간결한 감정 칩
+  Widget _buildCompactEmotions(DiaryEntry entry) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: entry.emotions.map((e) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+          ),
+          child: Text(
+            e,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  /// 내용
   Widget _buildDiaryContent(DiaryEntry entry) {
     return EmotiCard(
       child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '일기 내용',
-              style: AppTypography.titleMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              entry.content,
-              style: AppTypography.bodyLarge.copyWith(
-                height: 1.5,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.text_fields, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(
-                  '${entry.contentLength}자',
-                  style: AppTypography.caption.copyWith(
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Icon(Icons.format_list_bulleted, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(
-                  '${entry.wordCount}단어',
-                  style: AppTypography.caption.copyWith(
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ],
+        padding: const EdgeInsets.all(12),
+        child: Text(
+          entry.content,
+          style: AppTypography.bodyLarge.copyWith(height: 1.5, color: AppColors.textPrimary),
         ),
       ),
     );
   }
 
-  /// AI 분석 결과 섹션
-  Widget _buildAIAnalysisSection(DiaryEntry entry) {
-    if (entry.aiAnalysis == null) return const SizedBox.shrink();
-    
-    return EmotiCard(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.psychology, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'AI 분석 결과',
-                  style: AppTypography.titleMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            
-            // 요약
-            if (entry.aiAnalysis!.summary.isNotEmpty) ...[
-              Text(
-                '요약',
-                style: AppTypography.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                entry.aiAnalysis!.summary,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-            
-            // 조언
-            if (entry.aiAnalysis!.advice.isNotEmpty) ...[
-              Text(
-                'AI 조언',
-                style: AppTypography.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                entry.aiAnalysis!.advice,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// AI 대화 히스토리 섹션
-  Widget _buildChatHistorySection(DiaryEntry entry) {
-    if (entry.chatHistory.isEmpty) return const SizedBox.shrink();
-    
-    return EmotiCard(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.chat_bubble, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'AI 대화 히스토리',
-                  style: AppTypography.titleMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            
-            Text(
-              '${entry.chatHistory.length}개의 메시지',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 미디어 섹션
-  Widget _buildMediaSection(DiaryEntry entry) {
-    return EmotiCard(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.attach_file, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  '첨부 파일',
-                  style: AppTypography.titleMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            
-            Text(
-              '이미지: ${entry.imageCount}개, 음성: ${entry.voiceCount}개, 그림: ${entry.drawingCount}개',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 태그 섹션
-  Widget _buildTagSection(DiaryEntry entry) {
-    return EmotiCard(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '태그',
-              style: AppTypography.titleMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 10),
-            
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: entry.tags.map((tag) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  tag,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: Colors.grey[700],
-                  ),
-                ),
-              )).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 메타데이터 섹션
-  Widget _buildMetadataSection(DiaryEntry entry) {
-    return EmotiCard(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '추가 정보',
-              style: AppTypography.titleMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            if (entry.weather != null) ...[
-              Row(
-                children: [
-                  Icon(Icons.wb_sunny, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 8),
-                  Text(
-                    '날씨: ${entry.weather}',
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
-            
-            if (entry.location != null) ...[
-              Row(
-                children: [
-                  Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 8),
-                  Text(
-                    '위치: ${entry.location}',
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
-            
-            Row(
-              children: [
-                Icon(Icons.public, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 8),
-                Text(
-                  '공개 여부: ${entry.isPublic ? "공개" : "비공개"}',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 액션 버튼들
-  Widget _buildActionButtons(DiaryEntry entry) {
-    return Row(
-      children: [
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () => _editDiary(entry),
-            icon: const Icon(Icons.edit),
-            label: const Text('수정'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () => _shareDiary(entry),
-            icon: const Icon(Icons.share),
-            label: const Text('공유'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primary,
-              side: BorderSide(color: AppColors.primary),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 일기 수정
+  // 아래 함수들은 기존 파일에 이미 존재 (삭제하지 않음)
   void _editDiary(DiaryEntry entry) {
     // TODO: 일기 수정 페이지로 이동
     print('일기 수정: ${entry.id}');
   }
 
-  /// 일기 공유
-  void _shareDiary(DiaryEntry entry) {
-    // TODO: 일기 공유 기능
-    print('일기 공유: ${entry.id}');
-  }
-
-  /// 더보기 옵션
   void _showMoreOptions(DiaryEntry entry) {
     showModalBottomSheet(
       context: context,
@@ -650,7 +326,6 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             title: const Text('복사'),
             onTap: () {
               Navigator.pop(context);
-              // TODO: 일기 내용 복사
             },
           ),
           ListTile(
@@ -663,7 +338,6 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     );
   }
 
-  /// 삭제 확인
   Future<void> _confirmDelete(DiaryEntry entry) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -683,7 +357,6 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
         ],
       ),
     );
-
     if (confirmed == true) {
       try {
         await ref.read(firestoreProvider).deleteDiary(entry.id);
@@ -709,7 +382,6 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     }
   }
 
-  /// 날짜 포맷팅
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -724,7 +396,6 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     }
   }
 
-  /// 시간 포맷팅
   String _formatTime(DateTime date) {
     return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
