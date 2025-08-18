@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../providers/diary_provider.dart';
+import '../providers/firestore_provider.dart';
 import '../models/diary_entry.dart';
 import '../models/emotion.dart';
 import '../models/diary_entry.dart' show DiaryType;
@@ -203,61 +204,21 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     }
   }
 
-  /// 일기 목록 (StreamBuilder 사용)
+  /// 일기 목록 (Riverpod StreamProvider 사용)
   Widget _buildDiaryList(DiaryState diaryState, DiaryProvider diaryNotifier) {
     print('=== 일기 목록 빌드 ===');
     
-    // StreamBuilder를 사용해서 실시간 Firestore 데이터 가져오기
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection("diaries").snapshots(),
-      builder: (context, snapshot) {
-        print('=== StreamBuilder 상태 ===');
-        print('연결 상태: ${snapshot.connectionState}');
-        print('데이터 있음: ${snapshot.hasData}');
-        print('오류 있음: ${snapshot.hasError}');
-        if (snapshot.hasData) {
-          print('문서 개수: ${snapshot.data!.docs.length}');
-        }
-        if (snapshot.hasError) {
-          print('오류 내용: ${snapshot.error}');
-        }
+    final authState = ref.read(authProvider);
+    final userId = authState.user?.uid ?? 'demo_user';
+    
+    // Riverpod StreamProvider 사용
+    return Consumer(
+      builder: (context, ref, child) {
+        final diariesAsync = ref.watch(diariesStreamProvider(userId));
         
-        // 오류 발생 시
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
-                const SizedBox(height: 16),
-                Text(
-                  "❌ 오류: ${snapshot.error}",
-                  style: AppTypography.bodyLarge.copyWith(
-                    color: Colors.red[600],
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '더미 데이터를 표시합니다.',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // 더미 데이터로 폴백
-                Expanded(
-                  child: _buildDummyDataList(),
-                ),
-              ],
-            ),
-          );
-        }
-        
-        // 로딩 중
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
+        return diariesAsync.when(
+          // 로딩 중
+          loading: () => const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -266,61 +227,95 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                 Text('일기 목록을 불러오는 중...'),
               ],
             ),
-          );
-        }
-        
-        // 데이터 없음
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]),
-                const SizedBox(height: 16),
-                Text(
-                  '데이터가 없습니다',
-                  style: AppTypography.titleLarge.copyWith(
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w600,
+          ),
+          
+          // 오류 발생 시
+          error: (error, stackTrace) {
+            print('❌ StreamProvider 오류: $error');
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    "❌ 오류: $error",
+                    style: AppTypography.bodyLarge.copyWith(
+                      color: Colors.red[600],
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '더미 데이터를 표시합니다.',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: Colors.grey[500],
+                  const SizedBox(height: 16),
+                  Text(
+                    '더미 데이터를 표시합니다.',
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: Colors.grey[600],
+                    ),
                   ),
+                  const SizedBox(height: 24),
+                  Expanded(
+                    child: _buildDummyDataList(),
+                  ),
+                ],
+              ),
+            );
+          },
+          
+          // 데이터 표시
+          data: (snapshot) {
+            if (snapshot.docs.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      '데이터가 없습니다',
+                      style: AppTypography.titleLarge.copyWith(
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '더미 데이터를 표시합니다.',
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Expanded(
+                      child: _buildDummyDataList(),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                // 더미 데이터로 폴백
-                Expanded(
-                  child: _buildDummyDataList(),
-                ),
-              ],
-            ),
-          );
-        }
-        
-        // 실제 Firestore 데이터 표시
-        final docs = snapshot.data!.docs;
-        print('✅ Firestore에서 ${docs.length}개 문서 가져옴');
-        
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: docs.length,
-          itemBuilder: (context, index) {
-            final doc = docs[index];
-            final data = doc.data() as Map<String, dynamic>;
-            
-            // Firestore 데이터를 DiaryEntry로 변환
-            try {
-              final entry = DiaryEntry.fromFirestore(doc);
-              return _buildDiaryCard(entry, index);
-            } catch (e) {
-              print('문서 변환 실패: $e, 데이터: $data');
-              // 변환 실패 시 간단한 카드 표시
-              return _buildSimpleDiaryCard(doc.id, data, index);
+              );
             }
+            
+            // 실제 Firestore 데이터 표시
+            final docs = snapshot.docs;
+            print('✅ StreamProvider에서 ${docs.length}개 문서 가져옴');
+            
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: docs.length,
+              itemBuilder: (context, index) {
+                final doc = docs[index];
+                
+                // Firestore 데이터를 DiaryEntry로 변환
+                try {
+                  final entry = DiaryEntry.fromFirestore(doc);
+                  return _buildDiaryCard(entry, index);
+                } catch (e) {
+                  print('문서 변환 실패: $e, 문서 ID: ${doc.id}');
+                  final data = doc.data() as Map<String, dynamic>;
+                  // 변환 실패 시 간단한 카드 표시
+                  return _buildSimpleDiaryCard(doc.id, data, index);
+                }
+              },
+            );
           },
         );
       },

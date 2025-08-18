@@ -169,13 +169,13 @@ class DiaryEntry {
   final Map<String, dynamic>? metadata; // 추가 메타데이터
 
   DiaryEntry({
-    required this.id,
+    String? id,
     required this.userId,
     required this.title,
     required this.content,
     required this.emotions,
     required this.emotionIntensities,
-    required this.createdAt,
+    DateTime? createdAt,
     this.updatedAt,
     this.mediaFiles = const [],
     this.aiAnalysis,
@@ -186,7 +186,9 @@ class DiaryEntry {
     this.isPublic = false,
     this.diaryType = DiaryType.free, // 기본값은 자유형
     this.metadata,
-  });
+  }) : 
+    id = id ?? _generateId(),
+    createdAt = createdAt ?? DateTime.now();
 
   /// Firestore에서 데이터를 가져와 DiaryEntry 객체로 변환
   factory DiaryEntry.fromFirestore(DocumentSnapshot doc) {
@@ -245,6 +247,12 @@ class DiaryEntry {
     };
   }
 
+  /// 고유 ID 생성
+  static String _generateId() {
+    return DateTime.now().millisecondsSinceEpoch.toString() + 
+           (1000 + DateTime.now().microsecond % 1000).toString();
+  }
+
   /// 일기 내용을 복사하여 새로운 객체 생성
   DiaryEntry copyWith({
     String? id,
@@ -262,6 +270,7 @@ class DiaryEntry {
     String? location,
     List<String>? tags,
     bool? isPublic,
+    DiaryType? diaryType,
     Map<String, dynamic>? metadata,
   }) {
     return DiaryEntry(
@@ -280,6 +289,7 @@ class DiaryEntry {
       location: location ?? this.location,
       tags: tags ?? this.tags,
       isPublic: isPublic ?? this.isPublic,
+      diaryType: diaryType ?? this.diaryType,
       metadata: metadata ?? this.metadata,
     );
   }

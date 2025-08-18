@@ -185,18 +185,26 @@ class DiaryProvider extends StateNotifier<DiaryState> {
   /// 일기 생성
   Future<void> createDiaryEntry(DiaryEntry entry) async {
     try {
-      await _firestore.collection('diaries').doc(entry.id).set(entry.toFirestore());
-      
-      // 로컬 상태 업데이트
-      final updatedEntries = [entry, ...state.diaryEntries];
+      final collection = _firestore.collection('diaries');
+      final docRef = entry.id.isEmpty ? collection.doc() : collection.doc(entry.id);
+      final data = {
+        ...entry.toFirestore(),
+        'id': docRef.id,
+        'createdAt': Timestamp.fromDate(entry.createdAt),
+      };
+      await docRef.set(data);
+
+      // 로컬 상태 업데이트 (저장된 문서 ID 반영)
+      final savedEntry = entry.copyWith(id: docRef.id);
+      final updatedEntries = [savedEntry, ...state.diaryEntries];
       updatedEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      
+
       state = state.copyWith(
         diaryEntries: updatedEntries,
         filteredEntries: updatedEntries,
       );
-      
-      print('일기 생성 완료: ${entry.id}');
+
+      print('일기 생성 완료: ${savedEntry.id}');
     } catch (e) {
       print('일기 생성 실패: $e');
       throw e;
