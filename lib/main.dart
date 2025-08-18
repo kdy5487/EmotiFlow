@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
 import 'package:emoti_flow/core/services/firebase_service.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
@@ -25,11 +25,8 @@ void main() async {
   }
   
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ],
-      child: const EmotiFlowApp(),
+    const ProviderScope(
+      child: EmotiFlowApp(),
     ),
   );
 }

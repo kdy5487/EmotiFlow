@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
 import 'package:emoti_flow/shared/widgets/cards/emoti_card.dart';
 import 'package:emoti_flow/shared/widgets/buttons/emoti_button.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -44,7 +44,7 @@ class HomePage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 오늘의 감정 요약
-            _buildTodayMoodSection(context),
+            _buildTodayMoodSection(context, ref),
             const SizedBox(height: 24),
             
             // 빠른 액션 버튼들
@@ -68,8 +68,8 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildTodayMoodSection(BuildContext context) {
-    final String userName = context.read<AuthProvider>().userName ?? '사용자';
+  Widget _buildTodayMoodSection(BuildContext context, WidgetRef ref) {
+    final String userName = ref.read(authProvider).user?.displayName ?? '사용자';
     return EmotiCard(
       backgroundColor: AppTheme.primary.withOpacity(0.1),
       borderColor: AppTheme.primary,

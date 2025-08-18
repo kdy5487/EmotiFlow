@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:emoti_flow/features/home/views/home_page.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
+import 'package:emoti_flow/features/diary/views/diary_write_page.dart';
 // TODO: 각 뷰 생성 전까지는 라우트를 최소화 유지
 import 'package:emoti_flow/features/auth/pages/login_page.dart' as login;
 
@@ -26,23 +27,13 @@ class AppRoutes {
 
 class AppRouter {
   static GoRouter createRouter(BuildContext context) {
-    final auth = context.read<AuthProvider>();
-
     return GoRouter(
       initialLocation: AppRoutes.home,
-      refreshListenable: auth,
       redirect: (context, state) {
-        final bool loggedIn = auth.isLoggedIn;
+        // Riverpod을 사용하지 않으므로 기본 리다이렉트 로직만 구현
         final String loc = state.uri.toString();
-
-        if (!loggedIn && loc != AppRoutes.login) {
-          // 미로그인 상태에서 보호된 경로 접근 시 로그인으로
-          return AppRoutes.login;
-        }
-        if (loggedIn && loc.startsWith(AppRoutes.auth)) {
-          // 로그인 후 인증 경로 접근 시 홈으로
-          return AppRoutes.home;
-        }
+        
+        // 로그인 상태는 각 페이지에서 개별적으로 처리
         return null;
       },
       routes: [
@@ -86,7 +77,7 @@ class AppRouter {
           GoRoute(
             path: 'create',
             name: 'diary-create',
-            builder: (context, state) => const DiaryCreatePage(),
+            builder: (context, state) => const DiaryWritePage(),
           ),
           GoRoute(
             path: 'detail',

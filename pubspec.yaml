@@ -32,9 +32,6 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   
-  # 상태 관리 (나중에 추가)
-  # flutter_riverpod: ^2.4.9
-  
   # 라우팅
   go_router: ^13.2.0
   
@@ -49,7 +46,7 @@ dependencies:
   google_sign_in: ^6.2.1
   
   # 상태 관리
-  provider: ^6.1.1
+  flutter_riverpod: ^2.4.9
   
   # HTTP 통신 (나중에 추가)
   # dio: ^5.4.0
