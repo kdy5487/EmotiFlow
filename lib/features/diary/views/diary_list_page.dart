@@ -49,15 +49,61 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     final diaryNotifier = ref.read(diaryProvider.notifier);
     
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('일기 목록'),
+        title: const Text(
+          '일기 목록',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
+          // 검색 버튼
           IconButton(
-            onPressed: _showFilterDialog,
-            icon: const Icon(Icons.filter_list),
+            onPressed: _toggleSearch,
+            icon: Icon(
+              _searchController.text.isNotEmpty ? Icons.close : Icons.search,
+            ),
           ),
+          // 필터 버튼
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              onPressed: _showFilterDialog,
+              icon: Stack(
+                children: [
+                  const Icon(Icons.filter_list),
+                  if (_currentFilters.isNotEmpty)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: AppColors.secondary,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 12,
+                          minHeight: 12,
+                        ),
+                        child: Text(
+                          '${_currentFilters.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          // 정렬 버튼
           IconButton(
             onPressed: _showSortDialog,
             icon: const Icon(Icons.sort),
@@ -66,8 +112,9 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
       ),
       body: Column(
         children: [
-          // 검색 및 필터 섹션
-          _buildSearchAndFilterSection(diaryNotifier),
+          // 검색 및 필터 섹션 (검색이 활성화되었을 때만 표시)
+          if (_searchController.text.isNotEmpty || _currentFilters.isNotEmpty)
+            _buildSearchAndFilterSection(diaryNotifier),
           
           // 필터 태그 표시
           if (_currentFilters.isNotEmpty) _buildFilterTags(diaryNotifier),
@@ -78,58 +125,82 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showWriteOptionsDialog(context),
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      floatingActionButton: _buildFloatingActionButton(),
+    );
+  }
+
+  /// 검색 토글
+  void _toggleSearch() {
+    if (_searchController.text.isNotEmpty) {
+      setState(() {
+        _searchController.clear();
+        _currentSearchQuery = '';
+      });
+      _applySearchAndFilter(ref.read(diaryProvider.notifier));
+    } else {
+      _searchFocusNode.requestFocus();
+    }
+  }
+
+  /// 플로팅 액션 버튼
+  Widget _buildFloatingActionButton() {
+    return FloatingActionButton(
+      onPressed: () => _showWriteOptionsDialog(context),
+      backgroundColor: AppColors.primary,
+      foregroundColor: Colors.white,
+      elevation: 4,
+      child: const Icon(Icons.add),
     );
   }
 
   /// 검색 및 필터 섹션
   Widget _buildSearchAndFilterSection(DiaryProvider diaryNotifier) {
     return Container(
+      margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
             spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         children: [
-          // 검색바
-          EmotiTextField(
-            controller: _searchController,
-            focusNode: _searchFocusNode,
-            hintText: '일기 내용, 제목, 태그로 검색...',
-            prefixIcon: const Icon(Icons.search),
-            onChanged: (value) {
-              _currentSearchQuery = value;
-              _applySearchAndFilter(diaryNotifier);
-            },
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // 빠른 필터 버튼들
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildQuickFilterChip('전체', null, diaryNotifier),
-                _buildQuickFilterChip('긍정', 'positive', diaryNotifier),
-                _buildQuickFilterChip('부정', 'negative', diaryNotifier),
-                _buildQuickFilterChip('AI 분석', true, diaryNotifier, filterKey: 'hasAIAnalysis'),
-                _buildQuickFilterChip('미디어', true, diaryNotifier, filterKey: 'hasMedia'),
-              ],
+          // 검색바 (크기 축소)
+          if (_searchController.text.isEmpty)
+            EmotiTextField(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              hintText: '일기 내용, 제목, 태그로 검색...',
+              prefixIcon: const Icon(Icons.search, size: 20),
+              onChanged: (value) {
+                _currentSearchQuery = value;
+                _applySearchAndFilter(diaryNotifier);
+              },
             ),
-          ),
+          
+          if (_searchController.text.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            // 빠른 필터 버튼들
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildQuickFilterChip('전체', null, diaryNotifier),
+                  _buildQuickFilterChip('긍정', 'positive', diaryNotifier),
+                  _buildQuickFilterChip('부정', 'negative', diaryNotifier),
+                  _buildQuickFilterChip('AI 분석', true, diaryNotifier, filterKey: 'hasAIAnalysis'),
+                  _buildQuickFilterChip('미디어', true, diaryNotifier, filterKey: 'hasMedia'),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -143,7 +214,13 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     return Container(
       margin: const EdgeInsets.only(right: 8),
       child: FilterChip(
-        label: Text(label),
+        label: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
         selected: isSelected,
         onSelected: (selected) {
           if (selected) {
@@ -157,7 +234,10 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
         checkmarkColor: AppColors.primary,
         labelStyle: TextStyle(
           color: isSelected ? AppColors.primary : AppColors.textSecondary,
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
       ),
     );
@@ -166,24 +246,59 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   /// 필터 태그 표시
   Widget _buildFilterTags(DiaryProvider diaryNotifier) {
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 4,
-        children: _currentFilters.entries.map((entry) {
-          return Chip(
-            label: Text(_getFilterLabel(entry.key, entry.value)),
-            onDeleted: () {
-              _currentFilters.remove(entry.key);
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.filter_list, size: 16, color: Colors.grey[600]),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: _currentFilters.entries.map((entry) {
+                return Chip(
+                  label: Text(
+                    _getFilterLabel(entry.key, entry.value),
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  onDeleted: () {
+                    _currentFilters.remove(entry.key);
+                    _applySearchAndFilter(diaryNotifier);
+                  },
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  labelStyle: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 11,
+                  ),
+                  deleteIcon: const Icon(Icons.close, size: 16),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                );
+              }).toList(),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _currentFilters.clear();
+              });
               _applySearchAndFilter(diaryNotifier);
             },
-            backgroundColor: AppColors.primary.withOpacity(0.1),
-            labelStyle: TextStyle(
-              color: AppColors.primary,
-              fontSize: 12,
+            child: Text(
+              '모두 지우기',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+              ),
             ),
-          );
-        }).toList(),
+          ),
+        ],
       ),
     );
   }
@@ -299,7 +414,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
             print('✅ StreamProvider에서 ${docs.length}개 문서 가져옴');
             
             return ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               itemCount: docs.length,
               itemBuilder: (context, index) {
                 final doc = docs[index];
@@ -325,13 +440,13 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   /// 일기 카드
   Widget _buildDiaryCard(DiaryEntry entry, int index) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       child: EmotiCard(
         child: InkWell(
           onTap: () => _navigateToDetail(entry),
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -363,19 +478,19 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                   ],
                 ),
                 
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 
                 // 제목
                 if (entry.title.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: 6),
                     child: Text(
                       entry.title,
                       style: AppTypography.titleLarge.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -386,11 +501,11 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
                   ),
-                  maxLines: 3,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 
                 // 하단 정보 (태그, 미디어, AI 분석)
                 Row(
@@ -487,6 +602,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     if (emotionModel == null) return const SizedBox.shrink();
     
     return Container(
+      constraints: const BoxConstraints(minHeight: 28),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: emotionModel.color.withOpacity(0.2),
@@ -697,47 +813,93 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('정렬 기준'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.sort, color: AppColors.primary),
+            const SizedBox(width: 8),
+            const Text('정렬 기준', style: TextStyle(fontWeight: FontWeight.w600)),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RadioListTile<String>(
-              title: const Text('날짜순 (최신)'),
-              value: 'date',
-              groupValue: _currentSortBy,
-              onChanged: (value) {
-                setState(() {
-                  _currentSortBy = value!;
-                });
-                Navigator.of(context).pop();
-                _applySorting();
-              },
-            ),
-            RadioListTile<String>(
-              title: const Text('감정순'),
-              value: 'emotion',
-              groupValue: _currentSortBy,
-              onChanged: (value) {
-                setState(() {
-                  _currentSortBy = value!;
-                });
-                Navigator.of(context).pop();
-                _applySorting();
-              },
-            ),
-            RadioListTile<String>(
-              title: const Text('감정 타입순'),
-              value: 'moodType',
-              groupValue: _currentSortBy,
-              onChanged: (value) {
-                setState(() {
-                  _currentSortBy = value!;
-                });
-                Navigator.of(context).pop();
-                _applySorting();
-              },
-            ),
+            _buildSortOption('date', '날짜순 (최신)', Icons.schedule, '최근 작성된 순서대로'),
+            _buildSortOption('emotion', '감정순', Icons.emoji_emotions, '감정 강도 순서대로'),
+            _buildSortOption('moodType', '감정 타입순', Icons.psychology, '긍정/부정 순서대로'),
           ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              '취소',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 정렬 옵션 위젯
+  Widget _buildSortOption(String value, String title, IconData icon, String subtitle) {
+    final isSelected = _currentSortBy == value;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      constraints: const BoxConstraints(minHeight: 80),
+      decoration: BoxDecoration(
+        color: isSelected ? AppColors.primary.withOpacity(0.08) : Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected ? AppColors.primary : Colors.grey[300]!,
+          width: isSelected ? 2 : 1,
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          setState(() {
+            _currentSortBy = value;
+          });
+          Navigator.of(context).pop();
+          _applySorting();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(icon, color: isSelected ? AppColors.primary : Colors.grey[600]),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                      ),
+                      softWrap: true,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isSelected ? AppColors.primary.withOpacity(0.7) : Colors.grey[600],
+                      ),
+                      softWrap: true,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -752,32 +914,145 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 
   /// 일기 작성 옵션 다이얼로그
   void _showWriteOptionsDialog(BuildContext context) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('일기 작성 방법'),
-        content: Column(
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.chat, color: AppColors.primary),
-              title: const Text('AI와 대화하며 작성'),
-              subtitle: const Text('AI가 질문을 통해 일기를 이끌어줍니다'),
+            // 핸들바
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // 제목
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Row(
+                children: [
+                  Icon(Icons.add_circle, color: AppColors.primary, size: 28),
+                  const SizedBox(width: 12),
+                  Text(
+                    '일기 작성 방법',
+                    style: AppTypography.titleLarge.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // 옵션들
+            _buildWriteOption(
+              context,
+              icon: Icons.chat_bubble_outline,
+              title: 'AI와 대화하며 작성',
+              subtitle: 'AI가 질문을 통해 일기를 이끌어줍니다',
+              color: AppColors.primary,
               onTap: () {
                 Navigator.of(context).pop();
                 context.push('/diary/chat-write');
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.edit, color: AppColors.secondary),
-              title: const Text('자유롭게 작성'),
-              subtitle: const Text('직접 일기를 작성합니다'),
+            
+            _buildWriteOption(
+              context,
+              icon: Icons.edit_outlined,
+              title: '자유롭게 작성',
+              subtitle: '직접 일기를 작성합니다',
+              color: AppColors.secondary,
               onTap: () {
                 Navigator.of(context).pop();
                 context.push('/diary/write');
               },
             ),
+            
+            const SizedBox(height: 32),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// 일기 작성 옵션 위젯
+  Widget _buildWriteOption(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            constraints: const BoxConstraints(minHeight: 88),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color.withOpacity(0.2)),
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: color, size: 24),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: AppTypography.titleMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: color,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: color.withOpacity(0.5),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -862,18 +1137,25 @@ class _FilterDialogState extends State<_FilterDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('필터 설정'),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Row(
+        children: [
+          Icon(Icons.filter_list, color: AppColors.primary),
+          const SizedBox(width: 8),
+          const Text('필터 설정', style: TextStyle(fontWeight: FontWeight.w600)),
+        ],
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // 감정별 필터
             _buildEmotionFilter(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             
             // 날짜 범위 필터
             _buildDateRangeFilter(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             
             // 기타 필터
             _buildOtherFilters(),
@@ -889,11 +1171,17 @@ class _FilterDialogState extends State<_FilterDialog> {
               _endDate = null;
             });
           },
-          child: const Text('초기화'),
+          child: Text(
+            '초기화',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('취소'),
+          child: Text(
+            '취소',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
         ),
         ElevatedButton(
           onPressed: () {
@@ -902,6 +1190,13 @@ class _FilterDialogState extends State<_FilterDialog> {
             widget.onFiltersChanged(_filters);
             Navigator.of(context).pop();
           },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
           child: const Text('적용'),
         ),
       ],
@@ -913,19 +1208,39 @@ class _FilterDialogState extends State<_FilterDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '감정별 필터',
-          style: AppTypography.titleMedium.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+        Row(
+          children: [
+            Icon(Icons.emoji_emotions, color: AppColors.primary, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              '감정별 필터',
+              style: AppTypography.titleMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Wrap(
           spacing: 8,
+          runSpacing: 8,
           children: Emotion.basicEmotions.map((emotion) {
             final isSelected = _filters['emotion'] == emotion.name;
             return FilterChip(
-              label: Text(emotion.name),
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(emotion.emoji),
+                  const SizedBox(width: 6),
+                  Text(
+                    emotion.name,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
               selected: isSelected,
               onSelected: (selected) {
                 setState(() {
@@ -936,6 +1251,15 @@ class _FilterDialogState extends State<_FilterDialog> {
                   }
                 });
               },
+              selectedColor: emotion.color.withOpacity(0.2),
+              checkmarkColor: emotion.color,
+              labelStyle: TextStyle(
+                color: isSelected ? emotion.color : AppColors.textSecondary,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
             );
           }).toList(),
         ),
@@ -948,32 +1272,47 @@ class _FilterDialogState extends State<_FilterDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '날짜 범위',
-          style: AppTypography.titleMedium.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+        Row(
+          children: [
+            Icon(Icons.calendar_today, color: AppColors.primary, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              '날짜 범위',
+              style: AppTypography.titleMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
-              child: TextButton.icon(
-                onPressed: () => _selectDate(context, true),
-                icon: const Icon(Icons.calendar_today),
-                label: Text(_startDate != null 
-                    ? '${_startDate!.month}/${_startDate!.day}'
-                    : '시작일'),
+              child: _buildDateButton(
+                context: context,
+                isStartDate: true,
+                date: _startDate,
+                label: '시작일',
+                onTap: () => _selectDate(context, true),
               ),
             ),
-            const Text('~'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                '~',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
             Expanded(
-              child: TextButton.icon(
-                onPressed: () => _selectDate(context, false),
-                icon: const Icon(Icons.calendar_today),
-                label: Text(_endDate != null 
-                    ? '${_endDate!.month}/${_endDate!.day}'
-                    : '종료일'),
+              child: _buildDateButton(
+                context: context,
+                isStartDate: false,
+                date: _endDate,
+                label: '종료일',
+                onTap: () => _selectDate(context, false),
               ),
             ),
           ],
@@ -982,20 +1321,79 @@ class _FilterDialogState extends State<_FilterDialog> {
     );
   }
 
+  /// 날짜 버튼 위젯
+  Widget _buildDateButton({
+    required BuildContext context,
+    required bool isStartDate,
+    required DateTime? date,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final hasDate = date != null;
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: hasDate ? AppColors.primary.withOpacity(0.1) : Colors.grey[100],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: hasDate ? AppColors.primary : Colors.grey[300]!,
+              width: hasDate ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.calendar_today,
+                size: 16,
+                color: hasDate ? AppColors.primary : Colors.grey[600],
+              ),
+              const SizedBox(width: 8),
+              Text(
+                hasDate 
+                    ? '${date!.month}/${date.day}'
+                    : label,
+                style: TextStyle(
+                  color: hasDate ? AppColors.primary : Colors.grey[600],
+                  fontWeight: hasDate ? FontWeight.w600 : FontWeight.normal,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// 기타 필터
   Widget _buildOtherFilters() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '기타 옵션',
-          style: AppTypography.titleMedium.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+        Row(
+          children: [
+            Icon(Icons.tune, color: AppColors.primary, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              '기타 옵션',
+              style: AppTypography.titleMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        CheckboxListTile(
-          title: const Text('AI 분석 완료된 일기만'),
+        const SizedBox(height: 12),
+        _buildCheckboxOption(
+          title: 'AI 분석 완료된 일기만',
+          subtitle: 'AI가 분석한 일기만 표시',
+          icon: Icons.psychology,
           value: _filters['hasAIAnalysis'] == true,
           onChanged: (value) {
             setState(() {
@@ -1007,8 +1405,10 @@ class _FilterDialogState extends State<_FilterDialog> {
             });
           },
         ),
-        CheckboxListTile(
-          title: const Text('미디어가 첨부된 일기만'),
+        _buildCheckboxOption(
+          title: '미디어가 첨부된 일기만',
+          subtitle: '사진이나 파일이 첨부된 일기만 표시',
+          icon: Icons.image,
           value: _filters['hasMedia'] == true,
           onChanged: (value) {
             setState(() {
@@ -1021,6 +1421,64 @@ class _FilterDialogState extends State<_FilterDialog> {
           },
         ),
       ],
+    );
+  }
+
+  /// 체크박스 옵션 위젯
+  Widget _buildCheckboxOption({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool value,
+    required ValueChanged<bool?> onChanged,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: value ? AppColors.primary.withOpacity(0.05) : Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: value ? AppColors.primary.withOpacity(0.3) : Colors.grey[200]!,
+        ),
+      ),
+      child: CheckboxListTile(
+        title: Row(
+          children: [
+            Icon(
+              icon,
+              color: value ? AppColors.primary : Colors.grey[600],
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: value ? AppColors.primary : AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: value ? AppColors.primary.withOpacity(0.7) : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        value: value,
+        onChanged: onChanged,
+        activeColor: AppColors.primary,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        controlAffinity: ListTileControlAffinity.trailing,
+      ),
     );
   }
 

@@ -110,49 +110,49 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             ],
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 일기 헤더
                 _buildDiaryHeader(diaryEntry),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
                 
                 // 감정 정보
                 _buildEmotionInfo(diaryEntry),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
                 
                 // 일기 내용
                 _buildDiaryContent(diaryEntry),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
                 
                 // AI 분석 결과
                 if (diaryEntry.hasAIAnalysis) ...[
                   _buildAIAnalysisSection(diaryEntry),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                 ],
                 
                 // AI 대화 히스토리
                 if (diaryEntry.hasChatHistory) ...[
                   _buildChatHistorySection(diaryEntry),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                 ],
                 
                 // 미디어 섹션
                 if (diaryEntry.mediaCount > 0) ...[
                   _buildMediaSection(diaryEntry),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                 ],
                 
                 // 태그 섹션
                 if (diaryEntry.tags.isNotEmpty) ...[
                   _buildTagSection(diaryEntry),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                 ],
                 
                 // 메타데이터
                 _buildMetadataSection(diaryEntry),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
                 
                 // 액션 버튼들
                 _buildActionButtons(diaryEntry),
@@ -168,7 +168,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
   Widget _buildDiaryHeader(DiaryEntry entry) {
     return EmotiCard(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -193,7 +193,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             
             // 제목
             Text(
@@ -205,7 +205,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             ),
             
             // 일기 타입
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -230,7 +230,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
   Widget _buildEmotionInfo(DiaryEntry entry) {
     return EmotiCard(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -241,7 +241,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             
             if (entry.emotions.isNotEmpty) ...[
               Wrap(
@@ -296,7 +296,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
   Widget _buildDiaryContent(DiaryEntry entry) {
     return EmotiCard(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -307,15 +307,15 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Text(
               entry.content,
               style: AppTypography.bodyLarge.copyWith(
-                height: 1.6,
+                height: 1.5,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Icon(Icons.text_fields, size: 16, color: Colors.grey[600]),
@@ -349,7 +349,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     
     return EmotiCard(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -414,7 +414,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     
     return EmotiCard(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -466,7 +466,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             
             Text(
               '이미지: ${entry.imageCount}개, 음성: ${entry.voiceCount}개, 그림: ${entry.drawingCount}개',
@@ -495,7 +495,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             
             Wrap(
               spacing: 8,
