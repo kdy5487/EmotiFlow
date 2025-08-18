@@ -68,70 +68,80 @@ class _EmotiTextFieldState extends State<EmotiTextField> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (widget.labelText != null) ...[
-          Text(
-            widget.labelText!,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.textTheme.titleMedium?.color,
+    return GestureDetector(
+      onTap: () {
+        // 키보드 외부 터치시 포커스 해제
+        if (widget.focusNode != null) {
+          widget.focusNode!.unfocus();
+        } else {
+          FocusScope.of(context).unfocus();
+        }
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.labelText != null) ...[
+            Text(
+              widget.labelText!,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.textTheme.titleMedium?.color,
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          TextFormField(
+            controller: widget.controller,
+            keyboardType: widget.keyboardType,
+            obscureText: _obscureText,
+            enabled: widget.enabled,
+            readOnly: widget.readOnly,
+            maxLines: widget.maxLines,
+            maxLength: widget.maxLength,
+            autofocus: widget.autofocus,
+            focusNode: widget.focusNode,
+            textInputAction: widget.textInputAction,
+            autocorrect: widget.autocorrect,
+            enableSuggestions: widget.enableSuggestions,
+            onTap: widget.onTap,
+            onChanged: widget.onChanged,
+            onFieldSubmitted: widget.onSubmitted,
+            validator: widget.validator,
+            decoration: InputDecoration(
+              hintText: widget.hintText,
+              helperText: widget.helperText,
+              errorText: widget.errorText,
+              prefixIcon: widget.prefixIcon,
+              suffixIcon: _buildSuffixIcon(),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppTheme.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppTheme.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppTheme.primary, width: 2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppTheme.error, width: 2),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppTheme.error, width: 2),
+              ),
+              filled: true,
+              fillColor: widget.enabled 
+                ? theme.inputDecorationTheme.fillColor
+                : theme.inputDecorationTheme.fillColor?.withOpacity(0.5),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
           ),
-          const SizedBox(height: 8),
         ],
-        TextFormField(
-          controller: widget.controller,
-          keyboardType: widget.keyboardType,
-          obscureText: _obscureText,
-          enabled: widget.enabled,
-          readOnly: widget.readOnly,
-          maxLines: widget.maxLines,
-          maxLength: widget.maxLength,
-          autofocus: widget.autofocus,
-          focusNode: widget.focusNode,
-          textInputAction: widget.textInputAction,
-          autocorrect: widget.autocorrect,
-          enableSuggestions: widget.enableSuggestions,
-          onTap: widget.onTap,
-          onChanged: widget.onChanged,
-          onFieldSubmitted: widget.onSubmitted,
-          validator: widget.validator,
-          decoration: InputDecoration(
-            hintText: widget.hintText,
-            helperText: widget.helperText,
-            errorText: widget.errorText,
-            prefixIcon: widget.prefixIcon,
-            suffixIcon: _buildSuffixIcon(),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppTheme.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppTheme.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppTheme.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppTheme.error, width: 2),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppTheme.error, width: 2),
-            ),
-            filled: true,
-            fillColor: widget.enabled 
-              ? theme.inputDecorationTheme.fillColor
-              : theme.inputDecorationTheme.fillColor?.withOpacity(0.5),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -172,37 +182,43 @@ class EmotiSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      onChanged: onChanged,
-      onSubmitted: (_) => onSearch?.call(),
-      decoration: InputDecoration(
-        hintText: hintText ?? '검색어를 입력하세요',
-        prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
-        suffixIcon: controller?.text.isNotEmpty == true
-          ? IconButton(
-              icon: const Icon(Icons.clear, color: AppTheme.textSecondary),
-              onPressed: () {
-                controller?.clear();
-                onClear?.call();
-              },
-            )
-          : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.border),
+    return GestureDetector(
+      onTap: () {
+        // 키보드 외부 터치시 포커스 해제
+        FocusScope.of(context).unfocus();
+      },
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        onSubmitted: (_) => onSearch?.call(),
+        decoration: InputDecoration(
+          hintText: hintText ?? '검색어를 입력하세요',
+          prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
+          suffixIcon: controller?.text.isNotEmpty == true
+            ? IconButton(
+                icon: const Icon(Icons.clear, color: AppTheme.textSecondary),
+                onPressed: () {
+                  controller?.clear();
+                  onClear?.call();
+                },
+              )
+            : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppTheme.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppTheme.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppTheme.primary, width: 2),
+          ),
+          filled: true,
+          fillColor: AppTheme.divider,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
-        ),
-        filled: true,
-        fillColor: AppTheme.divider,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }

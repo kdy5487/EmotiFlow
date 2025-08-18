@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:emoti_flow/features/home/views/home_page.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
+import 'package:emoti_flow/features/diary/views/diary_write_page.dart';
+import 'package:emoti_flow/features/diary/views/diary_chat_write_page.dart';
+import 'package:emoti_flow/features/diary/views/diary_list_page.dart';
+import 'package:emoti_flow/features/diary/views/diary_detail_page.dart';
+import 'package:emoti_flow/features/ai/views/ai_page.dart';
 // TODO: 각 뷰 생성 전까지는 라우트를 최소화 유지
 import 'package:emoti_flow/features/auth/pages/login_page.dart' as login;
 
@@ -26,23 +31,13 @@ class AppRoutes {
 
 class AppRouter {
   static GoRouter createRouter(BuildContext context) {
-    final auth = context.read<AuthProvider>();
-
     return GoRouter(
       initialLocation: AppRoutes.home,
-      refreshListenable: auth,
       redirect: (context, state) {
-        final bool loggedIn = auth.isLoggedIn;
+        // Riverpod을 사용하지 않으므로 기본 리다이렉트 로직만 구현
         final String loc = state.uri.toString();
-
-        if (!loggedIn && loc != AppRoutes.login) {
-          // 미로그인 상태에서 보호된 경로 접근 시 로그인으로
-          return AppRoutes.login;
-        }
-        if (loggedIn && loc.startsWith(AppRoutes.auth)) {
-          // 로그인 후 인증 경로 접근 시 홈으로
-          return AppRoutes.home;
-        }
+        
+        // 로그인 상태는 각 페이지에서 개별적으로 처리
         return null;
       },
       routes: [
@@ -81,22 +76,30 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.diary,
         name: 'diary',
-        builder: (context, state) => const DiaryPage(),
+        builder: (context, state) => const DiaryListPage(),
         routes: [
           GoRoute(
-            path: 'create',
-            name: 'diary-create',
-            builder: (context, state) => const DiaryCreatePage(),
+            path: 'write',
+            name: 'diary-write',
+            builder: (context, state) => const DiaryWritePage(),
           ),
           GoRoute(
-            path: 'detail',
+            path: 'chat-write',
+            name: 'diary-chat-write',
+            builder: (context, state) => const DiaryChatWritePage(),
+          ),
+          GoRoute(
+            path: 'detail/:id',
             name: 'diary-detail',
-            builder: (context, state) => const DiaryDetailPage(),
+            builder: (context, state) {
+              final id = state.pathParameters['id'] ?? '';
+              return DiaryDetailPage(diaryId: id);
+            },
           ),
         ],
       ),
       
-      // AI 서비스 라우트
+      // AI 서비스 라우트  
       GoRoute(
         path: AppRoutes.ai,
         name: 'ai',
@@ -205,98 +208,61 @@ class DiaryPage extends StatelessWidget {
   }
 }
 
-class DiaryCreatePage extends StatelessWidget {
-  const DiaryCreatePage({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('일기 작성')),
-      body: const Center(child: Text('일기 작성 페이지')),
-    );
-  }
-}
 
-class DiaryDetailPage extends StatelessWidget {
-  const DiaryDetailPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('일기 상세')),
-      body: const Center(child: Text('일기 상세 페이지')),
-    );
-  }
-}
-
-class AIPage extends StatelessWidget {
-  const AIPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('AI 서비스')),
-      body: const Center(child: Text('AI 서비스 페이지')),
-    );
-  }
-}
+// 임시 플레이스홀더 페이지들
 
 class AnalyticsPage extends StatelessWidget {
   const AnalyticsPage({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('분석')),
-      body: const Center(child: Text('분석 페이지')),
+      body: const Center(child: Text('분석 페이지 - 개발 중')),
     );
   }
 }
 
 class MusicPage extends StatelessWidget {
   const MusicPage({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('음악')),
-      body: const Center(child: Text('음악 페이지')),
+      body: const Center(child: Text('음악 페이지 - 개발 중')),
     );
   }
 }
 
 class CommunityPage extends StatelessWidget {
   const CommunityPage({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('커뮤니티')),
-      body: const Center(child: Text('커뮤니티 페이지')),
+      body: const Center(child: Text('커뮤니티 페이지 - 개발 중')),
     );
   }
 }
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('설정')),
-      body: const Center(child: Text('설정 페이지')),
+      body: const Center(child: Text('설정 페이지 - 개발 중')),
     );
   }
 }
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('프로필')),
-      body: const Center(child: Text('프로필 페이지')),
+      body: const Center(child: Text('프로필 페이지 - 개발 중')),
     );
   }
 }

@@ -1,53 +1,73 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 
+/// 인증 상태를 관리하는 클래스
+class AuthState {
+  final User? user;
+  final bool isLoading;
+  final String? error;
+
+  const AuthState({
+    this.user,
+    this.isLoading = false,
+    this.error,
+  });
+
+  AuthState copyWith({
+    User? user,
+    bool? isLoading,
+    String? error,
+  }) {
+    return AuthState(
+      user: user ?? this.user,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+    );
+  }
+}
+
 /// 인증 상태 관리 클래스
-class AuthProvider extends ChangeNotifier {
+class AuthProvider extends StateNotifier<AuthState> {
   final AuthService _authService = AuthService.instance;
   
-  User? _user;
-  bool _isLoading = false;
-  String? _error;
-  
-  /// 현재 사용자
-  User? get user => _user;
-  
-  /// 로딩 상태
-  bool get isLoading => _isLoading;
-  
-  /// 에러 메시지
-  String? get error => _error;
-  
-  /// 로그인 상태
-  bool get isLoggedIn => _user != null;
-  
-  /// 사용자 이메일
-  String? get userEmail => _user?.email;
-  
-  /// 사용자 이름
-  String? get userName => _user?.displayName;
-  
-  /// 사용자 프로필 사진
-  String? get userPhoto => _user?.photoURL;
-  
   /// 초기화
-  AuthProvider() {
+  AuthProvider() : super(const AuthState()) {
     _init();
   }
   
+  /// 현재 사용자
+  User? get user => state.user;
+  
+  /// 로딩 상태
+  bool get isLoading => state.isLoading;
+  
+  /// 에러 메시지
+  String? get error => state.error;
+  
+  /// 로그인 상태
+  bool get isLoggedIn => state.user != null;
+  
+  /// 사용자 이메일
+  String? get userEmail => state.user?.email;
+  
+  /// 사용자 이름
+  String? get userName => state.user?.displayName;
+  
+  /// 사용자 프로필 사진
+  String? get userPhoto => state.user?.photoURL;
+  
   /// 초기화 및 자동 로그인 체크
   void _init() {
-    _user = _authService.currentUser;
+    state = state.copyWith(user: _authService.currentUser);
     
     // 앱 시작 시 자동 로그인 체크
     _checkAutoLogin();
     
     // 인증 상태 변화 감지
     _authService.authStateChanges.listen((User? user) {
-      _user = user;
-      _error = null;
-      notifyListeners();
+      state = state.copyWith(user: user, error: null);
     });
   }
   
@@ -59,15 +79,16 @@ class AuthProvider extends ChangeNotifier {
       final isAutoLoggedIn = await _authService.checkAutoLogin();
       
       if (isAutoLoggedIn) {
-        _user = _authService.currentUser;
+        final currentUser = _authService.currentUser;
+        state = state.copyWith(user: currentUser);
         print('✅ 자동 로그인 성공');
       } else {
-        _user = null;
+        state = state.copyWith(user: null);
         print('❌ 자동 로그인 실패 - 수동 로그인 필요');
       }
     } catch (e) {
       print('❌ 자동 로그인 체크 중 오류: $e');
-      _user = null;
+      state = state.copyWith(user: null);
     } finally {
       _setLoading(false);
     }
@@ -75,14 +96,12 @@ class AuthProvider extends ChangeNotifier {
   
   /// 로딩 상태 설정
   void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
+    state = state.copyWith(isLoading: loading);
   }
   
   /// 에러 설정
   void _setError(String? error) {
-    _error = error;
-    notifyListeners();
+    state = state.copyWith(error: error);
   }
   
   /// Google 로그인
@@ -94,7 +113,7 @@ class AuthProvider extends ChangeNotifier {
       final userCredential = await _authService.signInWithGoogle();
       
       if (userCredential != null) {
-        _user = userCredential.user;
+        state = state.copyWith(user: userCredential.user);
         _setLoading(false);
         return true;
       } else {
@@ -115,7 +134,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       _setLoading(true);
       await _authService.signOut();
-      _user = null;
+      state = state.copyWith(user: null);
       _setLoading(false);
     } catch (e) {
       _setError('로그아웃에 실패했습니다: $e');
@@ -140,10 +159,9 @@ class AuthProvider extends ChangeNotifier {
       );
       
       // 로컬 상태 업데이트는 Firebase Auth에서 자동으로 처리됨
-      // _user는 authStateChanges 스트림에서 자동 업데이트됨
+      // user는 authStateChanges 스트림에서 자동 업데이트됨
       
       _setLoading(false);
-      notifyListeners();
       return true;
       
     } catch (e) {
@@ -158,3 +176,8 @@ class AuthProvider extends ChangeNotifier {
     _setError(null);
   }
 }
+
+/// AuthProvider를 위한 Riverpod provider
+final authProvider = StateNotifierProvider<AuthProvider, AuthState>((ref) {
+  return AuthProvider();
+});

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
 import 'package:emoti_flow/shared/widgets/cards/emoti_card.dart';
 import 'package:emoti_flow/shared/widgets/buttons/emoti_button.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -44,7 +44,7 @@ class HomePage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 오늘의 감정 요약
-            _buildTodayMoodSection(context),
+            _buildTodayMoodSection(context, ref),
             const SizedBox(height: 24),
             
             // 빠른 액션 버튼들
@@ -68,8 +68,8 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildTodayMoodSection(BuildContext context) {
-    final String userName = context.read<AuthProvider>().userName ?? '사용자';
+  Widget _buildTodayMoodSection(BuildContext context, WidgetRef ref) {
+    final String userName = ref.read(authProvider).user?.displayName ?? '사용자';
     return EmotiCard(
       backgroundColor: AppTheme.primary.withOpacity(0.1),
       borderColor: AppTheme.primary,
@@ -121,22 +121,22 @@ class HomePage extends StatelessWidget {
             children: [
               Expanded(
                 child: EmotiButton(
-                  text: '일기 작성',
-                  onPressed: () => context.push('/diary/create'),
+                  text: '일기 목록',
+                  onPressed: () => context.push('/diary'),
                   type: EmotiButtonType.primary,
                   size: EmotiButtonSize.medium,
-                  icon: Icons.edit,
+                  icon: Icons.list,
                   isFullWidth: true,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: EmotiButton(
-                  text: 'AI 분석',
-                  onPressed: () => context.push('/ai'),
+                  text: 'AI 대화형',
+                  onPressed: () => context.push('/diary/chat-write'),
                   type: EmotiButtonType.outline,
                   size: EmotiButtonSize.medium,
-                  icon: Icons.psychology,
+                  icon: Icons.chat,
                   isFullWidth: true,
                   textColor: AppTheme.primary,
                 ),
@@ -164,6 +164,17 @@ class HomePage extends StatelessWidget {
             Expanded(
               child: _buildQuickActionCard(
                 context,
+                icon: Icons.edit,
+                title: '자유형 일기',
+                subtitle: '직접 작성하기',
+                color: AppTheme.success,
+                onTap: () => context.push('/diary/write'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
                 icon: Icons.music_note,
                 title: '음악 듣기',
                 subtitle: '감정에 맞는 음악',
@@ -171,7 +182,11 @@ class HomePage extends StatelessWidget {
                 onTap: () => context.push('/music'),
               ),
             ),
-            const SizedBox(width: 12),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
             Expanded(
               child: _buildQuickActionCard(
                 context,
@@ -180,6 +195,32 @@ class HomePage extends StatelessWidget {
                 subtitle: '감정 변화 분석',
                 color: AppTheme.info,
                 onTap: () => context.push('/analytics'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.psychology,
+                title: 'AI 분석',
+                subtitle: '감정 분석 및 조언',
+                color: AppTheme.primary,
+                onTap: () => context.push('/ai'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                icon: Icons.people,
+                title: '커뮤니티',
+                subtitle: '다른 사용자와 소통',
+                color: AppTheme.warning,
+                onTap: () => context.push('/community'),
               ),
             ),
           ],
