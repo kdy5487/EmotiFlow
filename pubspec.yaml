@@ -48,6 +48,9 @@ dependencies:
   # 상태 관리
   flutter_riverpod: ^2.4.9
   http: ^1.2.2
+  image_picker: ^1.0.7
+  path_provider: ^2.1.3
+  flutter_drawing_board: ^0.8.0
   
   # HTTP 통신 (나중에 추가)
   # dio: ^5.4.0

@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../viewmodels/diary_write_view_model.dart';
+import 'drawing_canvas_page.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import '../providers/diary_provider.dart';
 import '../models/emotion.dart';
+import '../models/diary_entry.dart';
 
 
 import '../../../shared/widgets/inputs/emoti_text_field.dart';
@@ -76,33 +80,33 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
           FocusScope.of(context).unfocus();
         },
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 날짜 선택
               _buildDatePickerSection(viewModel),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               
               // 제목 입력
               _buildTitleSection(viewModel),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               
               // 감정 선택
               _buildEmotionSection(viewModel),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               
               // 내용 입력
               _buildContentSection(viewModel),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               
               // 태그 입력
               _buildTagSection(viewModel),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               
               // 미디어 첨부
               _buildMediaSection(viewModel),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               
               // AI 분석 설정
               _buildAIAnalysisSection(viewModel),
@@ -116,7 +120,7 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
               if (state.errorMessage != null)
                 _buildErrorMessage(state.errorMessage!),
               
-              const SizedBox(height: 100), // 하단 여백
+              const SizedBox(height: 80), // 하단 여백
             ],
           ),
         ),
@@ -127,27 +131,21 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
   /// 날짜 선택 섹션
   Widget _buildDatePickerSection(DiaryWriteViewModel viewModel) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.primary.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.primary.withOpacity(0.2)),
       ),
       child: Row(
         children: [
-          Icon(Icons.calendar_today, color: AppColors.primary),
-          const SizedBox(width: 12),
+          const Icon(Icons.calendar_today, size: 18, color: AppColors.primary),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '날짜 선택',
-                  style: AppTypography.titleMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
+                Text('날짜 선택', style: AppTypography.bodyLarge),
                 Text(
                   _formatDate(viewModel.selectedDate),
                   style: AppTypography.bodyMedium.copyWith(
@@ -172,14 +170,8 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '제목',
-          style: AppTypography.headlineSmall.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
+        Text('제목', style: AppTypography.titleMedium),
+        const SizedBox(height: 6),
         EmotiTextField(
           controller: _titleController,
           focusNode: _titleFocusNode,
@@ -199,21 +191,17 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '오늘의 감정',
-          style: AppTypography.headlineSmall.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
+        Text('오늘의 감정', style: AppTypography.titleMedium),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Text(
+              '감정 선택 (복수 선택 가능)',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
-        Text(
-          '오늘 느낀 감정을 선택해주세요 (여러 개 선택 가능)',
-          style: AppTypography.bodySmall.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 16),
         
         // 감정 선택 그리드
         GridView.builder(
@@ -221,9 +209,9 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 4,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            childAspectRatio: 1.0,
+            crossAxisSpacing: 6,
+            mainAxisSpacing: 6,
+            childAspectRatio: 0.9,
           ),
           itemCount: Emotion.basicEmotions.length,
           itemBuilder: (context, index) {
@@ -248,7 +236,7 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
                   children: [
                     Text(
                       emotion.emoji,
-                      style: const TextStyle(fontSize: 20),
+                      style: const TextStyle(fontSize: 18),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -342,19 +330,13 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '내용',
-          style: AppTypography.headlineSmall.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
+        Text('내용', style: AppTypography.titleMedium),
+        const SizedBox(height: 6),
         EmotiTextField(
           controller: _contentController,
           focusNode: _contentFocusNode,
           hintText: '오늘 있었던 일이나 느낀 점을 자유롭게 작성해주세요...',
-          maxLines: 10,
+          maxLines: 8,
           maxLength: 1000,
         ),
         const SizedBox(height: 8),
@@ -384,14 +366,8 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '태그',
-          style: AppTypography.headlineSmall.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
+        Text('태그', style: AppTypography.titleMedium),
+        const SizedBox(height: 6),
         Text(
           '일기와 관련된 키워드를 태그로 추가해주세요',
           style: AppTypography.bodySmall.copyWith(
@@ -423,10 +399,12 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
                   _tagController.clear();
                 }
               },
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add, size: 18),
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
+                minimumSize: const Size(36, 36),
+                padding: EdgeInsets.zero,
               ),
             ),
           ],
@@ -460,14 +438,8 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '미디어 첨부',
-          style: AppTypography.headlineSmall.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
+        Text('미디어 첨부', style: AppTypography.titleMedium),
+        const SizedBox(height: 6),
         Text(
           '사진, 그림, 음성 등을 첨부할 수 있습니다',
           style: AppTypography.bodySmall.copyWith(
@@ -505,7 +477,7 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
           ],
         ),
         
-        // 첨부된 미디어 목록
+        // 첨부된 미디어 목록 (썸네일/프리뷰)
         if (viewModel.mediaCount > 0) ...[
           const SizedBox(height: 16),
           Text(
@@ -517,21 +489,28 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
           ),
           const SizedBox(height: 8),
           // 여기에 미디어 썸네일 목록 표시
-          Container(
+          SizedBox(
             height: 80,
-            child: ListView.builder(
+            child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: viewModel.mediaCount,
+              itemCount: viewModel.mediaFiles.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
-                // 실제 미디어 파일이 있을 때 썸네일 표시
-                return Container(
-                  width: 80,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
+                final file = viewModel.mediaFiles[index];
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 80,
+                    height: 80,
                     color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
+                    child: file.type == MediaType.image || file.type == MediaType.drawing
+                        ? Image.file(
+                            File(file.url),
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.grey),
+                          )
+                        : const Icon(Icons.audiotrack, color: Colors.grey),
                   ),
-                  child: const Icon(Icons.image, color: Colors.grey),
                 );
               },
             ),
@@ -712,18 +691,12 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
 
   /// 이미지 추가
   void _addImage() {
-    // TODO: 이미지 선택 및 업로드 구현
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('이미지 추가 기능은 추후 구현 예정입니다.')),
-    );
+    _pickImage();
   }
 
   /// 그림 추가
   void _addDrawing() {
-    // TODO: 그림 그리기 기능 구현
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('그림 그리기 기능은 추후 구현 예정입니다.')),
-    );
+    _openDrawing();
   }
 
   /// 음성 추가
@@ -732,6 +705,52 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('음성 녹음 기능은 추후 구현 예정입니다.')),
     );
+  }
+
+  /// 이미지 선택 (image_picker)
+  Future<void> _pickImage() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+      if (picked == null) return;
+      final vm = ref.read(diaryWriteProvider.notifier);
+      vm.addMediaFile(MediaFile(
+        id: picked.path,
+        url: picked.path,
+        type: MediaType.image,
+      ));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이미지가 추가되었습니다.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('이미지 추가 실패: $e')),
+        );
+      }
+    }
+  }
+
+  /// 그림 그리기 화면 열기
+  Future<void> _openDrawing() async {
+    final path = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => const DrawingCanvasPage()),
+    );
+    if (path == null) return;
+    final vm = ref.read(diaryWriteProvider.notifier);
+    vm.addMediaFile(MediaFile(
+      id: path,
+      url: path,
+      type: MediaType.drawing,
+    ));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('그림이 추가되었습니다.')),
+      );
+    }
   }
 
   /// 일기 저장
@@ -768,16 +787,91 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
       
       final entry = viewModel.createDiaryEntry(currentUser);
       await diaryNotifier.createDiaryEntry(entry);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('일기가 성공적으로 저장되었습니다.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        context.pop(); // 이전 화면으로 돌아가기
-      }
+
+      if (!mounted) return;
+      // 저장 직후 결과 미리보기
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Text('저장 완료', style: AppTypography.titleLarge),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text('제목', style: AppTypography.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(entry.title, style: AppTypography.bodyLarge),
+                  const SizedBox(height: 12),
+                  Text('내용', style: AppTypography.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(entry.content, style: AppTypography.bodyMedium),
+                  const SizedBox(height: 12),
+                  if (entry.mediaCount > 0) ...[
+                    Text('첨부된 미디어', style: AppTypography.titleMedium),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 80,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: entry.mediaFiles.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final file = entry.mediaFiles[index];
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              width: 80,
+                              height: 80,
+                              color: Colors.grey[200],
+                              child: file.type == MediaType.image || file.type == MediaType.drawing
+                                  ? Image.asset(
+                                      file.url,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.grey),
+                                    )
+                                  : const Icon(Icons.audiotrack, color: Colors.grey),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.check),
+                      label: const Text('확인'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+
+      if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

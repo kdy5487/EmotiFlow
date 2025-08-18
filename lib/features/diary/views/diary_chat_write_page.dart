@@ -24,6 +24,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   
   bool _isTyping = false;
   bool _showResult = false;
+  OpenAIAnalysisResult? _lastAnalysis;
 
   @override
   void initState() {
@@ -45,6 +46,11 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     final viewModel = ref.read(diaryWriteProvider.notifier);
     viewModel.resetForm();
     viewModel.setIsChatMode(true);
+    setState(() {
+      _showResult = false;
+      _lastAnalysis = null;
+    });
+    _messageController.clear();
     
     // AI 첫 메시지 추가
     final initialMessage = ChatMessage(
@@ -94,11 +100,6 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
         );
         
         viewModel.addChatMessage(aiMessage);
-        
-        // 충분한 대화가 진행되면 결과 표시
-        if (chatHistory.length >= 6) {
-          _generateDiaryFromChat();
-        }
       }
     } catch (e) {
       print('AI 응답 생성 실패: $e');
@@ -117,36 +118,27 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     }
   }
 
-  /// 대화에서 일기 생성
-  Future<void> _generateDiaryFromChat() async {
-    final viewModel = ref.read(diaryWriteProvider.notifier);
+  /// 대화 요약 생성 및 결과 보기
+  Future<void> _summarizeAndShowResult() async {
     final state = ref.read(diaryWriteProvider);
-    
     if (state.chatHistory.isEmpty) return;
-    
-    // 간단한 일기 생성
-    final userMessages = state.chatHistory
-        .where((m) => !m.isFromAI)
-        .map((m) => m.content)
-        .join(' ');
-    
-    final title = userMessages.length > 20 
-        ? '${userMessages.substring(0, 20)}...'
-        : userMessages.isEmpty 
-            ? 'AI와의 대화' 
-            : userMessages;
-    
-    final content = state.chatHistory
-        .map((m) => '${m.isFromAI ? "AI" : "나"}: ${m.content}')
-        .join('\n\n');
-    
-    final emotions = _analyzeEmotionsFromText(userMessages);
-    
-    viewModel.updateTitle(title);
-    viewModel.updateContent(content);
-    viewModel.updateSelectedEmotions(emotions);
-    
-    setState(() => _showResult = true);
+    setState(() => _isTyping = true);
+    try {
+      final analysis = await OpenAIService.instance.analyzeDiaryFromChat(
+        history: state.chatHistory,
+      );
+      if (analysis != null) {
+        _lastAnalysis = analysis;
+        // 프리뷰 표시용으로 상태 업데이트
+        final vm = ref.read(diaryWriteProvider.notifier);
+        vm.updateTitle(analysis.title);
+        vm.updateContent(analysis.content);
+        vm.updateSelectedEmotions(analysis.emotions);
+        setState(() => _showResult = true);
+      }
+    } finally {
+      setState(() => _isTyping = false);
+    }
   }
 
   /// 텍스트에서 감정 분석
@@ -178,14 +170,33 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
 
   /// 일기 저장
   Future<void> _saveDiary() async {
-    final viewModel = ref.read(diaryWriteProvider.notifier);
     final authState = ref.read(authProvider);
     final userId = authState.user?.uid ?? 'demo_user';
+    final state = ref.read(diaryWriteProvider);
     
     try {
-      final entry = viewModel.createDiaryEntry(userId);
-      final diaryNotifier = ref.read(diaryProvider.notifier);
+      // 요약이 없으면 먼저 생성
+      if (_lastAnalysis == null) {
+        await _summarizeAndShowResult();
+      }
+      final analysis = _lastAnalysis;
+      if (analysis == null) throw '요약 생성 실패';
       
+      // 일기 엔트리 직접 구성 (요약 본문/제목 사용)
+      final entry = DiaryEntry(
+        userId: userId,
+        title: analysis.title,
+        content: analysis.content,
+        emotions: analysis.emotions,
+        emotionIntensities: analysis.emotionIntensities,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        aiAnalysis: analysis.aiAnalysis,
+        chatHistory: state.chatHistory,
+        diaryType: DiaryType.aiChat,
+      );
+      
+      final diaryNotifier = ref.read(diaryProvider.notifier);
       await diaryNotifier.createDiaryEntry(entry);
       
       if (mounted) {
@@ -226,6 +237,12 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
         actions: [
+          // 저장(요약) 버튼을 앱바에 배치
+          IconButton(
+            onPressed: _isTyping ? null : _summarizeAndShowResult,
+            icon: const Icon(Icons.check_circle, color: Colors.white),
+            tooltip: '요약 보기',
+          ),
           IconButton(
             onPressed: _startNewConversation,
             icon: const Icon(Icons.refresh, color: Colors.white),
@@ -233,35 +250,45 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // 대화 영역
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              reverse: true, // 카카오톡 스타일
-              padding: const EdgeInsets.all(16),
-              itemCount: state.chatHistory.reversed.length + (_isTyping ? 1 : 0),
-              itemBuilder: (context, index) {
-                final messages = state.chatHistory.reversed.toList();
-                
-                if (_isTyping && index == 0) {
-                  return _buildTypingIndicator();
-                }
-                
-                final messageIndex = _isTyping ? index - 1 : index;
-                final message = messages[messageIndex];
-                return _buildChatBubble(message);
-              },
+      body: _showResult
+          ? _buildResultFullScreen(state)
+          : GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: Column(
+                children: [
+                  // 대화 영역
+                  Expanded(
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      reverse: true, // 카카오톡 스타일
+                      padding: const EdgeInsets.all(16),
+                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                      itemCount: state.chatHistory.reversed.length + (_isTyping ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        final messages = state.chatHistory.reversed.toList();
+                        if (_isTyping && index == 0) {
+                          return _buildTypingIndicator();
+                        }
+                        final messageIndex = _isTyping ? index - 1 : index;
+                        final message = messages[messageIndex];
+                        return _buildChatBubble(message);
+                      },
+                    ),
+                  ),
+                  // 입력 영역
+                  SafeArea(top: false, child: _buildInputSection()),
+                ],
+              ),
             ),
-          ),
-          
-          // 결과 표시 영역
-          if (_showResult) _buildResultSection(state),
-          
-          // 입력 영역
-          _buildInputSection(),
-        ],
+    );
+  }
+
+  /// 결과 전체 화면
+  Widget _buildResultFullScreen(DiaryWriteState state) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        child: _buildResultSection(state),
       ),
     );
   }
@@ -371,17 +398,20 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
 
   /// 결과 섹션
   Widget _buildResultSection(DiaryWriteState state) {
+    final analysis = _lastAnalysis;
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.green[50],
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.green[200]!),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             children: [
               Icon(Icons.auto_awesome, color: Colors.green[600], size: 24),
@@ -398,26 +428,20 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
           const SizedBox(height: 16),
           
           // 제목
-          if (state.title.isNotEmpty) ...[
-            _buildResultItem('제목', state.title, Icons.title),
+          if ((analysis?.title ?? state.title).isNotEmpty) ...[
+            _buildResultItem('제목', analysis?.title ?? state.title, Icons.title),
             const SizedBox(height: 12),
           ],
           
           // 감정
-          if (state.selectedEmotions.isNotEmpty) ...[
-            _buildResultItem('감정', state.selectedEmotions.join(', '), Icons.favorite),
+          if ((analysis?.emotions ?? state.selectedEmotions).isNotEmpty) ...[
+            _buildResultItem('감정', (analysis?.emotions ?? state.selectedEmotions).join(', '), Icons.favorite),
             const SizedBox(height: 12),
           ],
           
-          // 내용 요약
-          if (state.content.isNotEmpty) ...[
-            _buildResultItem(
-              '내용 요약',
-              state.content.length > 100 
-                  ? '${state.content.substring(0, 100)}...'
-                  : state.content,
-              Icons.description,
-            ),
+          // 내용 요약(실제 요약 본문 사용)
+          if ((analysis?.content ?? state.content).isNotEmpty) ...[
+            _buildResultItem('내용 요약', analysis?.content ?? state.content, Icons.description),
             const SizedBox(height: 20),
           ],
           
@@ -431,7 +455,8 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
               icon: Icons.save,
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
