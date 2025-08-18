@@ -5,12 +5,13 @@ import '../viewmodels/diary_write_view_model.dart';
 import '../providers/diary_provider.dart';
 import '../models/emotion.dart';
 
+
 import '../../../shared/widgets/inputs/emoti_text_field.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../core/providers/auth_provider.dart';
 
-/// 일기 작성 페이지
+/// 자유형 일기 작성 페이지
 class DiaryWritePage extends ConsumerStatefulWidget {
   const DiaryWritePage({super.key});
 
@@ -23,6 +24,7 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
   final _contentController = TextEditingController();
   final _titleFocusNode = FocusNode();
   final _contentFocusNode = FocusNode();
+  final _tagController = TextEditingController();
 
   @override
   void initState() {
@@ -44,6 +46,7 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     _contentController.dispose();
     _titleFocusNode.dispose();
     _contentFocusNode.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
@@ -54,12 +57,12 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('일기 작성'),
+        title: const Text('자유형 일기 작성'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         actions: [
           TextButton(
-            onPressed: viewModel.canSave ? _saveDiary : null,
+            onPressed: viewModel.canSaveEntry ? _saveDiary : null,
             child: const Text(
               '저장',
               style: TextStyle(color: Colors.white),
@@ -77,6 +80,10 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 날짜 선택
+              _buildDatePickerSection(viewModel),
+              const SizedBox(height: 24),
+              
               // 제목 입력
               _buildTitleSection(viewModel),
               const SizedBox(height: 24),
@@ -89,8 +96,20 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
               _buildContentSection(viewModel),
               const SizedBox(height: 24),
               
+              // 태그 입력
+              _buildTagSection(viewModel),
+              const SizedBox(height: 24),
+              
+              // 미디어 첨부
+              _buildMediaSection(viewModel),
+              const SizedBox(height: 24),
+              
               // AI 분석 설정
               _buildAIAnalysisSection(viewModel),
+              const SizedBox(height: 24),
+              
+              // 공개 설정
+              _buildPublicSection(viewModel),
               const SizedBox(height: 24),
               
               // 에러 메시지
@@ -101,6 +120,49 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// 날짜 선택 섹션
+  Widget _buildDatePickerSection(DiaryWriteViewModel viewModel) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.calendar_today, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '날짜 선택',
+                  style: AppTypography.titleMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  _formatDate(viewModel.selectedDate),
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => _selectDate(context, viewModel),
+            child: const Text('변경'),
+          ),
+        ],
       ),
     );
   }
@@ -214,7 +276,7 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     );
   }
 
-      /// 감정 강도 조절 섹션
+  /// 감정 강도 조절 섹션
   Widget _buildEmotionIntensitySection(DiaryWriteViewModel viewModel) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,11 +357,209 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
           maxLines: 10,
           maxLength: 1000,
         ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '${viewModel.contentLength}/1000자',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            Text(
+              '${viewModel.wordCount}단어',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
 
-    /// AI 분석 설정 섹션
+  /// 태그 입력 섹션
+  Widget _buildTagSection(DiaryWriteViewModel viewModel) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '태그',
+          style: AppTypography.headlineSmall.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '일기와 관련된 키워드를 태그로 추가해주세요',
+          style: AppTypography.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        
+        // 태그 입력 필드
+        Row(
+          children: [
+            Expanded(
+              child: EmotiTextField(
+                controller: _tagController,
+                hintText: '태그를 입력하고 Enter를 누르세요',
+                onSubmitted: (value) {
+                  if (value.trim().isNotEmpty) {
+                    viewModel.addTag(value.trim());
+                    _tagController.clear();
+                  }
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: () {
+                if (_tagController.text.trim().isNotEmpty) {
+                  viewModel.addTag(_tagController.text.trim());
+                  _tagController.clear();
+                }
+              },
+              icon: const Icon(Icons.add),
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+        
+        // 태그 목록
+        if (viewModel.tags.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: viewModel.tags.map((tag) {
+              return Chip(
+                label: Text(tag),
+                onDeleted: () => viewModel.removeTag(tag),
+                backgroundColor: AppColors.primary.withOpacity(0.1),
+                labelStyle: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 12,
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// 미디어 첨부 섹션
+  Widget _buildMediaSection(DiaryWriteViewModel viewModel) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '미디어 첨부',
+          style: AppTypography.headlineSmall.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '사진, 그림, 음성 등을 첨부할 수 있습니다',
+          style: AppTypography.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        
+        // 미디어 타입별 버튼
+        Row(
+          children: [
+            Expanded(
+              child: _buildMediaButton(
+                icon: Icons.photo_camera,
+                label: '사진',
+                onTap: () => _addImage(),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildMediaButton(
+                icon: Icons.brush,
+                label: '그림',
+                onTap: () => _addDrawing(),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildMediaButton(
+                icon: Icons.mic,
+                label: '음성',
+                onTap: () => _addVoice(),
+              ),
+            ),
+          ],
+        ),
+        
+        // 첨부된 미디어 목록
+        if (viewModel.mediaCount > 0) ...[
+          const SizedBox(height: 16),
+          Text(
+            '첨부된 미디어 (${viewModel.mediaCount}개)',
+            style: AppTypography.titleMedium.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          // 여기에 미디어 썸네일 목록 표시
+          Container(
+            height: 80,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: viewModel.mediaCount,
+              itemBuilder: (context, index) {
+                // 실제 미디어 파일이 있을 때 썸네일 표시
+                return Container(
+                  width: 80,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.image, color: Colors.grey),
+                );
+              },
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// 미디어 버튼
+  Widget _buildMediaButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return ElevatedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.secondary.withOpacity(0.1),
+        foregroundColor: AppColors.secondary,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+    );
+  }
+
+  /// AI 분석 설정 섹션
   Widget _buildAIAnalysisSection(DiaryWriteViewModel viewModel) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -350,6 +610,57 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     );
   }
 
+  /// 공개 설정 섹션
+  Widget _buildPublicSection(DiaryWriteViewModel viewModel) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.secondary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.secondary.withOpacity(0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.public,
+            color: AppColors.secondary,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '공개 설정',
+                  style: AppTypography.titleLarge.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  '일기를 다른 사용자와 공유할 수 있습니다',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: viewModel.isPublic,
+            onChanged: (value) {
+              viewModel.togglePublic();
+            },
+            activeColor: AppColors.secondary,
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 에러 메시지 표시
   Widget _buildErrorMessage(String message) {
     return Container(
@@ -382,6 +693,44 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
           ),
         ],
       ),
+    );
+  }
+
+  /// 날짜 선택
+  Future<void> _selectDate(BuildContext context, DiaryWriteViewModel viewModel) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: viewModel.selectedDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now(),
+    );
+    
+    if (picked != null && picked != viewModel.selectedDate) {
+      viewModel.setSelectedDate(picked);
+    }
+  }
+
+  /// 이미지 추가
+  void _addImage() {
+    // TODO: 이미지 선택 및 업로드 구현
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('이미지 추가 기능은 추후 구현 예정입니다.')),
+    );
+  }
+
+  /// 그림 추가
+  void _addDrawing() {
+    // TODO: 그림 그리기 기능 구현
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('그림 그리기 기능은 추후 구현 예정입니다.')),
+    );
+  }
+
+  /// 음성 추가
+  void _addVoice() {
+    // TODO: 음성 녹음 기능 구현
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('음성 녹음 기능은 추후 구현 예정입니다.')),
     );
   }
 
@@ -418,28 +767,16 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
       }
       
       final entry = viewModel.createDiaryEntry(currentUser);
-      final success = await diaryNotifier.createDiaryEntry(entry);
+      await diaryNotifier.createDiaryEntry(entry);
       
-      if (success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('일기가 성공적으로 저장되었습니다.'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          context.pop(); // 이전 화면으로 돌아가기
-        }
-      } else {
-        if (mounted) {
-          final diaryState = ref.read(diaryProvider);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(diaryState.errorMessage ?? '저장에 실패했습니다.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('일기가 성공적으로 저장되었습니다.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        context.pop(); // 이전 화면으로 돌아가기
       }
     } catch (e) {
       if (mounted) {
@@ -450,6 +787,21 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
           ),
         );
       }
+    }
+  }
+
+  /// 날짜 포맷팅
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final targetDate = DateTime(date.year, date.month, date.day);
+    
+    if (targetDate == today) {
+      return '오늘';
+    } else if (targetDate == today.subtract(const Duration(days: 1))) {
+      return '어제';
+    } else {
+      return '${date.month}월 ${date.day}일';
     }
   }
 }

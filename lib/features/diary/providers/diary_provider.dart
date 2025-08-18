@@ -1,216 +1,276 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/diary_entry.dart';
-import '../models/emotion.dart';
 
-/// 일기 데이터의 상태를 관리하는 클래스
+/// 일기 상태 관리 클래스
 class DiaryState {
   final List<DiaryEntry> diaryEntries;
+  final List<DiaryEntry> filteredEntries;
   final bool isLoading;
   final String? errorMessage;
   final DiaryEntry? currentEntry;
+  final bool isOffline;
 
   const DiaryState({
     this.diaryEntries = const [],
+    this.filteredEntries = const [],
     this.isLoading = false,
     this.errorMessage,
     this.currentEntry,
+    this.isOffline = false,
   });
 
   DiaryState copyWith({
     List<DiaryEntry>? diaryEntries,
+    List<DiaryEntry>? filteredEntries,
     bool? isLoading,
     String? errorMessage,
     DiaryEntry? currentEntry,
+    bool? isOffline,
   }) {
     return DiaryState(
       diaryEntries: diaryEntries ?? this.diaryEntries,
+      filteredEntries: filteredEntries ?? this.filteredEntries,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: errorMessage,
       currentEntry: currentEntry ?? this.currentEntry,
+      isOffline: isOffline ?? this.isOffline,
     );
   }
 }
 
-/// 일기 데이터를 관리하는 프로바이더
+/// 일기 데이터 관리 Provider
 class DiaryProvider extends StateNotifier<DiaryState> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
-  DiaryProvider() : super(const DiaryState());
 
-  // Getters
-  List<DiaryEntry> get diaryEntries => state.diaryEntries;
-  bool get isLoading => state.isLoading;
-  String? get errorMessage => state.errorMessage;
-  DiaryEntry? get currentEntry => state.currentEntry;
-
-  /// 사용자의 일기 목록을 가져오기
-  Future<void> fetchDiaryEntries(String userId) async {
-    _setLoading(true);
-    _clearError();
-    
-    try {
-      final QuerySnapshot snapshot = await _firestore
-          .collection('diaries')
-          .where('userId', isEqualTo: userId)
-          .orderBy('createdAt', descending: true)
-          .get();
-
-      final diaryEntries = snapshot.docs
-          .map((doc) => DiaryEntry.fromFirestore(doc))
-          .toList();
-          
-      state = state.copyWith(diaryEntries: diaryEntries);
-    } catch (e) {
-      _setError('일기 목록을 가져오는데 실패했습니다: $e');
-    } finally {
-      _setLoading(false);
-    }
+  DiaryProvider() : super(const DiaryState()) {
+    print('=== DiaryProvider 초기화 ===');
+    // 즉시 더미 데이터 로드
+    _loadDummyData();
   }
 
-  /// 새로운 일기 작성
-  Future<bool> createDiaryEntry(DiaryEntry entry) async {
-    _setLoading(true);
-    _clearError();
-    
-    try {
-      final DocumentReference docRef = await _firestore
-          .collection('diaries')
-          .add(entry.toFirestore());
-      
-      // 생성된 ID로 업데이트된 엔트리 생성
-      final newEntry = entry.copyWith(id: docRef.id);
-      final newEntries = List<DiaryEntry>.from(state.diaryEntries)..insert(0, newEntry);
-      state = state.copyWith(diaryEntries: newEntries);
-      
-      return true;
-    } catch (e) {
-      _setError('일기 작성에 실패했습니다: $e');
-      return false;
-    } finally {
-      _setLoading(false);
-    }
+  /// 더미 데이터 즉시 로드
+  void _loadDummyData() {
+    final dummyEntries = _createDummyData('demo_user');
+    state = state.copyWith(
+      diaryEntries: dummyEntries,
+      filteredEntries: dummyEntries,
+      isLoading: false,
+    );
+    print('더미 데이터 ${dummyEntries.length}개 로드 완료');
   }
 
-  /// 일기 수정
-  Future<bool> updateDiaryEntry(DiaryEntry entry) async {
-    _setLoading(true);
-    _clearError();
+  /// 더미 데이터 생성
+  List<DiaryEntry> _createDummyData(String userId) {
+    final now = DateTime.now();
+    return [
+      DiaryEntry(
+        id: 'dummy_1',
+        title: 'AI와 함께한 하루',
+        content: 'AI와 대화하며 오늘 하루를 정리했습니다. 생각보다 많은 감정들을 느꼈네요.',
+        emotions: ['기쁨', '평온'],
+        emotionIntensities: {'기쁨': 8, '평온': 7},
+        userId: userId,
+        createdAt: now.subtract(const Duration(hours: 2)),
+        updatedAt: now.subtract(const Duration(hours: 2)),
+        diaryType: DiaryType.aiChat,
+      ),
+      DiaryEntry(
+        id: 'dummy_2',
+        title: '조금 힘들었던 하루',
+        content: '일이 많아서 조금 스트레스를 받았지만, 그래도 잘 버텨냈어요. 내일은 더 좋을 거예요.',
+        emotions: ['걱정', '희망'],
+        emotionIntensities: {'걱정': 6, '희망': 7},
+        userId: userId,
+        createdAt: now.subtract(const Duration(days: 1)),
+        updatedAt: now.subtract(const Duration(days: 1)),
+        diaryType: DiaryType.free,
+      ),
+      DiaryEntry(
+        id: 'dummy_3',
+        title: '새로운 도전',
+        content: '새로운 프로젝트를 시작하게 되어 설레고 기대됩니다. 열심히 해보겠어요!',
+        emotions: ['설렘', '기대'],
+        emotionIntensities: {'설렘': 9, '기대': 8},
+        userId: userId,
+        createdAt: now.subtract(const Duration(days: 2)),
+        updatedAt: now.subtract(const Duration(days: 2)),
+        diaryType: DiaryType.free,
+      ),
+      DiaryEntry(
+        id: 'dummy_4',
+        title: '감사한 마음',
+        content: '가족과 친구들이 있어서 감사해요. 오늘도 좋은 하루였습니다.',
+        emotions: ['감사', '기쁨'],
+        emotionIntensities: {'감사': 9, '기쁨': 8},
+        userId: userId,
+        createdAt: now.subtract(const Duration(days: 3)),
+        updatedAt: now.subtract(const Duration(days: 3)),
+        diaryType: DiaryType.free,
+      ),
+      DiaryEntry(
+        id: 'dummy_5',
+        title: '평온한 저녁',
+        content: '오늘은 특별한 일은 없었지만 마음이 평온했어요. 이런 날들도 소중해요.',
+        emotions: ['평온', '안도'],
+        emotionIntensities: {'평온': 8, '안도': 7},
+        userId: userId,
+        createdAt: now.subtract(const Duration(days: 4)),
+        updatedAt: now.subtract(const Duration(days: 4)),
+        diaryType: DiaryType.aiChat,
+      ),
+    ];
+  }
+
+  /// 일기 목록 새로고침
+  Future<void> refreshDiaryEntries(String userId) async {
+    print('=== refreshDiaryEntries 시작 ===');
+    state = state.copyWith(isLoading: true);
     
     try {
-      await _firestore
-          .collection('diaries')
-          .doc(entry.id)
-          .update(entry.toFirestore());
+      // 1. 먼저 더미 데이터 로드 (즉시 표시용)
+      final dummyEntries = _createDummyData(userId);
       
-      // 로컬 목록에서 해당 엔트리 찾아 업데이트
-      final index = state.diaryEntries.indexWhere((e) => e.id == entry.id);
-      if (index != -1) {
-        final newEntries = List<DiaryEntry>.from(state.diaryEntries);
-        newEntries[index] = entry;
-        state = state.copyWith(diaryEntries: newEntries);
+      // 2. Firebase에서 실제 데이터 시도
+      List<DiaryEntry> dbEntries = [];
+      try {
+        print('Firebase에서 데이터 가져오기 시도...');
+        final snapshot = await _firestore
+            .collection('diaries')
+            .where('userId', isEqualTo: userId)
+            .orderBy('createdAt', descending: true)
+            .get();
+        
+        dbEntries = snapshot.docs.map((doc) => DiaryEntry.fromFirestore(doc)).toList();
+        print('Firebase에서 ${dbEntries.length}개 일기 가져옴');
+      } catch (dbError) {
+        print('Firebase 오류: $dbError');
+        // DB 실패해도 더미 데이터는 표시
       }
       
-      return true;
+      // 3. 병합 (DB 데이터 + 중복되지 않는 더미 데이터)
+      final allEntries = <DiaryEntry>[
+        ...dbEntries,
+        ...dummyEntries.where((dummy) => !dbEntries.any((db) => db.id == dummy.id)),
+      ];
+      
+      // 4. 날짜순 정렬
+      allEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      
+      // 5. 상태 업데이트
+      state = state.copyWith(
+        diaryEntries: allEntries,
+        filteredEntries: allEntries,
+        isLoading: false,
+        errorMessage: null,
+        isOffline: dbEntries.isEmpty && dummyEntries.isNotEmpty,
+      );
+      
+      print('총 ${allEntries.length}개 일기 로드 완료');
+      
     } catch (e) {
-      _setError('일기 수정에 실패했습니다: $e');
-      return false;
-    } finally {
-      _setLoading(false);
+      print('예상치 못한 오류: $e');
+      // 오류 발생 시에도 더미 데이터는 표시
+      final dummyEntries = _createDummyData(userId);
+      state = state.copyWith(
+        diaryEntries: dummyEntries,
+        filteredEntries: dummyEntries,
+        isLoading: false,
+        errorMessage: null,
+        isOffline: true,
+      );
     }
+  }
+
+  /// 일기 생성
+  Future<void> createDiaryEntry(DiaryEntry entry) async {
+    try {
+      await _firestore.collection('diaries').doc(entry.id).set(entry.toFirestore());
+      
+      // 로컬 상태 업데이트
+      final updatedEntries = [entry, ...state.diaryEntries];
+      updatedEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      
+      state = state.copyWith(
+        diaryEntries: updatedEntries,
+        filteredEntries: updatedEntries,
+      );
+      
+      print('일기 생성 완료: ${entry.id}');
+    } catch (e) {
+      print('일기 생성 실패: $e');
+      throw e;
+    }
+  }
+
+  /// 검색 및 필터링
+  void searchAndFilter({
+    String? searchQuery,
+    Map<String, dynamic>? filters,
+    String? sortBy,
+  }) {
+    var filteredEntries = List<DiaryEntry>.from(state.diaryEntries);
+    
+    // 검색 적용
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      filteredEntries = filteredEntries.where((entry) =>
+          entry.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          entry.content.toLowerCase().contains(searchQuery.toLowerCase())).toList();
+    }
+    
+    // 감정 필터 적용
+    if (filters != null && filters['emotions'] != null) {
+      final emotionFilters = filters['emotions'] as List<String>;
+      if (emotionFilters.isNotEmpty) {
+        filteredEntries = filteredEntries.where((entry) =>
+            entry.emotions.any((emotion) => emotionFilters.contains(emotion))).toList();
+      }
+    }
+    
+    // 정렬 적용
+    if (sortBy != null) {
+      switch (sortBy) {
+        case 'date':
+          filteredEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          break;
+        case 'emotion':
+          filteredEntries.sort((a, b) => a.emotions.first.compareTo(b.emotions.first));
+          break;
+      }
+    }
+    
+    state = state.copyWith(filteredEntries: filteredEntries);
   }
 
   /// 일기 삭제
-  Future<bool> deleteDiaryEntry(String entryId) async {
-    _setLoading(true);
-    _clearError();
-    
+  Future<void> deleteDiaryEntry(String entryId) async {
     try {
-      await _firestore
-          .collection('diaries')
-          .doc(entryId)
-          .delete();
+      await _firestore.collection('diaries').doc(entryId).delete();
       
-      // 로컬 목록에서 해당 엔트리 제거
-      final newEntries = List<DiaryEntry>.from(state.diaryEntries)
-        ..removeWhere((e) => e.id == entryId);
-      state = state.copyWith(diaryEntries: newEntries);
+      final updatedEntries = state.diaryEntries.where((entry) => entry.id != entryId).toList();
       
-      return true;
-    } catch (e) {
-      _setError('일기 삭제에 실패했습니다: $e');
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  /// 특정 일기 가져오기
-  Future<DiaryEntry?> getDiaryEntry(String entryId) async {
-    try {
-      final DocumentSnapshot doc = await _firestore
-          .collection('diaries')
-          .doc(entryId)
-          .get();
-      
-      if (doc.exists) {
-        return DiaryEntry.fromFirestore(doc);
-      }
-      return null;
-    } catch (e) {
-      _setError('일기를 가져오는데 실패했습니다: $e');
-      return null;
-    }
-  }
-
-  /// 감정별 일기 필터링
-  List<DiaryEntry> getDiaryEntriesByEmotion(String emotion) {
-    return state.diaryEntries.where((entry) => 
-      entry.emotions.contains(emotion)
-    ).toList();
-  }
-
-  /// 날짜별 일기 필터링
-  List<DiaryEntry> getDiaryEntriesByDate(DateTime date) {
-    return state.diaryEntries.where((entry) {
-      final entryDate = DateTime(
-        entry.createdAt.year,
-        entry.createdAt.month,
-        entry.createdAt.day,
+      state = state.copyWith(
+        diaryEntries: updatedEntries,
+        filteredEntries: updatedEntries,
       );
-      final targetDate = DateTime(date.year, date.month, date.day);
-      return entryDate.isAtSameMomentAs(targetDate);
-    }).toList();
+      
+      print('일기 삭제 완료: $entryId');
+    } catch (e) {
+      print('일기 삭제 실패: $e');
+      throw e;
+    }
   }
 
-  /// 현재 편집 중인 일기 설정
-  void setCurrentEntry(DiaryEntry? entry) {
-    state = state.copyWith(currentEntry: entry);
-  }
-
-  /// 로딩 상태 설정
-  void _setLoading(bool value) {
-    state = state.copyWith(isLoading: value);
-  }
-
-  /// 에러 메시지 설정
-  void _setError(String message) {
-    state = state.copyWith(errorMessage: message);
-  }
-
-  /// 에러 메시지 초기화
-  void _clearError() {
-    state = state.copyWith(errorMessage: null);
-  }
-
-  /// 에러 메시지 수동 초기화 (UI에서 호출)
-  void clearError() {
-    _clearError();
+  /// 일기 조회
+  DiaryEntry? getDiaryEntry(String entryId) {
+    return state.diaryEntries.firstWhere(
+      (entry) => entry.id == entryId,
+      orElse: () => throw Exception('일기를 찾을 수 없습니다: $entryId'),
+    );
   }
 }
 
-/// DiaryProvider를 위한 Riverpod provider
+/// DiaryProvider 인스턴스
 final diaryProvider = StateNotifierProvider<DiaryProvider, DiaryState>((ref) {
   return DiaryProvider();
 });
