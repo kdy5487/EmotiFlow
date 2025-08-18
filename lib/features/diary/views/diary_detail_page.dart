@@ -25,7 +25,7 @@ class DiaryDetailPage extends ConsumerStatefulWidget {
 }
 
 class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
-  double _mediaHeight = 180;
+  double _gridItemHeight = 120;
   @override
   Widget build(BuildContext context) {
     // Riverpod Provider를 사용해서 일기 데이터 가져오기
@@ -112,15 +112,15 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             ],
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildDiaryHeader(diaryEntry),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 if (diaryEntry.mediaCount > 0) ...[
-                  _buildCompactMedia(diaryEntry),
-                  const SizedBox(height: 8),
+                  _buildMediaGrid(diaryEntry),
+                  const SizedBox(height: 4),
                 ],
                 _buildDiaryContent(diaryEntry),
               ],
@@ -135,7 +135,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
   Widget _buildDiaryHeader(DiaryEntry entry) {
     return EmotiCard(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -150,7 +150,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -167,7 +167,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
               ],
             ),
             if (entry.emotions.isNotEmpty) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               _buildInlineEmotions(entry),
             ],
           ],
@@ -176,18 +176,32 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     );
   }
 
-  /// 간결한 미디어 섹션 (첫 1~3장 썸네일)
-  Widget _buildCompactMedia(DiaryEntry entry) {
-    final files = entry.mediaFiles.take(3).toList();
+  /// 단순 미디어 그리드 (사진/그림 구분 없이)
+  Widget _buildMediaGrid(DiaryEntry entry) {
+    final files = entry.mediaFiles;
     return EmotiCard(
       child: Padding(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: _buildAnyImage(files.first.url, height: _mediaHeight),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+                childAspectRatio: 4 / 3,
+              ),
+              itemCount: files.length,
+              itemBuilder: (context, i) {
+                final url = files[i].url;
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: _buildAnyImage(url, height: _gridItemHeight),
+                );
+              },
             ),
             Row(
               children: [
@@ -195,24 +209,21 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                   icon: const Icon(Icons.remove),
                   onPressed: () {
                     setState(() {
-                      _mediaHeight = (_mediaHeight - 20).clamp(120, 300);
+                      _gridItemHeight = (_gridItemHeight - 10).clamp(90, 180);
                     });
                   },
                   tooltip: '작게',
                 ),
-                Text('${_mediaHeight.toInt()}px', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
+                Text('${_gridItemHeight.toInt()}px', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
                 IconButton(
                   icon: const Icon(Icons.add),
                   onPressed: () {
                     setState(() {
-                      _mediaHeight = (_mediaHeight + 20).clamp(120, 300);
+                      _gridItemHeight = (_gridItemHeight + 10).clamp(90, 180);
                     });
                   },
                   tooltip: '크게',
                 ),
-                const Spacer(),
-                if (files.length > 1)
-                  Text('더 보기 ${files.length - 1}', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
               ],
             ),
           ],
@@ -292,7 +303,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
   Widget _buildDiaryContent(DiaryEntry entry) {
     return EmotiCard(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         child: Text(
           entry.content,
           style: AppTypography.bodyLarge.copyWith(height: 1.5, color: AppColors.textPrimary),

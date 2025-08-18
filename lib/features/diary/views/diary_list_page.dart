@@ -13,6 +13,7 @@ import '../../../shared/widgets/inputs/emoti_text_field.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../core/providers/auth_provider.dart';
+import 'dart:io';
 
 /// 일기 목록 페이지
 class DiaryListPage extends ConsumerStatefulWidget {
@@ -454,13 +455,13 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   /// 일기 카드
   Widget _buildDiaryCard(DiaryEntry entry, int index) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 10),
       child: EmotiCard(
         child: InkWell(
           onTap: () => _navigateToDetail(entry),
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -492,7 +493,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                   ],
                 ),
                 
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 
                 // 제목
                 if (entry.title.isNotEmpty)
@@ -509,7 +510,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                     ),
                   ),
                 
-                // 내용 미리보기
+                // 내용/미디어 미리보기
                 Text(
                   entry.content,
                   style: AppTypography.bodyMedium.copyWith(
@@ -518,8 +519,20 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (entry.mediaCount > 0) ...[
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      height: 64,
+                      width: double.infinity,
+                      color: Colors.grey[200],
+                      child: _buildCardPreviewImage(entry),
+                    ),
+                  ),
+                ],
                 
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 
                 // 하단 정보 (태그, 미디어, AI 분석)
                 Row(
@@ -640,6 +653,24 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
           ),
         ],
       ),
+    );
+  }
+
+  /// 목록 카드용 프리뷰 이미지
+  Widget _buildCardPreviewImage(DiaryEntry entry) {
+    final url = entry.mediaFiles.first.url;
+    if (url.startsWith('http')) {
+      return Image.network(url, fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.grey),
+      );
+    }
+    if (url.startsWith('/') || url.startsWith('file:')) {
+      return Image.file(File(url), fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.grey),
+      );
+    }
+    return Image.asset(url, fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.grey),
     );
   }
 
