@@ -58,9 +58,28 @@ flutter run
 ```
 
 ### 환경 설정
-1. `lib/firebase_options.dart` 파일에 Firebase 설정 추가
-2. `lib/config/` 폴더에 API 키 및 환경 변수 설정
-3. Android/iOS 플랫폼별 설정 완료
+1. **환경 변수 설정**:
+   ```bash
+   # lib/config/env_config.template.dart 파일을 복사하여 env_config.dart로 이름 변경
+   cp lib/config/env_config.template.dart lib/config/env_config.dart
+   
+   # env_config.dart 파일에서 실제 API 키와 설정값들을 입력
+   ```
+
+2. **필요한 API 키들**:
+   - Firebase Project ID
+   - Firebase API Keys (Android/iOS)
+   - Google OAuth Client IDs
+   - OpenAI API Key (향후 추가 예정)
+
+3. **플랫폼별 설정**:
+   - Android: `android/app/google-services.json` (Firebase Console에서 다운로드)
+   - iOS: `ios/Runner/GoogleService-Info.plist` (Firebase Console에서 다운로드)
+
+4. **보안 주의사항**:
+   - `lib/config/env_config.dart` 파일은 Git에 커밋되지 않습니다
+   - API 키가 포함된 파일들은 `.gitignore`에 등록되어 있습니다
+   - 프로덕션 환경에서는 별도의 환경 변수 관리 시스템을 사용하세요
 
 ## 📚 문서
 

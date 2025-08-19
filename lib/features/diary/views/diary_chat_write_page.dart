@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../shared/widgets/buttons/emoti_button.dart';
-import '../../../core/ai/openai/openai_service.dart';
+import '../../../core/ai/gemini/gemini_service.dart';
 import '../models/diary_entry.dart';
 import '../viewmodels/diary_write_view_model.dart';
 import '../providers/diary_provider.dart';
@@ -24,7 +24,9 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   
   bool _isTyping = false;
   bool _showResult = false;
-  OpenAIAnalysisResult? _lastAnalysis;
+  String? _selectedEmotion;
+  bool _emotionSelected = false;
+  List<String> _conversationHistory = [];
 
   @override
   void initState() {
@@ -41,26 +43,42 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     super.dispose();
   }
 
-  /// 새 대화 시작
-  void _startNewConversation() {
+  /// 새 대화 시작 - 감정 선택 우선
+  void _startNewConversation() async {
     final viewModel = ref.read(diaryWriteProvider.notifier);
     viewModel.resetForm();
     viewModel.setIsChatMode(true);
     setState(() {
       _showResult = false;
-      _lastAnalysis = null;
+      _selectedEmotion = null;
+      _emotionSelected = false;
+      _conversationHistory.clear();
     });
     _messageController.clear();
     
-    // AI 첫 메시지 추가
-    final initialMessage = ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      content: '안녕하세요! 오늘 하루는 어떠셨나요? 편하게 이야기해주세요.',
-      isFromAI: true,
-      timestamp: DateTime.now(),
-    );
-    
-    viewModel.addChatMessage(initialMessage);
+    // Gemini AI로 감정 선택 초기 질문 생성
+    try {
+      final emotionPrompt = await GeminiService.instance.generateEmotionSelectionPrompt();
+      
+      final initialMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        content: emotionPrompt,
+        isFromAI: true,
+        timestamp: DateTime.now(),
+      );
+      
+      viewModel.addChatMessage(initialMessage);
+    } catch (e) {
+      // Fallback 메시지
+      final initialMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        content: '안녕하세요! 오늘 하루는 어뭇셨나요? 어떤 감정을 느끼고 계신지 궁금해요. 😊',
+        isFromAI: true,
+        timestamp: DateTime.now(),
+      );
+      
+      viewModel.addChatMessage(initialMessage);
+    }
   }
 
   /// 메시지 전송
@@ -79,19 +97,40 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     );
     
     viewModel.addChatMessage(userMessage);
+    _conversationHistory.add(message);
     _messageController.clear();
     
     // AI 응답 생성
     setState(() => _isTyping = true);
     
     try {
-      final chatHistory = ref.read(diaryWriteProvider).chatHistory;
-      final aiResponse = await OpenAIService.instance.generateChatReply(
-        history: chatHistory,
-        userMessage: message,
-      );
+      String aiResponse;
       
-      if (aiResponse != null && aiResponse.isNotEmpty) {
+      if (!_emotionSelected) {
+        // 감정이 선택되지 않은 경우, 감정 기반 질문 생성
+        aiResponse = await GeminiService.instance.generateEmotionBasedQuestion(
+          _selectedEmotion ?? '평온',
+          message,
+          _conversationHistory,
+        );
+        
+        // 감정이 선택되었는지 확인
+        if (_isEmotionSelection(message)) {
+          setState(() {
+            _emotionSelected = true;
+            _selectedEmotion = _extractEmotionFromMessage(message);
+          });
+        }
+      } else {
+        // 감정이 선택된 경우, 일반적인 대화 응답
+        aiResponse = await GeminiService.instance.generateEmotionBasedQuestion(
+          _selectedEmotion!,
+          message,
+          _conversationHistory,
+        );
+      }
+      
+      if (aiResponse.isNotEmpty) {
         final aiMessage = ChatMessage(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           content: aiResponse,
@@ -100,292 +139,223 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
         );
         
         viewModel.addChatMessage(aiMessage);
+        _conversationHistory.add(aiResponse);
       }
     } catch (e) {
       print('AI 응답 생성 실패: $e');
       
-      // 폴백 응답
-      final fallbackMessage = ChatMessage(
+      // Fallback 응답
+      final fallbackResponse = _emotionSelected 
+          ? '흥미로운 이야기네요! 더 자세히 들려주세요.'
+          : '어떤 감정을 느끼고 계신지 더 구체적으로 말씀해주세요.';
+      
+      final aiMessage = ChatMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        content: '죄송해요, 잠시 문제가 있었어요. 계속 이야기해주세요.',
+        content: fallbackResponse,
         isFromAI: true,
         timestamp: DateTime.now(),
       );
       
-      viewModel.addChatMessage(fallbackMessage);
+      viewModel.addChatMessage(aiMessage);
+      _conversationHistory.add(fallbackResponse);
     } finally {
       setState(() => _isTyping = false);
+      _scrollToBottom();
     }
   }
 
-  /// 대화 요약 생성 및 결과 보기
-  Future<void> _summarizeAndShowResult() async {
-    final state = ref.read(diaryWriteProvider);
-    if (state.chatHistory.isEmpty) return;
+  /// 감정 선택 여부 확인
+  bool _isEmotionSelection(String message) {
+    final emotionKeywords = [
+      '기쁨', '기쁘', '행복', '즐거', '신나',
+      '슬픔', '슬프', '우울', '속상', '눈물',
+      '분노', '화나', '짜증', '열받', '화',
+      '평온', '차분', '고요', '안정', '편안',
+      '설렘', '설레', '기대', '떨리', '긴장',
+      '걱정', '불안', '초조', '무서',
+      '감사', '고마', '은혜', '축복',
+      '지루함', '심심', '따분', '재미없'
+    ];
+    
+    return emotionKeywords.any((keyword) => message.contains(keyword));
+  }
+
+  /// 메시지에서 감정 추출
+  String _extractEmotionFromMessage(String message) {
+    if (message.contains('기쁘') || message.contains('행복') || message.contains('즐거') || message.contains('신나')) {
+      return '기쁨';
+    } else if (message.contains('슬프') || message.contains('우울') || message.contains('속상')) {
+      return '슬픔';
+    } else if (message.contains('화나') || message.contains('짜증') || message.contains('열받')) {
+      return '분노';
+    } else if (message.contains('차분') || message.contains('고요') || message.contains('안정')) {
+      return '평온';
+    } else if (message.contains('설레') || message.contains('기대') || message.contains('떨리')) {
+      return '설렘';
+    } else if (message.contains('걱정') || message.contains('불안') || message.contains('초조')) {
+      return '걱정';
+    } else if (message.contains('감사') || message.contains('고마') || message.contains('은혜')) {
+      return '감사';
+    } else if (message.contains('지루') || message.contains('심심') || message.contains('따분')) {
+      return '지루함';
+    }
+    return '평온';
+  }
+
+  /// 일기 완성 및 요약 생성
+  Future<void> _completeDiary() async {
+    if (_conversationHistory.isEmpty) return;
+    
     setState(() => _isTyping = true);
+    
     try {
-      final analysis = await OpenAIService.instance.analyzeDiaryFromChat(
-        history: state.chatHistory,
+      final selectedEmotion = _selectedEmotion ?? '평온';
+      final diarySummary = await GeminiService.instance.generateDiarySummary(
+        _conversationHistory,
+        selectedEmotion,
       );
-      if (analysis != null) {
-        _lastAnalysis = analysis;
-        // 프리뷰 표시용으로 상태 업데이트
-        final vm = ref.read(diaryWriteProvider.notifier);
-        vm.updateTitle(analysis.title);
-        vm.updateContent(analysis.content);
-        vm.updateSelectedEmotions(analysis.emotions);
-        setState(() => _showResult = true);
-      }
+      
+      final summaryMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        content: '📝 **오늘의 일기 요약**\n\n$diarySummary',
+        isFromAI: true,
+        timestamp: DateTime.now(),
+      );
+      
+      final viewModel = ref.read(diaryWriteProvider.notifier);
+      viewModel.addChatMessage(summaryMessage);
+      
+      setState(() {
+        _showResult = true;
+      });
+      
+      _scrollToBottom();
+    } catch (e) {
+      print('일기 요약 생성 실패: $e');
+      
+      final fallbackSummary = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        content: '📝 **오늘의 일기 요약**\n\n오늘 하루도 수고하셨습니다. 감정을 정리하는 것은 좋은 습관이에요.',
+        isFromAI: true,
+        timestamp: DateTime.now(),
+      );
+      
+      final viewModel = ref.read(diaryWriteProvider.notifier);
+      viewModel.addChatMessage(fallbackSummary);
+      
+      setState(() {
+        _showResult = true;
+      });
     } finally {
       setState(() => _isTyping = false);
     }
   }
 
-  /// 텍스트에서 감정 분석
-  List<String> _analyzeEmotionsFromText(String text) {
-    final lowerText = text.toLowerCase();
-    final emotions = <String>[];
-    
-    if (lowerText.contains('기쁘') || lowerText.contains('행복') || lowerText.contains('좋아')) {
-      emotions.add('기쁨');
-    }
-    if (lowerText.contains('슬프') || lowerText.contains('우울') || lowerText.contains('힘들')) {
-      emotions.add('슬픔');
-    }
-    if (lowerText.contains('화나') || lowerText.contains('분노') || lowerText.contains('짜증')) {
-      emotions.add('분노');
-    }
-    if (lowerText.contains('평온') || lowerText.contains('차분') || lowerText.contains('편안')) {
-      emotions.add('평온');
-    }
-    if (lowerText.contains('설렘') || lowerText.contains('기대') || lowerText.contains('떨림')) {
-      emotions.add('설렘');
-    }
-    if (lowerText.contains('걱정') || lowerText.contains('불안') || lowerText.contains('긴장')) {
-      emotions.add('걱정');
-    }
-    
-    return emotions.isEmpty ? ['평온'] : emotions;
-  }
-
-  /// 일기 저장
-  Future<void> _saveDiary() async {
-    final authState = ref.read(authProvider);
-    final userId = authState.user?.uid ?? 'demo_user';
-    final state = ref.read(diaryWriteProvider);
-    
-    try {
-      // 요약이 없으면 먼저 생성
-      if (_lastAnalysis == null) {
-        await _summarizeAndShowResult();
-      }
-      final analysis = _lastAnalysis;
-      if (analysis == null) throw '요약 생성 실패';
-      
-      // 일기 엔트리 직접 구성 (요약 본문/제목 사용)
-      final entry = DiaryEntry(
-        userId: userId,
-        title: analysis.title,
-        content: analysis.content,
-        emotions: analysis.emotions,
-        emotionIntensities: analysis.emotionIntensities,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        aiAnalysis: analysis.aiAnalysis,
-        chatHistory: state.chatHistory,
-        diaryType: DiaryType.aiChat,
-      );
-      
-      final diaryNotifier = ref.read(diaryProvider.notifier);
-      await diaryNotifier.createDiaryEntry(entry);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('AI 대화 일기가 저장되었습니다!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        context.pop();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('저장 실패: $e'),
-            backgroundColor: Colors.red,
-          ),
+  /// 스크롤을 하단으로 이동
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
         );
       }
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(diaryWriteProvider);
+    final chatState = ref.watch(diaryWriteProvider);
+    final chatHistory = chatState.chatHistory;
     
     return Scaffold(
-      resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: const Text(
-          'AI와 대화하기',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: AppColors.primary,
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-        ),
+        title: const Text('AI와 일기 작성'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
-          // 저장(요약) 버튼을 앱바에 배치
-          IconButton(
-            onPressed: _isTyping ? null : _summarizeAndShowResult,
-            icon: const Icon(Icons.check_circle, color: Colors.white),
-            tooltip: '요약 보기',
-          ),
-          IconButton(
-            onPressed: _startNewConversation,
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            tooltip: '새 대화 시작',
-          ),
+          if (_emotionSelected && !_showResult)
+            TextButton(
+              onPressed: _completeDiary,
+              child: const Text('일기 완성'),
+            ),
         ],
       ),
-      body: _showResult
-          ? _buildResultFullScreen(state)
-          : GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              child: Column(
+      body: Column(
+        children: [
+          // 감정 선택 상태 표시
+          if (_selectedEmotion != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              color: AppColors.primary.withOpacity(0.1),
+              child: Row(
                 children: [
-                  // 대화 영역
-                  Expanded(
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      reverse: true, // 카카오톡 스타일
-                      padding: const EdgeInsets.all(16),
-                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                      itemCount: state.chatHistory.reversed.length + (_isTyping ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        final messages = state.chatHistory.reversed.toList();
-                        if (_isTyping && index == 0) {
-                          return _buildTypingIndicator();
-                        }
-                        final messageIndex = _isTyping ? index - 1 : index;
-                        final message = messages[messageIndex];
-                        return _buildChatBubble(message);
-                      },
+                  Icon(Icons.emoji_emotions, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    '선택된 감정: $_selectedEmotion',
+                    style: AppTypography.bodyLarge.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  // 입력 영역
-                  SafeArea(top: false, child: _buildInputSection()),
                 ],
               ),
             ),
-    );
-  }
-
-  /// 결과 전체 화면
-  Widget _buildResultFullScreen(DiaryWriteState state) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        child: _buildResultSection(state),
-      ),
-    );
-  }
-
-  /// 채팅 버블
-  Widget _buildChatBubble(ChatMessage message) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        mainAxisAlignment: message.isFromAI 
-            ? MainAxisAlignment.start 
-            : MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (message.isFromAI) ...[
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Icon(Icons.smart_toy, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 12),
-          ],
           
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: message.isFromAI ? Colors.grey[100] : AppColors.primary,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Text(
-                message.content,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: message.isFromAI ? Colors.black87 : Colors.white,
-                  height: 1.4,
-                ),
-              ),
+          // 채팅 메시지 목록
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              itemCount: chatHistory.length + (_isTyping ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == chatHistory.length && _isTyping) {
+                  return _buildTypingIndicator();
+                }
+                
+                final message = chatHistory[index];
+                return _buildMessageBubble(message);
+              },
             ),
           ),
           
-          if (!message.isFromAI) ...[
-            const SizedBox(width: 12),
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Icon(Icons.person, color: Colors.grey, size: 20),
-            ),
-          ],
+          // 메시지 입력 영역
+          _buildMessageInput(),
         ],
       ),
     );
   }
 
-  /// 타이핑 인디케이터
   Widget _buildTypingIndicator() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Icon(Icons.smart_toy, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(18),
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'AI가 답변 중',
-                  style: AppTypography.bodyMedium.copyWith(color: Colors.grey[600]),
-                ),
-                const SizedBox(width: 8),
                 SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: 20,
+                  height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.grey[400]!),
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'AI가 생각하고 있어요...',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.primary,
                   ),
                 ),
               ],
@@ -396,108 +366,64 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     );
   }
 
-  /// 결과 섹션
-  Widget _buildResultSection(DiaryWriteState state) {
-    final analysis = _lastAnalysis;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.green[50],
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.green[200]!),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-          Row(
-            children: [
-              Icon(Icons.auto_awesome, color: Colors.green[600], size: 24),
-              const SizedBox(width: 12),
-              Text(
-                'AI 대화 결과',
-                style: AppTypography.titleLarge.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green[800],
+  Widget _buildMessageBubble(ChatMessage message) {
+    final isAI = message.isFromAI;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: isAI ? MainAxisAlignment.start : MainAxisAlignment.end,
+        children: [
+          if (isAI) ...[
+            CircleAvatar(
+              backgroundColor: AppColors.primary,
+              child: Icon(Icons.psychology, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 8),
+          ],
+          
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isAI 
+                    ? AppColors.primary.withOpacity(0.1)
+                    : AppColors.primary,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                message.content,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: isAI ? AppColors.textPrimary : Colors.white,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // 제목
-          if ((analysis?.title ?? state.title).isNotEmpty) ...[
-            _buildResultItem('제목', analysis?.title ?? state.title, Icons.title),
-            const SizedBox(height: 12),
-          ],
-          
-          // 감정
-          if ((analysis?.emotions ?? state.selectedEmotions).isNotEmpty) ...[
-            _buildResultItem('감정', (analysis?.emotions ?? state.selectedEmotions).join(', '), Icons.favorite),
-            const SizedBox(height: 12),
-          ],
-          
-          // 내용 요약(실제 요약 본문 사용)
-          if ((analysis?.content ?? state.content).isNotEmpty) ...[
-            _buildResultItem('내용 요약', analysis?.content ?? state.content, Icons.description),
-            const SizedBox(height: 20),
-          ],
-          
-          // 저장 버튼
-          SizedBox(
-            width: double.infinity,
-            child: EmotiButton(
-              text: '일기로 저장하기',
-              onPressed: _saveDiary,
-              type: EmotiButtonType.primary,
-              icon: Icons.save,
             ),
           ),
+          
+          if (!isAI) ...[
+            const SizedBox(width: 8),
+            CircleAvatar(
+              backgroundColor: AppColors.secondary,
+              child: Icon(Icons.person, color: Colors.white, size: 20),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
 
-  /// 결과 아이템
-  Widget _buildResultItem(String label, String value, IconData icon) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: Colors.green[600], size: 20),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: AppTypography.bodySmall.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.green[700],
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: AppTypography.bodyMedium.copyWith(color: Colors.green[800]),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 입력 섹션
-  Widget _buildInputSection() {
+  Widget _buildMessageInput() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey[300]!)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -505,33 +431,31 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
             child: TextField(
               controller: _messageController,
               decoration: InputDecoration(
-                hintText: '메시지를 입력하세요...',
-                hintStyle: TextStyle(color: Colors.grey[400]),
+                hintText: _emotionSelected 
+                    ? '더 자세히 이야기해주세요...'
+                    : '감정을 표현해주세요...',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: BorderSide.none,
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide(color: AppColors.primary),
+                filled: true,
+                fillColor: Colors.grey[100],
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
-              maxLines: 4,
-              minLines: 1,
+              maxLines: null,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _sendMessage(),
             ),
           ),
-          const SizedBox(width: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: IconButton(
-              onPressed: _isTyping ? null : _sendMessage,
-              icon: const Icon(Icons.send, color: Colors.white, size: 20),
+          const SizedBox(width: 8),
+          IconButton(
+            onPressed: _sendMessage,
+            icon: Icon(Icons.send, color: AppColors.primary),
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.primary.withOpacity(0.1),
               padding: const EdgeInsets.all(12),
             ),
           ),
