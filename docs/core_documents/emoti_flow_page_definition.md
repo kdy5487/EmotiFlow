@@ -313,6 +313,19 @@ SplashScreen → Onboarding → Auth (Login/Signup) → MainApp
   - 새로운 대화 시작 시 기존 대화 초기화
   - 뒤로가기 시 저장 확인 다이얼로그 표시
 
+#### 실제 구현 (업데이트)
+- **AppBar**: 좌측 뒤로가기, 우측 `새 대화(새로고침)` 아이콘, `일기 완성` 텍스트 버튼. 저장은 결과 다이얼로그에서 수행됨.
+- **대화 흐름**:
+  - 진입 시 Gemini `generateEmotionSelectionPrompt()`로 첫 AI 메시지 생성 후 `chatHistory`에 추가.
+  - 사용자가 입력하면 `generateEmotionBasedQuestion()` 호출 → AI 응답을 추가하며 타이핑 인디케이터 표시.
+  - 첫 사용자 메시지 이후 하단에 감정 선택 UI(8가지 감정, 이모지/색상 포함)가 노출되며 탭 시 감정 기반 질문 1회 추가 전송.
+- **일기 완성**: `generateDiarySummary()`로 요약 생성 → 결과 다이얼로그에서
+  - 선택 감정 표시
+  - AI 그림 생성 버튼 제공(`generateImage()`) → 성공 시 이미지 표시, 실패 시 안내 문구
+  - `저장 후 완료` 선택 시 Firestore에 `DiaryType.aiChat`으로 저장(메타데이터: `isChatDiary`, `conversationCount`, `aiGeneratedImage`).
+- **UI 구성**: 말풍선 버블, 좌측 AI(아이콘), 우측 사용자. 타이핑 인디케이터, 자동 스크롤.
+- **오류 처리/폴백**: 네트워크/AI 오류 시 간단한 폴백 텍스트로 대체, 스낵바 안내.
+
 ### **DiaryFreeWritePage (자유형 일기 작성 페이지)**
 - **Route**: /diary/free-write
 - **목적**: 자유롭게 일기 작성
@@ -395,57 +408,98 @@ SplashScreen → Onboarding → Auth (Login/Signup) → MainApp
   - 저장 시 감정 분석 및 AI 피드백 제공
   - 공유 기능으로 일기 내보내기
 
+#### 실제 구현 (업데이트)
+- **AppBar**: 프라이머리 색 배경, 우측 `저장` 텍스트 버튼. 공유 버튼은 UI 정의서상 존재하나 실제 구현에는 미노출.
+- **입력 섹션**:
+  - 날짜 선택: 상단 카드에서 오늘/어제/직접선택(달력) 지원.
+  - 제목/내용: `EmotiTextField`, 내용은 글자수/단어수 카운터 제공. 리치 텍스트 서식은 미구현.
+  - 감정: 8가지 기본 감정 그리드, 최대 3개 선택, 선택된 감정에 한해 강도(1~10) 슬라이더 제공.
+  - 태그: 입력 → 칩으로 추가/삭제.
+  - 미디어: 사진(갤러리)·그림(드로잉 캔버스) 버튼 제공, 썸네일 가로 리스트 프리뷰. 음성은 TODO로 스낵바 안내.
+  - AI 분석 스위치: 토글만 제공(분석 호출은 후속 단계 연동 예정).
+  - 공개 설정 스위치.
+- **검증/저장**: 로그인 필요. 자유형은 최소 1개 감정, 제목, 내용이 있어야 저장. 저장 직후 미리보기 바텀시트 표시.
+- **자동 저장**: 상태에 `lastAutoSave` 타임스탬프를 기록하는 수준으로 반영되어 있으며, 주기적 백그라운드 저장 타이머는 미구현.
+
 ---
 
 ## 📋 일기 관리 페이지
 
 ### **DiaryListPage (일기 목록 페이지)**
 - **Route**: /diary/list
-- **목적**: 작성된 일기 목록 확인 및 관리
-- **Flutter 구조**:
+- **목적**: 작성된 일기 목록 확인 및 관리 (리스트/그리드 전환, 검색, 필터/정렬, 일괄 삭제)
+- **Flutter 구조 (요약)**:
   ```dart
   Scaffold(
-    appBar: EmotiAppBar(
-      title: '일기 목록',
-      actions: [
-        IconButton(
-          icon: Icon(Icons.filter_list),
-          onPressed: _showFilterOptions,
-        ),
-        IconButton(
-          icon: Icon(Icons.search),
-          onPressed: _showSearchBar,
-        ),
-      ],
+    appBar: AppBar(
+      leading: isDeleteMode ? CloseButton(onPressed: exitDeleteMode) : null,
+      title: isDeleteMode ? Text('${selectedCount}개 선택') : Text('일기 목록'),
+      actions: isDeleteMode
+        ? [IconButton(icon: Icon(Icons.delete_outline), onPressed: confirmAndDeleteSelected)]
+        : [
+            IconButton(icon: Icon(isSearchActive ? Icons.close : Icons.search), onPressed: toggleSearch),
+            IconButton(icon: Icon(isGridView ? Icons.view_list : Icons.grid_view), onPressed: toggleView),
+            PopupMenuButton(
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'filter', child: Row(children:[Icon(Icons.filter_list), SizedBox(width:8), Text('필터') ])),
+                PopupMenuItem(value: 'sort',   child: Row(children:[Icon(Icons.sort),       SizedBox(width:8), Text('정렬') ])),
+                PopupMenuItem(value: 'delete_mode', child: Row(children:[Icon(Icons.delete_outline, color: Colors.red), SizedBox(width:8), Text('삭제 모드', style: TextStyle(color: Colors.red)) ])),
+              ],
+              onSelected: handleMenuSelection,
+            ),
+          ],
     ),
-    body: Column(
-      children: [
-        SearchAndFilterSection(),
-        Expanded(
-          child: DiaryListView(),
-        ),
-      ],
-    ),
-    floatingActionButton: FloatingActionButton(
-      onPressed: () => context.go('/diary/free-write'),
-      child: Icon(Icons.add),
-    ),
-    bottomNavigationBar: EmotiBottomNavigationBar(currentIndex: 1),
+    body: Column(children: [
+      if (isSearchActive) SearchSection(),
+      if (hasActiveFilters) FilterTagsBar(),
+      Expanded(child: isGridView ? DiaryGridViewFromDB() : DiaryListViewFromDB()),
+    ]),
+    floatingActionButton: FloatingActionButton(onPressed: openWriteOptions, child: Icon(Icons.add)),
   )
   ```
 
-- **주요 UI 컴포넌트**:
-  - **AppBar**: "일기 목록" 제목, 필터 버튼, 검색 버튼
-  - **SearchAndFilterSection**: 검색바 및 필터 옵션 (날짜, 감정, 키워드)
-  - **DiaryListView**: 일기 카드 목록 (ListView.builder)
-  - **FloatingActionButton**: 새 일기 작성 버튼
-  - **BottomNavigationBar**: 메인 네비게이션 (일기 탭 활성화)
+- **주요 UI 컴포넌트 (업데이트)**:
+  - **AppBar (일반 모드)**:
+    - 좌측: 기본 (뒤로가기 없음)
+    - 제목: "일기 목록"
+    - 우측 액션:
+      - 검색 토글 버튼: 검색창 표시/닫기
+      - 뷰 전환 버튼: 리스트 ↔ 그리드 토글
+      - 설정 메뉴: 필터, 정렬, 삭제 모드 진입을 개별 항목으로 분리
+  - **AppBar (삭제 모드)**:
+    - 좌측: 닫기(X) → 삭제 모드 종료
+    - 제목: 선택된 수 실시간 표시 (예: "3개 선택")
+    - 우측: 휴지통 아이콘 → 선택 항목 일괄 삭제
+  - **SearchSection**: 제목/내용/태그 검색 입력, 즉시 반영, 클리어 버튼 제공
+  - **FilterTagsBar**: 활성화된 필터들의 태그 나열 및 개별 제거, "모두 지우기" 제공
+  - **DiaryListViewFromDB (리스트)**: Firestore StreamProvider 기반 실시간 목록, 카드형 가로 레이아웃
+  - **DiaryGridViewFromDB (그리드)**: Firestore StreamProvider 기반 2열 그리드, 사진 없는 텍스트 중심 카드 (가독성 우선)
+  - **삭제 선택 오버레이**: 삭제 모드에서 각 카드 우상단에 동그라미 선택 표시 (체크/해제)
 
-- **상호작용**:
-  - 일기 카드 터치 시 상세 페이지로 이동
-  - 검색 및 필터링으로 원하는 일기 찾기
-  - 새 일기 작성 버튼으로 작성 페이지로 이동
-  - 하단 네비게이션으로 다른 메인 페이지 이동
+#### 실제 구현 (세부 사항)
+- **검색**: AppBar 토글 → 상단 검색 입력 노출, 입력 즉시 필터 적용, 닫기 시 초기화.
+- **뷰 전환**: 리스트/그리드 토글 버튼. 그리드는 이미지 미포함, 텍스트 전용 카드.
+- **삭제 모드**: 우측 설정 메뉴 → 삭제 모드 진입. 카드마다 원형 체크박스 오버레이, 다중 선택 후 AppBar 휴지통으로 일괄 삭제. 제목에 선택 개수 표기.
+- **상태/오류**: 로딩/오류/빈 상태를 뷰 내부에서 직접 처리. 스낵바 피드백 제공.
+
+- **상호작용 (업데이트)**:
+  - 리스트/그리드 모두 동일한 DB 데이터(실시간 Stream) 사용
+  - 검색 버튼 탭 시 검색창 표시 → 입력 즉시 필터 반영, 닫기 버튼으로 검색 종료 및 초기화
+  - 설정 메뉴에서 필터/정렬을 각각 별도 다이얼로그로 진입 (통합이 아닌 분리 운영)
+  - 삭제 모드 진입 시:
+    - 모든 카드에 선택 동그라미 표시
+    - 카드 탭 또는 동그라미 탭으로 선택/해제
+    - AppBar에 선택 개수 표시, 휴지통으로 일괄 삭제 (확인 다이얼로그 후 진행)
+    - 좌측 X로 삭제 모드 종료 (선택 상태 초기화)
+
+- **오류/비어있음 상태 처리**:
+  - 데이터 없음: 인박스 아이콘과 안내 문구 표시, 작성 유도 버튼 노출 가능
+  - 오류 발생: 에러 아이콘/문구 및 재시도 안내
+
+- **성능/UX 고려 사항**:
+  - StreamProvider로 실시간 업데이트 (추가/삭제/수정 반영)
+  - 그리드 카드는 미디어 썸네일 생략하여 정보 밀도와 가독성 강화
+  - 스크롤 및 아이템 렌더링 최적화 (ListView/GridView.builder)
 
 ### **DiaryDetailPage (일기 상세 페이지)**
 - **Route**: /diary/detail/:id

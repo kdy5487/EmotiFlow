@@ -170,7 +170,7 @@ EmotiFlow 앱에서 사용하는 Google Gemini API 프롬프트들의 구조와 
 ### 목적
 사용자의 대화 내용과 감정을 바탕으로 맞춤형 이미지 생성을 위한 상세 프롬프트 작성
 
-### 프롬프트 구조
+### 프롬프트 구조 (실제 구현)
 ```
 다음 내용을 바탕으로 감정적이고 아름다운 일기 그림을 그려주세요:
 
@@ -186,6 +186,13 @@ EmotiFlow 앱에서 사용하는 Google Gemini API 프롬프트들의 구조와 
 
 이 그림은 사용자의 개인적인 감정과 경험을 표현하는 일기용 이미지입니다.
 ```
+
+### 엔드포인트/파라미터 (구현 기준)
+- 모델: `gemini-1.5-flash:generateContent`
+- 요청 바디: `contents.parts[].text`에 프롬프트 전달
+- generationConfig: `temperature: 0.8`, `maxOutputTokens: 2048`
+- 반환 처리: 첫 candidate → content.parts[0].text 추출(텍스트 URL 가정) → `Image.network` 미리보기
+- 실패 처리: null 반환 → 다이얼로그/스낵바 안내
 
 ### 키워드 추출 로직
 ```javascript
@@ -236,11 +243,12 @@ generationConfig: {
 
 ## 🔄 프롬프트 버전 관리
 
-### 현재 버전: v2.1 (2024-01-19)
+### 현재 버전: v2.2 (2025-01-)
 - 감정 선택 UI 재도입
 - 동적 대화 시작 로직 개선
 - AI 이미지 생성 프롬프트 추가
 - 응답 길이 최적화
+- Gemini 1.5 Flash 엔드포인트 명시 및 파라미터 고정
 
 ### 이전 버전 변경사항
 - v2.0: 자유형 대화 중심으로 전환
