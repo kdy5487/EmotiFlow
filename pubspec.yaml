@@ -32,6 +32,12 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   
+  # 환경 변수 관리
+  flutter_dotenv: ^5.1.0
+  
+  # Gemini AI
+  google_generative_ai: ^0.2.3
+  
   # 라우팅
   go_router: ^13.2.0
   
@@ -62,7 +68,8 @@ dependencies:
   
   # UI 관련 (나중에 추가)
   # flutter_svg: ^2.0.9
-  # cached_network_image: ^3.3.0
+  cached_network_image: ^3.3.0
+  image: ^4.1.7
   # shimmer: ^3.0.0
   
   # 차트 및 데이터 시각화 (나중에 추가)
@@ -146,3 +153,7 @@ flutter:
   #   - assets/images/
   #   - assets/icons/
   #   - assets/animations/
+  
+  # 환경 변수 파일
+  assets:
+    - .env

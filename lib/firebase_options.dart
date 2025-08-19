@@ -3,6 +3,7 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -26,10 +27,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -42,8 +40,7 @@ class DefaultFirebaseOptions {
         );
       case TargetPlatform.linux:
         throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
+          'DefaultFirebaseOptions are not supported for this platform.',
         );
       default:
         throw UnsupportedError(
@@ -52,11 +49,19 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBMnBUJIHt1OfNUHkrqnnFkIu0JsZPiLAM',
-    appId: '1:671101750738:android:b02c9cb5a465f450b8cc0b',
-    messagingSenderId: '671101750738',
-    projectId: 'emotiflow-b1ef1',
-    storageBucket: 'emotiflow-b1ef1.firebasestorage.app',
+  static FirebaseOptions get android => FirebaseOptions(
+    apiKey: dotenv.env['ANDROID_API_KEY'] ?? 'AIzaSyBMnBUJIHt1OfNUHkrqnnFkIu0JsZPiLAM',
+    appId: dotenv.env['ANDROID_APP_ID'] ?? '1:671101750738:android:b02c9cb5a465f450b8cc0b',
+    messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '671101750738',
+    projectId: dotenv.env['FIREBASE_PROJECT_ID'] ?? 'emotiflow-b1ef1',
+    storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET'] ?? 'emotiflow-b1ef1.firebasestorage.app',
+  );
+
+  static FirebaseOptions get ios => FirebaseOptions(
+    apiKey: dotenv.env['IOS_API_KEY'] ?? 'AIzaSyDpfunHvYCzj8T7IjWXsv1x5kymQBTPbDY',
+    appId: dotenv.env['IOS_APP_ID'] ?? '1:671101750738:ios:5a33c0e444adf1a4b8cc0b',
+    messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '671101750738',
+    projectId: dotenv.env['FIREBASE_PROJECT_ID'] ?? 'emotiflow-b1ef1',
+    storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET'] ?? 'emotiflow-b1ef1.firebasestorage.app',
   );
 }

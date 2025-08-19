@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
 import 'package:emoti_flow/core/services/firebase_service.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
@@ -11,6 +12,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   try {
+    // .env 파일 로드
+    await dotenv.load(fileName: ".env");
+    print('✅ .env 파일 로드 성공!');
+    print('🔑 Gemini API Key: ${dotenv.env['GEMINI_API_KEY']?.substring(0, 10)}...');
+    
     // Firebase 초기화
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,

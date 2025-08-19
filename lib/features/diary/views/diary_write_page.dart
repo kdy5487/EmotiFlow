@@ -196,9 +196,26 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
         Row(
           children: [
             Text(
-              '감정 선택 (복수 선택 가능)',
+              '감정 선택 (최대 3개까지 선택 가능)',
               style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
             ),
+            const Spacer(),
+            if (viewModel.selectedEmotions.length >= 3)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+                ),
+                child: Text(
+                  '최대 3개',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 8),

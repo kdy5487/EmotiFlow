@@ -122,6 +122,11 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                   _buildMediaGrid(diaryEntry),
                   const SizedBox(height: 4),
                 ],
+                // AI 생성 이미지 표시 (채팅 일기인 경우)
+                if (diaryEntry.diaryType == DiaryType.aiChat && diaryEntry.metadata?['aiGeneratedImage'] != null) ...[
+                  _buildAIGeneratedImage(diaryEntry),
+                  const SizedBox(height: 4),
+                ],
                 _buildDiaryContent(diaryEntry),
               ],
             ),
@@ -271,6 +276,45 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     }
     return Image.asset(url, width: width, height: height, fit: BoxFit.cover,
       errorBuilder: (_, __, ___) => Container(color: Colors.grey[200], child: const Icon(Icons.image)),
+    );
+  }
+
+  /// AI 생성 이미지 표시
+  Widget _buildAIGeneratedImage(DiaryEntry entry) {
+    final imageUrl = entry.metadata?['aiGeneratedImage'] as String?;
+    if (imageUrl == null) return const SizedBox.shrink();
+    
+    return EmotiCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.auto_awesome, color: AppColors.secondary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'AI가 그린 그림',
+                  style: AppTypography.titleMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.secondary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _buildAnyImage(
+                imageUrl,
+                width: double.infinity,
+                height: 300,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

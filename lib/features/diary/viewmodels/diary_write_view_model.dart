@@ -121,9 +121,10 @@ class DiaryWriteViewModel extends StateNotifier<DiaryWriteState> {
     _autoSave();
   }
 
-  /// 감정 선택/해제
+  /// 감정 선택/해제 (최대 3개까지 선택 가능)
   void toggleEmotion(String emotion) {
     if (state.selectedEmotions.contains(emotion)) {
+      // 이미 선택된 감정이면 해제
       final newEmotions = List<String>.from(state.selectedEmotions)..remove(emotion);
       final newIntensities = Map<String, int>.from(state.emotionIntensities)..remove(emotion);
       state = state.copyWith(
@@ -131,6 +132,11 @@ class DiaryWriteViewModel extends StateNotifier<DiaryWriteState> {
         emotionIntensities: newIntensities,
       );
     } else {
+      // 새로운 감정 선택 (최대 3개 제한)
+      if (state.selectedEmotions.length >= 3) {
+        // 이미 3개가 선택된 경우 선택 불가
+        return;
+      }
       final newEmotions = List<String>.from(state.selectedEmotions)..add(emotion);
       final newIntensities = Map<String, int>.from(state.emotionIntensities)..[emotion] = 5;
       state = state.copyWith(

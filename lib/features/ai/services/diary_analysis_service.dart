@@ -1,4 +1,4 @@
-import '../../../core/ai/openai/openai_service.dart';
+import '../../../core/ai/gemini/gemini_service.dart';
 import '../../diary/models/diary_entry.dart';
 
 /// AI 일기 분석 결과
@@ -28,7 +28,7 @@ class DiaryAnalysisResult {
   });
 }
 
-/// AI 일기 분석 및 위로 서비스
+/// AI 일기 분석 및 위로 서비스 (Gemini 기반)
 class DiaryAnalysisService {
   DiaryAnalysisService._();
   static final DiaryAnalysisService instance = DiaryAnalysisService._();
@@ -36,11 +36,11 @@ class DiaryAnalysisService {
   /// 단일 일기 분석
   Future<DiaryAnalysisResult> analyzeSingleEntry(DiaryEntry entry) async {
     try {
-      // OpenAI API를 사용한 분석 (실제 구현 시)
-      // final result = await OpenAIService.instance.analyzeDiaryEntry(entry);
+      // Gemini API를 사용한 분석
+      final selectedEmotion = entry.emotions.isNotEmpty ? entry.emotions.first : '평온';
+      final aiResponse = await GeminiService.instance.analyzeEmotionAndComfort(entry.content, selectedEmotion);
       
-      // 현재는 로컬 분석 사용
-      return _performLocalAnalysis(entry);
+      return _parseAIResponse(entry, aiResponse);
     } catch (e) {
       print('일기 분석 실패: $e');
       return _performLocalAnalysis(entry);
@@ -72,6 +72,26 @@ class DiaryAnalysisService {
     }
   }
 
+  /// AI 응답을 파싱하여 구조화된 결과 생성
+  DiaryAnalysisResult _parseAIResponse(DiaryEntry entry, String aiResponse) {
+    // AI 응답을 분석하여 구조화된 데이터로 변환
+    final emotions = _extractEmotions(entry.content);
+    final emotionScores = _calculateEmotionScores(emotions);
+    
+    return DiaryAnalysisResult(
+      summary: aiResponse.length > 100 ? aiResponse.substring(0, 100) + '...' : aiResponse,
+      keywords: _extractKeywords(entry.content),
+      emotionScores: emotionScores,
+      advice: aiResponse,
+      actionItems: _extractActionItems(aiResponse),
+      moodTrend: _determineMoodTrend(emotionScores),
+      stressLevel: _calculateStressLevel(emotionScores),
+      positiveAspects: _extractPositiveAspects(aiResponse),
+      concernAreas: _extractConcernAreas(aiResponse),
+      encouragement: aiResponse,
+    );
+  }
+
   /// 감정 패턴 분석
   Map<String, dynamic> analyzeEmotionPatterns(List<DiaryEntry> entries) {
     if (entries.isEmpty) {
@@ -97,461 +117,321 @@ class DiaryAnalysisService {
     }
 
     // 주요 감정 추출
-    final dominantEmotions = emotionCounts.entries
-        .where((e) => e.value > 1)
+    final sortedEntries = emotionCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final dominantEmotions = sortedEntries
+        .take(3)
         .map((e) => e.key)
-        .take(5)
         .toList();
 
-    // 감정 균형 분석
-    final positiveEmotions = ['기쁨', '감사', '평온', '설렘', '사랑'];
-    final negativeEmotions = ['슬픔', '분노', '걱정', '스트레스', '지루함'];
+    // 감정 트렌드 계산
+    final emotionTrends = <String, List<double>>{};
+    for (final emotion in dominantEmotions) {
+      emotionTrends[emotion] = emotionIntensities[emotion] ?? [];
+    }
+
+    // 감정 균형 계산
+    final positiveEmotions = ['기쁨', '감사', '평온', '설렘'];
+    final negativeEmotions = ['슬픔', '걱정', '분노', '지루함'];
     
     int positiveCount = 0;
     int negativeCount = 0;
     
-    for (final emotion in emotionCounts.keys) {
-      if (positiveEmotions.contains(emotion)) {
-        positiveCount += emotionCounts[emotion]!;
-      } else if (negativeEmotions.contains(emotion)) {
-        negativeCount += emotionCounts[emotion]!;
+    for (final entry in entries) {
+      for (final emotion in entry.emotions) {
+        if (positiveEmotions.contains(emotion)) {
+          positiveCount++;
+        } else if (negativeEmotions.contains(emotion)) {
+          negativeCount++;
+        }
       }
     }
 
     String emotionBalance;
-    if (positiveCount > negativeCount * 1.5) {
+    if (positiveCount > negativeCount) {
       emotionBalance = 'positive';
-    } else if (negativeCount > positiveCount * 1.5) {
+    } else if (negativeCount > positiveCount) {
       emotionBalance = 'negative';
     } else {
-      emotionBalance = 'balanced';
+      emotionBalance = 'neutral';
     }
 
-    // 감정 안정성 계산 (변동성의 역수)
-    double totalVariance = 0.0;
-    int emotionTypeCount = 0;
-    
-    emotionIntensities.forEach((emotion, intensities) {
-      if (intensities.length > 1) {
-        final mean = intensities.reduce((a, b) => a + b) / intensities.length;
-        final variance = intensities
-            .map((x) => (x - mean) * (x - mean))
-            .reduce((a, b) => a + b) / intensities.length;
-        totalVariance += variance;
-        emotionTypeCount++;
+    // 감정 안정성 계산
+    double emotionStability = 0.0;
+    if (entries.length > 1) {
+      final emotionVariances = <double>[];
+      for (final emotion in dominantEmotions) {
+        final intensities = emotionIntensities[emotion] ?? [];
+        if (intensities.length > 1) {
+          final mean = intensities.reduce((a, b) => a + b) / intensities.length;
+          final variance = intensities.map((i) => (i - mean) * (i - mean)).reduce((a, b) => a + b) / intensities.length;
+          emotionVariances.add(variance);
+        }
       }
-    });
-
-    final emotionStability = emotionTypeCount > 0 
-        ? 1.0 - (totalVariance / emotionTypeCount / 25.0).clamp(0.0, 1.0)
-        : 0.5;
+      if (emotionVariances.isNotEmpty) {
+        emotionStability = 1.0 / (1.0 + emotionVariances.reduce((a, b) => a + b) / emotionVariances.length);
+      }
+    }
 
     return {
       'dominantEmotions': dominantEmotions,
-      'emotionTrends': emotionIntensities,
+      'emotionTrends': emotionTrends,
       'emotionBalance': emotionBalance,
       'emotionStability': emotionStability,
     };
   }
 
-  /// 스트레스 레벨 분석
-  double analyzeStressLevel(List<DiaryEntry> entries) {
-    if (entries.isEmpty) return 0.0;
-
-    final stressEmotions = ['걱정', '불안', '스트레스', '분노', '짜증'];
-    final calmEmotions = ['평온', '안정', '편안', '차분'];
-    
-    double stressScore = 0.0;
-    double calmScore = 0.0;
-    int totalEmotions = 0;
-
-    for (final entry in entries) {
-      for (final emotion in entry.emotions) {
-        final intensity = entry.emotionIntensities[emotion]?.toDouble() ?? 5.0;
-        
-        if (stressEmotions.contains(emotion)) {
-          stressScore += intensity;
-        } else if (calmEmotions.contains(emotion)) {
-          calmScore += intensity;
-        }
-        totalEmotions++;
-      }
-    }
-
-    if (totalEmotions == 0) return 0.0;
-
-    // 0-1 범위로 정규화
-    final normalizedStress = (stressScore / (stressScore + calmScore + 1)).clamp(0.0, 1.0);
-    return normalizedStress;
-  }
-
-  /// 로컬 단일 일기 분석
+  // 로컬 분석 메서드들
   DiaryAnalysisResult _performLocalAnalysis(DiaryEntry entry) {
-    final content = '${entry.title} ${entry.content}';
-    final keywords = _extractKeywords(content);
-    final emotionScores = entry.emotions.asMap().map(
-      (index, emotion) => MapEntry(
-        emotion,
-        entry.emotionIntensities[emotion]?.toDouble() ?? 5.0,
-      ),
-    );
-
-    final advice = _generateAdvice(entry);
-    final actionItems = _generateActionItems(entry);
-    final encouragement = _generateEncouragement(entry);
+    final emotions = _extractEmotions(entry.content);
+    final emotionScores = _calculateEmotionScores(emotions);
     
     return DiaryAnalysisResult(
-      summary: _generateSummary(entry),
-      keywords: keywords,
+      summary: '일기 분석이 완료되었습니다.',
+      keywords: _extractKeywords(entry.content),
       emotionScores: emotionScores,
-      advice: advice,
-      actionItems: actionItems,
-      moodTrend: _analyzeMoodTrend([entry]),
-      stressLevel: analyzeStressLevel([entry]),
-      positiveAspects: _findPositiveAspects(entry),
-      concernAreas: _findConcernAreas(entry),
-      encouragement: encouragement,
+      advice: '오늘 하루도 수고하셨습니다. 감정을 정리하는 것은 좋은 습관이에요.',
+      actionItems: ['감정 상태 점검하기', '긍정적 사고하기'],
+      moodTrend: _determineMoodTrend(emotionScores),
+      stressLevel: _calculateStressLevel(emotionScores),
+      positiveAspects: ['일기 작성 완료'],
+      concernAreas: [],
+      encouragement: '꾸준한 기록으로 더 나은 내일을 만들어가세요!',
     );
   }
 
-  /// 로컬 다중 일기 분석
   DiaryAnalysisResult _performMultipleAnalysis(List<DiaryEntry> entries) {
-    final allContent = entries.map((e) => '${e.title} ${e.content}').join(' ');
-    final keywords = _extractKeywords(allContent);
+    final patterns = analyzeEmotionPatterns(entries);
+    final dominantEmotions = patterns['dominantEmotions'] as List<String>;
     
-    // 감정 점수 집계
-    final emotionScores = <String, double>{};
-    final emotionCounts = <String, int>{};
+    return DiaryAnalysisResult(
+      summary: '${entries.length}개의 일기를 분석했습니다.',
+      keywords: _extractKeywordsFromMultiple(entries),
+      emotionScores: _calculateAverageEmotionScores(entries),
+      advice: _generateAdviceFromPatterns(patterns),
+      actionItems: _generateActionItemsFromPatterns(patterns),
+      moodTrend: _determineOverallMoodTrend(entries),
+      stressLevel: _calculateAverageStressLevel(entries),
+      positiveAspects: _extractPositiveAspectsFromPatterns(patterns),
+      concernAreas: _extractConcernAreasFromPatterns(patterns),
+      encouragement: '감정 패턴을 파악하는 것은 성장의 첫걸음입니다!',
+    );
+  }
+
+  // 헬퍼 메서드들
+  List<String> _extractEmotions(String text) {
+    final emotionKeywords = {
+      '기쁨': ['기쁘', '행복', '즐거', '신나', '웃'],
+      '슬픔': ['슬프', '우울', '속상', '눈물', '아프'],
+      '분노': ['화나', '짜증', '열받', '분노', '화'],
+      '평온': ['차분', '평온', '고요', '안정', '편안'],
+      '설렘': ['설레', '기대', '떨리', '긴장', '두근'],
+      '걱정': ['걱정', '불안', '긴장', '초조', '무서'],
+      '감사': ['감사', '고마', '은혜', '축복', '행운'],
+      '지루함': ['지루', '심심', '따분', '재미없', '단조'],
+    };
+
+    final foundEmotions = <String>[];
+    for (final entry in emotionKeywords.entries) {
+      for (final keyword in entry.value) {
+        if (text.contains(keyword)) {
+          foundEmotions.add(entry.key);
+          break;
+        }
+      }
+    }
+
+    return foundEmotions.isEmpty ? ['평온'] : foundEmotions;
+  }
+
+  Map<String, double> _calculateEmotionScores(List<String> emotions) {
+    final scores = <String, double>{};
+    for (final emotion in emotions) {
+      scores[emotion] = 7.0; // 기본 강도
+    }
+    return scores;
+  }
+
+  List<String> _extractKeywords(String text) {
+    // 간단한 키워드 추출 (실제로는 더 정교한 NLP 사용)
+    final words = text.split(' ');
+    return words.where((word) => word.length > 2).take(5).toList();
+  }
+
+  List<String> _extractActionItems(String text) {
+    // AI 응답에서 액션 아이템 추출
+    if (text.contains('해보세요') || text.contains('시도해보세요')) {
+      return ['AI 조언 실천하기'];
+    }
+    return ['감정 상태 점검하기'];
+  }
+
+  String _determineMoodTrend(Map<String, double> emotionScores) {
+    final positiveEmotions = ['기쁨', '감사', '평온', '설렘'];
+    final negativeEmotions = ['슬픔', '걱정', '분노', '지루함'];
+    
+    double positiveScore = 0;
+    double negativeScore = 0;
+    
+    for (final entry in emotionScores.entries) {
+      if (positiveEmotions.contains(entry.key)) {
+        positiveScore += entry.value;
+      } else if (negativeEmotions.contains(entry.key)) {
+        negativeScore += entry.value;
+      }
+    }
+    
+    if (positiveScore > negativeScore) {
+      return '긍정적';
+    } else if (negativeScore > positiveScore) {
+      return '부정적';
+    } else {
+      return '중립적';
+    }
+  }
+
+  double _calculateStressLevel(Map<String, double> emotionScores) {
+    final stressEmotions = ['걱정', '불안', '긴장', '초조'];
+    double stressScore = 0;
+    
+    for (final emotion in stressEmotions) {
+      stressScore += emotionScores[emotion] ?? 0;
+    }
+    
+    return stressScore / stressEmotions.length;
+  }
+
+  List<String> _extractPositiveAspects(String text) {
+    if (text.contains('좋') || text.contains('긍정')) {
+      return ['긍정적 사고'];
+    }
+    return ['일기 작성 완료'];
+  }
+
+  List<String> _extractConcernAreas(String text) {
+    if (text.contains('걱정') || text.contains('불안')) {
+      return ['감정 관리'];
+    }
+    return [];
+  }
+
+  // 다중 일기 분석 헬퍼 메서드들
+  List<String> _extractKeywordsFromMultiple(List<DiaryEntry> entries) {
+    final allKeywords = <String>[];
+    for (final entry in entries) {
+      allKeywords.addAll(_extractKeywords(entry.content));
+    }
+    return allKeywords.take(10).toList();
+  }
+
+  Map<String, double> _calculateAverageEmotionScores(List<DiaryEntry> entries) {
+    final emotionCounts = <String, List<double>>{};
     
     for (final entry in entries) {
       for (final emotion in entry.emotions) {
         final intensity = entry.emotionIntensities[emotion]?.toDouble() ?? 5.0;
-        emotionScores[emotion] = (emotionScores[emotion] ?? 0.0) + intensity;
-        emotionCounts[emotion] = (emotionCounts[emotion] ?? 0) + 1;
+        emotionCounts.putIfAbsent(emotion, () => []).add(intensity);
       }
     }
     
-    // 평균 계산
-    emotionScores.forEach((emotion, totalScore) {
-      emotionScores[emotion] = totalScore / emotionCounts[emotion]!;
+    final averageScores = <String, double>{};
+    emotionCounts.forEach((emotion, intensities) {
+      final average = intensities.reduce((a, b) => a + b) / intensities.length;
+      averageScores[emotion] = average;
     });
-
-    return DiaryAnalysisResult(
-      summary: _generateMultipleSummary(entries),
-      keywords: keywords,
-      emotionScores: emotionScores,
-      advice: _generateMultipleAdvice(entries),
-      actionItems: _generateMultipleActionItems(entries),
-      moodTrend: _analyzeMoodTrend(entries),
-      stressLevel: analyzeStressLevel(entries),
-      positiveAspects: _findMultiplePositiveAspects(entries),
-      concernAreas: _findMultipleConcernAreas(entries),
-      encouragement: _generateMultipleEncouragement(entries),
-    );
+    
+    return averageScores;
   }
 
-  /// 키워드 추출
-  List<String> _extractKeywords(String content) {
-    final keywords = <String>[];
-    final lowerContent = content.toLowerCase();
-    
-    // 감정 키워드
-    final emotionKeywords = ['기쁨', '슬픔', '분노', '평온', '설렘', '걱정', '감사', '사랑'];
-    for (final keyword in emotionKeywords) {
-      if (lowerContent.contains(keyword.toLowerCase())) {
-        keywords.add(keyword);
-      }
-    }
-    
-    // 활동 키워드
-    final activityKeywords = ['일', '가족', '친구', '운동', '여행', '공부', '취미'];
-    for (final keyword in activityKeywords) {
-      if (lowerContent.contains(keyword.toLowerCase())) {
-        keywords.add(keyword);
-      }
-    }
-    
-    return keywords.take(10).toList();
-  }
-
-  /// 요약 생성
-  String _generateSummary(DiaryEntry entry) {
-    if (entry.content.length <= 100) {
-      return entry.content;
-    }
-    return '${entry.content.substring(0, 100)}...';
-  }
-
-  /// 다중 일기 요약 생성
-  String _generateMultipleSummary(List<DiaryEntry> entries) {
-    final recentEntries = entries.take(3).toList();
-    final summaries = recentEntries.map((e) => e.title).join(', ');
-    return '최근 일기: $summaries 등 총 ${entries.length}개의 일기를 분석했습니다.';
-  }
-
-  /// 조언 생성
-  String _generateAdvice(DiaryEntry entry) {
-    final positiveEmotions = ['기쁨', '감사', '평온', '설렘'];
-    final negativeEmotions = ['슬픔', '분노', '걱정', '스트레스'];
-    
-    final hasPositive = entry.emotions.any((e) => positiveEmotions.contains(e));
-    final hasNegative = entry.emotions.any((e) => negativeEmotions.contains(e));
-    
-    if (hasPositive && !hasNegative) {
-      return '긍정적인 감정을 느끼고 계시네요! 이런 좋은 순간들을 더 자주 만들어보세요.';
-    } else if (hasNegative && !hasPositive) {
-      return '힘든 감정을 느끼고 계시는군요. 스스로에게 더 친절하게 대해주시고, 작은 기쁨을 찾아보세요.';
-    } else if (hasPositive && hasNegative) {
-      return '복합적인 감정을 느끼고 계시네요. 이는 자연스러운 것이니 자신을 이해해주세요.';
-    } else {
-      return '감정을 솔직하게 기록하는 것만으로도 큰 도움이 됩니다. 계속 이어가세요.';
-    }
-  }
-
-  /// 다중 일기 조언 생성
-  String _generateMultipleAdvice(List<DiaryEntry> entries) {
-    final patterns = analyzeEmotionPatterns(entries);
+  String _generateAdviceFromPatterns(Map<String, dynamic> patterns) {
     final balance = patterns['emotionBalance'] as String;
     final stability = patterns['emotionStability'] as double;
     
     if (balance == 'positive' && stability > 0.7) {
-      return '감정적으로 안정되고 긍정적인 상태를 잘 유지하고 계시네요. 현재의 좋은 습관들을 계속 이어가세요.';
+      return '안정적이고 긍정적인 감정 상태를 유지하고 계시네요!';
     } else if (balance == 'negative' && stability < 0.3) {
-      return '최근 감정적으로 어려운 시기를 보내고 계시는 것 같아요. 전문가의 도움을 받거나 신뢰할 수 있는 사람과 이야기해보세요.';
-    } else if (stability < 0.5) {
-      return '감정 변화가 큰 시기인 것 같아요. 규칙적인 생활과 충분한 휴식을 통해 안정을 찾아보세요.';
+      return '감정 변화가 큰 시기를 보내고 계시네요. 차분히 마음을 정리해보세요.';
     } else {
-      return '전반적으로 균형 잡힌 감정 상태를 보이고 계세요. 지금처럼 꾸준히 자기 돌봄을 실천해보세요.';
+      return '감정의 균형을 맞추는 것이 중요합니다.';
     }
   }
 
-  /// 실행 항목 생성
-  List<String> _generateActionItems(DiaryEntry entry) {
-    final items = <String>[];
-    
-    if (entry.emotions.contains('스트레스') || entry.emotions.contains('걱정')) {
-      items.add('깊게 숨쉬기 연습하기');
-      items.add('산책이나 가벼운 운동하기');
-    }
-    
-    if (entry.emotions.contains('슬픔')) {
-      items.add('좋아하는 음악 듣기');
-      items.add('신뢰하는 사람과 대화하기');
-    }
-    
-    if (entry.emotions.contains('기쁨') || entry.emotions.contains('감사')) {
-      items.add('이 순간을 기억하고 감사하기');
-      items.add('긍정적인 경험 더 만들어보기');
-    }
-    
-    // 기본 항목
-    if (items.isEmpty) {
-      items.addAll([
-        '충분한 수면 취하기',
-        '건강한 식사하기',
-        '자신에게 친절하게 대하기',
-      ]);
-    }
-    
-    return items.take(3).toList();
-  }
-
-  /// 다중 일기 실행 항목 생성
-  List<String> _generateMultipleActionItems(List<DiaryEntry> entries) {
-    final stressLevel = analyzeStressLevel(entries);
-    final patterns = analyzeEmotionPatterns(entries);
+  List<String> _generateActionItemsFromPatterns(Map<String, dynamic> patterns) {
     final balance = patterns['emotionBalance'] as String;
+    final stability = patterns['emotionStability'] as double;
     
-    final items = <String>[];
-    
-    if (stressLevel > 0.6) {
-      items.addAll([
-        '스트레스 관리 기법 연습하기',
-        '전문가 상담 고려하기',
-        '충분한 휴식 취하기',
-      ]);
-    } else if (balance == 'negative') {
-      items.addAll([
-        '긍정적인 활동 늘리기',
-        '사회적 지지망 활용하기',
-        '자기 돌봄 실천하기',
-      ]);
+    if (balance == 'negative') {
+      return ['긍정적 사고 연습하기', '스트레스 관리하기', '취미 활동하기'];
+    } else if (stability < 0.5) {
+      return ['감정 안정성 향상하기', '일상의 리듬 찾기'];
     } else {
-      items.addAll([
-        '현재의 좋은 습관 유지하기',
-        '새로운 도전 시도하기',
-        '감사 인식 늘리기',
-      ]);
-    }
-    
-    return items.take(3).toList();
-  }
-
-  /// 격려 메시지 생성
-  String _generateEncouragement(DiaryEntry entry) {
-    final encouragements = [
-      '오늘도 자신의 감정을 솔직하게 기록해주셔서 감사해요.',
-      '감정을 인정하고 표현하는 것은 용기 있는 일이에요.',
-      '매일 조금씩 성장하고 있는 자신을 인정해주세요.',
-      '힘든 순간도 지나갈 것이니 자신을 믿어보세요.',
-      '작은 변화도 의미 있는 발걸음이에요.',
-    ];
-    
-    return encouragements[DateTime.now().millisecond % encouragements.length];
-  }
-
-  /// 다중 일기 격려 메시지 생성
-  String _generateMultipleEncouragement(List<DiaryEntry> entries) {
-    final dayCount = entries.length;
-    
-    if (dayCount >= 7) {
-      return '일주일 이상 꾸준히 일기를 작성하고 계시네요! 정말 대단해요. 이런 노력이 분명 좋은 변화를 가져올 거예요.';
-    } else if (dayCount >= 3) {
-      return '며칠째 일기를 작성하고 계시는군요. 자기 성찰의 시간을 갖는 것은 정말 소중한 일이에요.';
-    } else {
-      return '일기 작성을 시작하신 것을 축하해요. 작은 시작이 큰 변화의 첫걸음이 될 수 있어요.';
+      return ['현재 상태 유지하기', '감정 기록 계속하기'];
     }
   }
 
-  /// 기분 트렌드 분석
-  String _analyzeMoodTrend(List<DiaryEntry> entries) {
+  String _determineOverallMoodTrend(List<DiaryEntry> entries) {
     if (entries.length < 2) return '데이터 부족';
     
-    // 최근 3개 일기의 감정 점수 평균 계산
     final recentEntries = entries.take(3).toList();
     final olderEntries = entries.skip(3).take(3).toList();
     
-    double recentScore = 0.0;
-    double olderScore = 0.0;
+    if (recentEntries.isEmpty || olderEntries.isEmpty) return '데이터 부족';
     
-    for (final entry in recentEntries) {
-      recentScore += _calculateEntryMoodScore(entry);
-    }
-    recentScore /= recentEntries.length;
+    final recentMood = _calculateAverageMood(recentEntries);
+    final olderMood = _calculateAverageMood(olderEntries);
     
-    if (olderEntries.isNotEmpty) {
-      for (final entry in olderEntries) {
-        olderScore += _calculateEntryMoodScore(entry);
-      }
-      olderScore /= olderEntries.length;
-      
-      if (recentScore > olderScore + 0.5) {
-        return '상승 추세';
-      } else if (recentScore < olderScore - 0.5) {
-        return '하락 추세';
-      } else {
-        return '안정적';
-      }
-    }
-    
-    return '안정적';
+    if (recentMood > olderMood + 1) return '개선';
+    else if (recentMood < olderMood - 1) return '악화';
+    else return '안정';
   }
 
-  /// 일기의 기분 점수 계산
-  double _calculateEntryMoodScore(DiaryEntry entry) {
-    final positiveEmotions = ['기쁨', '감사', '평온', '설렘', '사랑'];
-    final negativeEmotions = ['슬픔', '분노', '걱정', '스트레스'];
+  double _calculateAverageMood(List<DiaryEntry> entries) {
+    double totalMood = 0;
+    int count = 0;
     
-    double score = 5.0; // 중립
-    
-    for (final emotion in entry.emotions) {
-      final intensity = entry.emotionIntensities[emotion]?.toDouble() ?? 5.0;
-      
-      if (positiveEmotions.contains(emotion)) {
-        score += intensity * 0.1;
-      } else if (negativeEmotions.contains(emotion)) {
-        score -= intensity * 0.1;
+    for (final entry in entries) {
+      for (final emotion in entry.emotions) {
+        final intensity = entry.emotionIntensities[emotion]?.toDouble() ?? 5.0;
+        totalMood += intensity;
+        count++;
       }
     }
     
-    return score.clamp(0.0, 10.0);
+    return count > 0 ? totalMood / count : 5.0;
   }
 
-  /// 긍정적 측면 찾기
-  List<String> _findPositiveAspects(DiaryEntry entry) {
-    final aspects = <String>[];
+  double _calculateAverageStressLevel(List<DiaryEntry> entries) {
+    double totalStress = 0;
+    int count = 0;
     
-    if (entry.emotions.contains('기쁨')) {
-      aspects.add('기쁜 순간을 경험했어요');
-    }
-    if (entry.emotions.contains('감사')) {
-      aspects.add('감사할 일을 찾았어요');
-    }
-    if (entry.emotions.contains('평온')) {
-      aspects.add('마음의 평온을 느꼈어요');
-    }
-    if (entry.content.contains('성공') || entry.content.contains('달성')) {
-      aspects.add('목표를 달성했어요');
-    }
-    if (entry.content.contains('도움') || entry.content.contains('배움')) {
-      aspects.add('새로운 것을 배웠어요');
+    for (final entry in entries) {
+      totalStress += _calculateStressLevel(_calculateEmotionScores(entry.emotions));
+      count++;
     }
     
-    return aspects;
+    return count > 0 ? totalStress / count : 0.0;
   }
 
-  /// 다중 일기 긍정적 측면 찾기
-  List<String> _findMultiplePositiveAspects(List<DiaryEntry> entries) {
-    final aspects = <String>[];
-    
-    final totalPositiveEmotions = entries
-        .expand((e) => e.emotions)
-        .where((e) => ['기쁨', '감사', '평온', '설렘', '사랑'].contains(e))
-        .length;
-    
-    if (totalPositiveEmotions > entries.length) {
-      aspects.add('전반적으로 긍정적인 감정을 많이 경험하고 있어요');
-    }
-    
-    if (entries.length >= 5) {
-      aspects.add('꾸준한 일기 작성으로 자기 성찰을 실천하고 있어요');
-    }
-    
-    final aiChatEntries = entries.where((e) => e.diaryType == DiaryType.aiChat).length;
-    if (aiChatEntries > 0) {
-      aspects.add('AI와의 대화를 통해 새로운 관점을 얻고 있어요');
-    }
-    
-    return aspects;
-  }
-
-  /// 우려 영역 찾기
-  List<String> _findConcernAreas(DiaryEntry entry) {
-    final concerns = <String>[];
-    
-    if (entry.emotions.contains('스트레스')) {
-      concerns.add('스트레스 수준이 높아 보여요');
-    }
-    if (entry.emotions.contains('걱정')) {
-      concerns.add('걱정이 많으신 것 같아요');
-    }
-    if (entry.emotions.contains('슬픔')) {
-      concerns.add('슬픈 감정을 경험하고 있어요');
-    }
-    
-    return concerns;
-  }
-
-  /// 다중 일기 우려 영역 찾기
-  List<String> _findMultipleConcernAreas(List<DiaryEntry> entries) {
-    final concerns = <String>[];
-    
-    final stressLevel = analyzeStressLevel(entries);
-    if (stressLevel > 0.7) {
-      concerns.add('지속적인 높은 스트레스 수준');
-    }
-    
-    final patterns = analyzeEmotionPatterns(entries);
+  List<String> _extractPositiveAspectsFromPatterns(Map<String, dynamic> patterns) {
     final balance = patterns['emotionBalance'] as String;
-    if (balance == 'negative') {
-      concerns.add('부정적인 감정이 우세함');
+    if (balance == 'positive') {
+      return ['긍정적 감정 우세', '안정적인 감정 상태'];
     }
-    
+    return ['감정 인식 능력'];
+  }
+
+  List<String> _extractConcernAreasFromPatterns(Map<String, dynamic> patterns) {
+    final balance = patterns['emotionBalance'] as String;
     final stability = patterns['emotionStability'] as double;
-    if (stability < 0.3) {
-      concerns.add('감정 변화가 매우 큼');
+    
+    final concerns = <String>[];
+    if (balance == 'negative') {
+      concerns.add('부정적 감정 관리');
+    }
+    if (stability < 0.5) {
+      concerns.add('감정 안정성');
     }
     
-    return concerns;
+    return concerns.isEmpty ? ['감정 균형'] : concerns;
   }
 }

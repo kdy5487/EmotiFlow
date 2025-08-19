@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Google 로그인 중심의 인증 서비스 클래스
 class AuthService {
@@ -15,8 +16,8 @@ class AuthService {
       'email',
       'profile',
     ],
-    // 서버 클라이언트 ID를 명시적으로 설정 (필요시)
-    // serverClientId: 'YOUR_SERVER_CLIENT_ID',
+    // 서버 클라이언트 ID를 환경 변수에서 가져오기
+    serverClientId: dotenv.env['WEB_OAUTH_CLIENT_ID'] ?? '',
   );
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   

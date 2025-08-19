@@ -6,7 +6,7 @@
 |------|------|
 | **프로젝트명** | EmotiFlow (AI 기반 감정 일기 앱) |
 | **개발 기간** | 2주 |
-| **개발 도구** | Flutter + Firebase + OpenAI API |
+| **개발 도구** | Flutter + Firebase + Google Gemini API |
 | **목표** | AI와 함께하는 일상의 감정 파트너, 개인화된 감정 관리 및 성장 도구 |
 
 ---
@@ -79,11 +79,11 @@
 |----|---------------|-----------|----------|
 | **TECH-001** | Flutter 앱 개발 | Flutter SDK 3.16+ | 높음 |
 | **TECH-002** | Firebase 연동 | Firebase Auth, Firestore, Storage | 높음 |
-| **TECH-003** | OpenAI API 연동 | OpenAI GPT-4 API, 감정 분석 | 높음 |
+| **TECH-003** | Google Gemini API 연동 | Gemini 1.5 Flash, 감정 대화/요약/이미지 생성 | 높음 |
 | **TECH-004** | 차트 및 데이터 시각화 | fl_chart, syncfusion_flutter_charts | 높음 |
 | **TECH-005** | 그림 그리기 기능 | Custom Paint, Canvas API | 중간 |
 | **TECH-006** | 음원 재생 | audioplayers, just_audio | 중간 |
-| **TECH-007** | 이미지 생성 | OpenAI DALL-E API | 높음 |
+| **TECH-007** | 이미지 생성 | Google Gemini 1.5 Flash(generateContent) | 높음 |
 | **TECH-008** | 영상 제작 | video_player, ffmpeg | 낮음 |
 | **TECH-009** | 로컬 저장소 | SharedPreferences, Hive | 중간 |
 | **TECH-010** | HTTP 통신 | Dio, http | 높음 |
