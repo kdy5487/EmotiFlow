@@ -68,7 +68,8 @@ dependencies:
   
   # UI 관련 (나중에 추가)
   # flutter_svg: ^2.0.9
-  # cached_network_image: ^3.3.0
+  cached_network_image: ^3.3.0
+  image: ^4.1.7
   # shimmer: ^3.0.0
   
   # 차트 및 데이터 시각화 (나중에 추가)

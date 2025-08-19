@@ -148,24 +148,117 @@ ${hasHistory ? '''
     }
   }
 
-  /// AI 이미지 생성 (실제 이미지 URL 반환)
-  Future<String?> generateImage(String prompt) async {
+  /// AI 이미지 생성 (채팅 내용과 감정 기반 맞춤형 그림)
+  Future<String?> generateImage(String diarySummary, String? selectedEmotion, List<String> conversationHistory) async {
     try {
-      // 실제 이미지 생성 API 호출 (예: Unsplash API 또는 다른 이미지 생성 서비스)
-      // 현재는 더미 이미지 URL 반환
-      final dummyImages = [
-        'https://picsum.photos/seed/emotion1/400/400',
-        'https://picsum.photos/seed/emotion2/400/400',
-        'https://picsum.photos/seed/emotion3/400/400',
-        'https://picsum.photos/seed/emotion4/400/400',
-        'https://picsum.photos/seed/emotion5/400/400',
-      ];
+      // 채팅 내용과 감정을 바탕으로 상세한 프롬프트 생성
+      final detailedPrompt = _createDetailedImagePrompt(diarySummary, selectedEmotion, conversationHistory);
       
-      // 프롬프트 기반으로 랜덤 이미지 선택 (실제로는 AI가 생성한 이미지)
-      final randomIndex = prompt.length % dummyImages.length;
-      return dummyImages[randomIndex];
+      // Gemini Pro Vision API 호출
+      final response = await _callGeminiImageAPI(detailedPrompt);
+      return response;
     } catch (e) {
       print('AI 이미지 생성 실패: $e');
+      return null;
+    }
+  }
+
+  /// 상세한 이미지 생성 프롬프트 생성
+  String _createDetailedImagePrompt(String diarySummary, String? selectedEmotion, List<String> conversationHistory) {
+    final emotionDescription = selectedEmotion != null ? '감정: $selectedEmotion' : '감정: 자연스러운';
+    
+    // 대화 내용에서 핵심 키워드 추출
+    final keywords = _extractKeywordsFromConversation(conversationHistory);
+    
+    return '''
+다음 내용을 바탕으로 감정적이고 아름다운 일기 그림을 그려주세요:
+
+$emotionDescription
+일기 내용: $diarySummary
+핵심 키워드: ${keywords.join(', ')}
+
+스타일: 
+- 감정에 맞는 색감과 분위기
+- 일기 내용을 상징적으로 표현
+- 따뜻하고 아름다운 일러스트레이션
+- 한국적인 감성과 현대적인 디자인
+
+이 그림은 사용자의 개인적인 감정과 경험을 표현하는 일기용 이미지입니다.
+''';
+  }
+
+  /// 대화 내용에서 핵심 키워드 추출
+  List<String> _extractKeywordsFromConversation(List<String> conversationHistory) {
+    final keywords = <String>{};
+    
+    for (final message in conversationHistory) {
+      // 감정 관련 키워드
+      if (message.contains('기쁨') || message.contains('행복') || message.contains('즐거')) keywords.add('기쁨');
+      if (message.contains('슬픔') || message.contains('우울') || message.contains('속상')) keywords.add('슬픔');
+      if (message.contains('화남') || message.contains('짜증') || message.contains('열받')) keywords.add('화남');
+      if (message.contains('평온') || message.contains('차분') || message.contains('편안')) keywords.add('평온');
+      if (message.contains('설렘') || message.contains('기대') || message.contains('떨리')) keywords.add('설렘');
+      if (message.contains('피곤함') || message.contains('지쳐') || message.contains('힘들')) keywords.add('피곤함');
+      if (message.contains('놀람') || message.contains('깜짝') || message.contains('어이없')) keywords.add('놀람');
+      if (message.contains('걱정') || message.contains('불안') || message.contains('초조')) keywords.add('걱정');
+      
+      // 활동 관련 키워드
+      if (message.contains('산책') || message.contains('걷기')) keywords.add('산책');
+      if (message.contains('음식') || message.contains('밥') || message.contains('먹')) keywords.add('음식');
+      if (message.contains('친구') || message.contains('사람') || message.contains('만남')) keywords.add('사람');
+      if (message.contains('일') || message.contains('업무') || message.contains('공부')) keywords.add('일/공부');
+      if (message.contains('음악') || message.contains('노래')) keywords.add('음악');
+      if (message.contains('영화') || message.contains('드라마')) keywords.add('영화/드라마');
+    }
+    
+    return keywords.take(5).toList(); // 최대 5개 키워드
+  }
+
+  /// Gemini Pro Vision API 호출
+  Future<String?> _callGeminiImageAPI(String prompt) async {
+    final apiKey = _apiKey;
+    if (apiKey.isEmpty) {
+      print('❌ Gemini API 키가 없습니다.');
+      return null;
+    }
+
+    final url = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=$apiKey';
+    
+    final requestBody = {
+      'contents': [
+        {
+          'parts': [
+            {
+              'text': prompt
+            }
+          ]
+        }
+      ],
+      'generationConfig': {
+        'temperature': 0.8,
+        'maxOutputTokens': 2048,
+      },
+    };
+    
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        body: jsonEncode(requestBody),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // 실제 이미지 생성 API 응답 처리
+        return data['candidates']?[0]?['content']?['parts']?[0]?['text'];
+      } else {
+        print('❌ 이미지 생성 API 오류: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('❌ 이미지 생성 API 호출 실패: $e');
       return null;
     }
   }

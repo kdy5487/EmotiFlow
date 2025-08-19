@@ -25,6 +25,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   List<String> _conversationHistory = [];
   String? _selectedEmotion; // 선택된 감정
   bool _emotionSelected = false; // 감정이 선택되었는지 여부
+  String? _aiGeneratedImageUrl; // AI 생성 이미지 URL
 
   @override
   void initState() {
@@ -694,6 +695,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
         metadata: {
           'isChatDiary': true, // 채팅 일기 구분을 위한 메타데이터
           'conversationCount': _conversationHistory.length,
+          'aiGeneratedImage': _aiGeneratedImageUrl, // AI 생성 이미지 URL
         },
       );
       
@@ -743,8 +745,12 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
         ),
       );
       
-      // AI 이미지 생성 요청
-      final imageUrl = await GeminiService.instance.generateImage(diarySummary);
+      // AI 이미지 생성 요청 (채팅 내용과 감정 기반)
+      final imageUrl = await GeminiService.instance.generateImage(
+        diarySummary, 
+        _selectedEmotion, 
+        _conversationHistory
+      );
       
       // 로딩 다이얼로그 닫기
       Navigator.of(context).pop();
@@ -779,6 +785,13 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
             ],
           ),
         );
+      }
+      
+      // AI 생성 이미지 URL을 일기 저장시 사용할 수 있도록 저장
+      if (imageUrl != null) {
+        setState(() {
+          _aiGeneratedImageUrl = imageUrl;
+        });
       }
     } catch (e) {
       // 로딩 다이얼로그 닫기
