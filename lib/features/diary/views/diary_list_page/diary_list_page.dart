@@ -545,7 +545,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                         ),
                         child: Text(
                           entry.tags.first,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: AppColors.primary,
                             fontSize: 9,
                             fontWeight: FontWeight.w500,
@@ -714,11 +714,11 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   /// 통합 필터 및 정렬 다이얼로그 UI
   Widget _buildFilterAndSortDialog() {
     return AlertDialog(
-      title: Row(
+      title: const Row(
         children: [
           Icon(Icons.tune, color: AppColors.primary),
-          const SizedBox(width: 8),
-          const Text('필터 및 정렬 설정'),
+          SizedBox(width: 8),
+          Text('필터 및 정렬 설정'),
         ],
       ),
       content: SizedBox(
@@ -784,13 +784,13 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                 label: '자유 일기',
                 value: 'diaryType',
                 filterValue: DiaryType.free.name,
-                icon: Icon(Icons.edit),
+                icon: const Icon(Icons.edit),
               ),
               _buildFilterChip(
                 label: 'AI 채팅 일기',
                 value: 'diaryType',
                 filterValue: DiaryType.aiChat.name,
-                icon: Icon(Icons.chat),
+                icon: const Icon(Icons.chat),
               ),
             ],
           ),
@@ -820,13 +820,13 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                 label: '사진/그림 있음',
                 value: 'hasMedia',
                 filterValue: 'true',
-                icon: Icon(Icons.image),
+                icon: const Icon(Icons.image),
               ),
               _buildFilterChip(
                 label: 'AI 생성 이미지',
                 value: 'hasAIImage',
                 filterValue: 'true',
-                icon: Icon(Icons.auto_awesome),
+                icon: const Icon(Icons.auto_awesome),
               ),
             ],
           ),
@@ -841,19 +841,19 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                 label: '최근 7일',
                 value: 'dateRange',
                 filterValue: '7days',
-                icon: Icon(Icons.calendar_today),
+                icon: const Icon(Icons.calendar_today),
               ),
               _buildFilterChip(
                 label: '최근 30일',
                 value: 'dateRange',
                 filterValue: '30days',
-                icon: Icon(Icons.calendar_month),
+                icon: const Icon(Icons.calendar_month),
               ),
               _buildFilterChip(
                 label: '이번 달',
                 value: 'dateRange',
                 filterValue: 'thisMonth',
-                icon: Icon(Icons.calendar_view_month),
+                icon: const Icon(Icons.calendar_view_month),
               ),
             ],
           ),
@@ -995,7 +995,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
         ),
       ),
       trailing: isSelected
-          ? Icon(Icons.check_circle, color: AppColors.primary)
+          ? const Icon(Icons.check_circle, color: AppColors.primary)
           : null,
       onTap: () {
         ref.read(diaryListUiProvider.notifier).setSortBy(value);
@@ -1258,7 +1258,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                     _applySearchAndFilter(diaryNotifier);
                   },
                   backgroundColor: AppColors.primary.withOpacity(0.1),
-                  labelStyle: TextStyle(
+                  labelStyle: const TextStyle(
                     color: AppColors.primary,
                     fontSize: 11,
                   ),
@@ -1640,7 +1640,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                           
                           // AI 분석 완료 여부
                           if (entry.hasAIAnalysis)
-                            Icon(
+                            const Icon(
                               Icons.psychology,
                               size: 10, // 아이콘 크기 더 축소 (12 → 10)
                               color: AppColors.primary,
@@ -1794,7 +1794,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
           fit: BoxFit.contain, // 전체 이미지가 보이도록 변경
           width: 120,
           height: 140,
-          placeholder: (context, url) => Center(
+          placeholder: (context, url) => const Center(
             child: CircularProgressIndicator(
               value: null,
               strokeWidth: 2,
@@ -1819,7 +1819,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
           fit: BoxFit.contain,
           width: 160,
           height: 160,
-          placeholder: (context, url) => Center(
+          placeholder: (context, url) => const Center(
             child: CircularProgressIndicator(
               value: null,
               strokeWidth: 2,
@@ -1911,11 +1911,11 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
+        title: const Row(
           children: [
             Icon(Icons.sort, color: AppColors.primary),
-            const SizedBox(width: 8),
-            const Text('정렬 기준', style: TextStyle(fontWeight: FontWeight.w600)),
+            SizedBox(width: 8),
+            Text('정렬 기준', style: TextStyle(fontWeight: FontWeight.w600)),
           ],
         ),
         content: Column(
@@ -2032,7 +2032,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
               padding: const EdgeInsets.all(24),
               child: Row(
                 children: [
-                  Icon(Icons.add_circle, color: AppColors.primary, size: 28),
+                  const Icon(Icons.add_circle, color: AppColors.primary, size: 28),
                   const SizedBox(width: 12),
                   Text(
                     '일기 작성 방법',

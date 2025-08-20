@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../theme/app_colors.dart';
-import '../../../theme/app_typography.dart';
-import '../../../shared/widgets/cards/emoti_card.dart';
-import '../../../shared/widgets/buttons/emoti_button.dart';
-import '../../diary/models/diary_entry.dart';
-import '../../diary/providers/diary_provider.dart';
-import '../services/diary_analysis_service.dart';
-import '../../../core/ai/gemini/gemini_service.dart';
+import 'package:emoti_flow/theme/app_theme.dart';
+import 'package:emoti_flow/theme/app_typography.dart';
+import 'package:emoti_flow/shared/widgets/cards/emoti_card.dart';
+import 'package:emoti_flow/shared/widgets/buttons/emoti_button.dart';
 
-/// AI 분석 페이지
 class AIPage extends ConsumerStatefulWidget {
   const AIPage({super.key});
 
@@ -19,329 +14,372 @@ class AIPage extends ConsumerStatefulWidget {
 }
 
 class _AIPageState extends ConsumerState<AIPage> {
-  bool _isAnalyzing = false;
-  DiaryAnalysisResult? _analysisResult;
-  String _aiAdvice = '';
-  List<String> _insights = [];
+  final TextEditingController _messageController = TextEditingController();
+  final List<ChatMessage> _messages = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _loadAnalysisData();
+    _addWelcomeMessage();
   }
 
-  /// 분석 데이터 로드
-  Future<void> _loadAnalysisData() async {
-    setState(() => _isAnalyzing = true);
-    
-    try {
-      final diaryState = ref.read(diaryProvider);
-      final recentEntries = diaryState.diaryEntries.take(7).toList();
-      
-      if (recentEntries.isNotEmpty) {
-        // Gemini AI 분석 서비스 사용
-        _analysisResult = await DiaryAnalysisService.instance.analyzeMultipleEntries(recentEntries);
-        _aiAdvice = _analysisResult!.advice;
-        _insights = [
-          ..._analysisResult!.positiveAspects,
-          ..._analysisResult!.actionItems,
-        ];
-      } else {
-        _analysisResult = DiaryAnalysisResult(
-          summary: '분석할 일기가 없습니다.',
-          keywords: [],
-          emotionScores: {'평온': 7.0, '기쁨': 6.0, '걱정': 3.0},
-          advice: '일기를 더 많이 작성하시면 더 정확한 분석을 제공할 수 있어요.',
-          actionItems: ['일기 작성하기'],
-          moodTrend: '데이터 부족',
-          stressLevel: 0.0,
-          positiveAspects: [],
-          concernAreas: ['일기 부족'],
-          encouragement: '꾸준한 일기 작성으로 감정을 기록해보세요.',
-        );
-        _aiAdvice = _analysisResult!.advice;
-        _insights = ['꾸준한 일기 작성으로 감정을 기록해보세요'];
-      }
-    } catch (e) {
-      print('분석 데이터 로드 실패: $e');
-      _analysisResult = null;
-    } finally {
-      setState(() => _isAnalyzing = false);
-    }
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
   }
 
-  /// Gemini AI로 개인화된 조언 생성
-  Future<void> _generatePersonalizedAdvice() async {
-    setState(() => _isAnalyzing = true);
-    
-    try {
-      final diaryState = ref.read(diaryProvider);
-      final recentEntries = diaryState.diaryEntries.take(3).toList();
+  void _addWelcomeMessage() {
+    _messages.add(ChatMessage(
+      text: '안녕하세요! 저는 당신의 감정 파트너 AI입니다. 오늘 하루는 어땠나요?',
+      isAI: true,
+      timestamp: DateTime.now(),
+    ));
+  }
+
+  void _sendMessage() {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+
+    // 사용자 메시지 추가
+    _messages.add(ChatMessage(
+      text: text,
+      isAI: false,
+      timestamp: DateTime.now(),
+    ));
+
+    _messageController.clear();
+    setState(() {});
+
+    // AI 응답 시뮬레이션
+    _simulateAIResponse(text);
+  }
+
+  void _simulateAIResponse(String userMessage) {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // 실제 AI 서비스 연동 시에는 여기서 API 호출
+    Future.delayed(const Duration(seconds: 2), () {
+      String aiResponse = _generateAIResponse(userMessage);
       
-      if (recentEntries.isNotEmpty) {
-        final latestEntry = recentEntries.first;
-        final selectedEmotion = latestEntry.emotions.isNotEmpty ? latestEntry.emotions.first : '평온';
-        
-        // Gemini AI로 개인화된 조언 생성
-        final personalizedAdvice = await GeminiService.instance.analyzeEmotionAndComfort(
-          latestEntry.content, 
-          selectedEmotion
-        );
-        
-        setState(() {
-          _aiAdvice = personalizedAdvice;
-          _insights = _extractInsightsFromAdvice(personalizedAdvice);
-        });
-      }
-    } catch (e) {
-      print('개인화된 조언 생성 실패: $e');
       setState(() {
-        _aiAdvice = 'AI 조언을 생성하는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        _messages.add(ChatMessage(
+          text: aiResponse,
+          isAI: true,
+          timestamp: DateTime.now(),
+        ));
+        _isLoading = false;
       });
-    } finally {
-      setState(() => _isAnalyzing = false);
-    }
+    });
   }
 
-  /// AI 조언에서 인사이트 추출
-  List<String> _extractInsightsFromAdvice(String advice) {
-    final insights = <String>[];
-    
-    if (advice.contains('감정')) {
-      insights.add('감정 인식 및 관리');
+  String _generateAIResponse(String userMessage) {
+    // 간단한 응답 생성 로직 (실제로는 AI 모델 사용)
+    if (userMessage.contains('기쁘') || userMessage.contains('좋') || userMessage.contains('행복')) {
+      return '정말 기쁜 일이 있었나요? 그런 긍정적인 감정을 느끼는 것은 정말 좋은 일이에요. 더 자세히 이야기해주세요!';
+    } else if (userMessage.contains('슬프') || userMessage.contains('우울') || userMessage.contains('힘들')) {
+      return '힘든 시간을 보내고 계시는군요. 그런 감정을 느끼는 것은 자연스러운 일이에요. 함께 이야기해보아요.';
+    } else if (userMessage.contains('화나') || userMessage.contains('짜증') || userMessage.contains('분노')) {
+      return '화가 나는 일이 있었나요? 그런 감정을 표현하는 것도 중요해요. 어떤 일이 있었는지 들려주세요.';
+    } else {
+      return '흥미로운 이야기네요! 더 자세히 들려주세요. 당신의 감정과 생각을 이해하고 싶어요.';
     }
-    if (advice.contains('스트레스')) {
-      insights.add('스트레스 관리');
-    }
-    if (advice.contains('긍정')) {
-      insights.add('긍정적 사고');
-    }
-    if (advice.contains('관계')) {
-      insights.add('인간관계 개선');
-    }
-    if (advice.contains('목표')) {
-      insights.add('목표 설정 및 달성');
-    }
-    
-    return insights.isEmpty ? ['자기 성찰'] : insights;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('AI 감정 분석'),
+        title: const Text(
+          'AI 감정 파트너',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primary,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.psychology),
+            onPressed: () {
+              // AI 설정 또는 도움말
+            },
+          ),
+        ],
       ),
-      body: _isAnalyzing
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // AI 분석 결과 요약
-                  if (_analysisResult != null) ...[
-                    _buildAnalysisSummary(),
-                    const SizedBox(height: 24),
-                  ],
-                  
-                  // AI 조언 섹션
-                  _buildAIAdviceSection(),
-                  const SizedBox(height: 24),
-                  
-                  // 인사이트 섹션
-                  _buildInsightsSection(),
-                  const SizedBox(height: 24),
-                  
-                  // 액션 아이템 섹션
-                  if (_analysisResult != null) ...[
-                    _buildActionItemsSection(),
-                    const SizedBox(height: 24),
-                  ],
-                  
-                  // 새로운 조언 생성 버튼
-                  _buildGenerateAdviceButton(),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildAnalysisSummary() {
-    return EmotiCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
         children: [
-          Text(
-            '감정 분석 요약',
-            style: AppTypography.headlineSmall.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.bold,
-            ),
+          // AI 기능 소개 카드
+          _buildAIFeaturesCard(),
+          
+          // 채팅 영역
+          Expanded(
+            child: _buildChatArea(),
           ),
-          const SizedBox(height: 16),
-          Text(
-            _analysisResult!.summary,
-            style: AppTypography.bodyLarge,
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildInfoChip('기분 트렌드', _analysisResult!.moodTrend),
-              const SizedBox(width: 8),
-              _buildInfoChip('스트레스 레벨', '${_analysisResult!.stressLevel.toStringAsFixed(1)}'),
-            ],
-          ),
+          
+          // 메시지 입력 영역
+          _buildMessageInput(),
         ],
       ),
     );
   }
 
-  Widget _buildAIAdviceSection() {
-    return EmotiCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.psychology, color: AppColors.primary),
-              const SizedBox(width: 8),
-              Text(
-                'AI 조언',
-                style: AppTypography.headlineSmall.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _aiAdvice.isNotEmpty ? _aiAdvice : 'AI 조언을 생성해보세요.',
-            style: AppTypography.bodyLarge,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInsightsSection() {
-    return EmotiCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.lightbulb_outline, color: AppColors.primary),
-              const SizedBox(width: 8),
-              Text(
-                '주요 인사이트',
-                style: AppTypography.headlineSmall.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (_insights.isNotEmpty)
-            ...(_insights.map((insight) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Icon(Icons.check_circle, color: AppColors.success, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(insight, style: AppTypography.bodyMedium)),
-                ],
-              ),
-            )))
-          else
-            Text(
-              '인사이트를 생성해보세요.',
-              style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionItemsSection() {
-    return EmotiCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.assignment, color: AppColors.primary),
-              const SizedBox(width: 8),
-              Text(
-                '실행 계획',
-                style: AppTypography.headlineSmall.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (_analysisResult!.actionItems.isNotEmpty)
-            ...(_analysisResult!.actionItems.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Icon(Icons.play_arrow, color: AppColors.primary, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(item, style: AppTypography.bodyMedium)),
-                ],
-              ),
-            )))
-          else
-            Text(
-              '실행 계획이 없습니다.',
-              style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGenerateAdviceButton() {
-    return EmotiButton(
-      text: '새로운 AI 조언 생성',
-      onPressed: _generatePersonalizedAdvice,
-      isFullWidth: true,
-      icon: Icons.refresh,
-    );
-  }
-
-  Widget _buildInfoChip(String label, String value) {
+  Widget _buildAIFeaturesCard() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+      margin: const EdgeInsets.all(16),
+      child: EmotiCard(
+        backgroundColor: AppTheme.primary.withOpacity(0.05),
+        borderColor: AppTheme.primary.withOpacity(0.2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.psychology, color: AppTheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'AI 감정 분석',
+                  style: AppTypography.titleMedium.copyWith(
+                    color: AppTheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.check_circle, color: AppTheme.success, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '감정 상태 분석 및 개선 방안 제시',
+                    style: AppTypography.bodyMedium.copyWith(color: AppTheme.textSecondary),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.assignment, color: AppTheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  '일기 작성 도움',
+                  style: AppTypography.titleMedium.copyWith(
+                    color: AppTheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.play_arrow, color: AppTheme.primary, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'AI와의 대화를 통한 일기 작성 지원',
+                    style: AppTypography.bodyMedium.copyWith(color: AppTheme.textSecondary),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-      child: Column(
+    );
+  }
+
+  Widget _buildChatArea() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppTheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+      ),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _messages.length + (_isLoading ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == _messages.length && _isLoading) {
+            return _buildLoadingMessage();
+          }
+          return _buildMessage(_messages[index]);
+        },
+      ),
+    );
+  }
+
+  Widget _buildMessage(ChatMessage message) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w500,
+          if (message.isAI) ...[
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppTheme.primary,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.psychology,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: message.isAI 
+                  ? AppTheme.primary.withOpacity(0.1)
+                  : AppTheme.primary,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                message.text,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: message.isAI ? AppTheme.textPrimary : Colors.white,
+                ),
+              ),
             ),
           ),
-          Text(
-            value,
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.bold,
+          if (!message.isAI) ...[
+            const SizedBox(width: 8),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppTheme.secondary,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.person,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingMessage() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: AppTheme.primary,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.psychology,
+              color: Colors.white,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+              ),
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildMessageInput() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        border: Border(
+          top: BorderSide(color: AppTheme.border),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _messageController,
+              decoration: InputDecoration(
+                hintText: '메시지를 입력하세요...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: AppTheme.background,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
+              onSubmitted: (_) => _sendMessage(),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.primary,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: IconButton(
+              onPressed: _sendMessage,
+              icon: const Icon(Icons.send, color: Colors.white),
+              style: IconButton.styleFrom(
+                backgroundColor: AppTheme.primary.withOpacity(0.1),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ChatMessage {
+  final String text;
+  final bool isAI;
+  final DateTime timestamp;
+
+  ChatMessage({
+    required this.text,
+    required this.isAI,
+    required this.timestamp,
+  });
 }

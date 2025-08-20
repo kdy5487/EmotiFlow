@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
 import 'package:emoti_flow/core/services/firebase_service.dart';
-import 'package:emoti_flow/core/providers/auth_provider.dart';
 import 'package:emoti_flow/routes/app_router.dart';
 import 'firebase_options.dart';
 

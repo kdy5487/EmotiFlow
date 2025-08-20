@@ -21,7 +21,7 @@ class DiaryDetailPage extends ConsumerStatefulWidget {
 }
 
 class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
-  double _gridItemHeight = 120;
+  final double _gridItemHeight = 120;
   @override
   Widget build(BuildContext context) {
     // Riverpod Provider를 사용해서 일기 데이터 가져오기

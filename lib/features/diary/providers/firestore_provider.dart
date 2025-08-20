@@ -40,7 +40,7 @@ class FirestoreProvider {
       print('✅ 일기 저장 성공: ${entry.id}');
     } catch (e) {
       print('❌ 일기 저장 실패: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -54,7 +54,7 @@ class FirestoreProvider {
       print('✅ 일기 업데이트 성공: ${entry.id}');
     } catch (e) {
       print('❌ 일기 업데이트 실패: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -68,7 +68,7 @@ class FirestoreProvider {
       print('✅ 일기 삭제 성공: $entryId');
     } catch (e) {
       print('❌ 일기 삭제 실패: $e');
-      throw e;
+      rethrow;
     }
   }
 

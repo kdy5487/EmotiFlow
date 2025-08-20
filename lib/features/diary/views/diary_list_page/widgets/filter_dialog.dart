@@ -30,11 +30,11 @@ class _FilterDialogState extends State<FilterDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Row(
+      title: const Row(
         children: [
           Icon(Icons.filter_list, color: AppColors.primary),
-          const SizedBox(width: 8),
-          const Text('필터 설정', style: TextStyle(fontWeight: FontWeight.w600)),
+          SizedBox(width: 8),
+          Text('필터 설정', style: TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),
       content: SingleChildScrollView(
@@ -88,7 +88,7 @@ class _FilterDialogState extends State<FilterDialog> {
       children: [
         Row(
           children: [
-            Icon(Icons.emoji_emotions, color: AppColors.primary, size: 20),
+            const Icon(Icons.emoji_emotions, color: AppColors.primary, size: 20),
             const SizedBox(width: 8),
             Text('감정별 필터', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w600)),
           ],
@@ -130,7 +130,7 @@ class _FilterDialogState extends State<FilterDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(children: [
-          Icon(Icons.calendar_today, color: AppColors.primary, size: 20),
+          const Icon(Icons.calendar_today, color: AppColors.primary, size: 20),
           const SizedBox(width: 8),
           Text('날짜 범위', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w600)),
         ]),
@@ -161,7 +161,7 @@ class _FilterDialogState extends State<FilterDialog> {
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(Icons.calendar_today, size: 16, color: hasDate ? AppColors.primary : Colors.grey[600]),
             const SizedBox(width: 8),
-            Text(hasDate ? '${date!.month}/${date!.day}' : label, style: TextStyle(color: hasDate ? AppColors.primary : Colors.grey[600], fontWeight: hasDate ? FontWeight.w600 : FontWeight.normal, fontSize: 12)),
+            Text(hasDate ? '${date.month}/${date.day}' : label, style: TextStyle(color: hasDate ? AppColors.primary : Colors.grey[600], fontWeight: hasDate ? FontWeight.w600 : FontWeight.normal, fontSize: 12)),
           ]),
         ),
       ),
@@ -171,7 +171,7 @@ class _FilterDialogState extends State<FilterDialog> {
   Widget _buildOtherFilters() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        Icon(Icons.tune, color: AppColors.primary, size: 20),
+        const Icon(Icons.tune, color: AppColors.primary, size: 20),
         const SizedBox(width: 8),
         Text('기타 옵션', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w600)),
       ]),

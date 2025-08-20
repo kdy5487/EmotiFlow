@@ -27,7 +27,7 @@ class GeminiService {
 
     try {
       print('🚀 Gemini API 호출 시작...');
-      final prompt = '''
+      const prompt = '''
 당신은 따뜻하고 공감적인 AI 상담사입니다.
 
 사용자가 일기를 작성하려고 합니다. 아래 8가지 감정 중에서 선택하거나 자유롭게 이야기할 수 있다고 안내해주세요.

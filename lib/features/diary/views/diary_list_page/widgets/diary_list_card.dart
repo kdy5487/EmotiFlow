@@ -138,11 +138,11 @@ class DiaryListCard extends StatelessWidget {
                                 ),
                               const SizedBox(width: 4),
                               if (entry.aiAnalysis != null)
-                                Row(
+                                const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(Icons.psychology, size: 10, color: AppColors.primary),
-                                    const SizedBox(width: 2),
+                                    SizedBox(width: 2),
                                     Text(
                                       'AI',
                                       style: TextStyle(

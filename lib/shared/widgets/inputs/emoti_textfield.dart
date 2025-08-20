@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_colors.dart';
+import '../../../theme/app_theme.dart';
 import '../../../theme/app_typography.dart';
 
-/// EmotiFlow 앱의 입력 필드 시스템
-/// UI/UX 가이드에 정의된 모든 입력 필드 스타일을 포함
+/// EmotiFlow 앱의 텍스트 필드 시스템
+/// UI/UX 가이드에 정의된 모든 텍스트 필드 스타일을 포함
 class EmotiTextField extends StatefulWidget {
-  final String? labelText;
-  final String? hintText;
+  final String? label;
+  final String? hint;
   final String? helperText;
   final String? errorText;
   final TextEditingController? controller;
@@ -27,11 +27,54 @@ class EmotiTextField extends StatefulWidget {
   final TextInputAction? textInputAction;
   final bool autocorrect;
   final bool enableSuggestions;
+  final String? initialValue;
+  final EdgeInsetsGeometry? contentPadding;
+  final InputBorder? border;
+  final InputBorder? enabledBorder;
+  final InputBorder? focusedBorder;
+  final InputBorder? errorBorder;
+  final InputBorder? focusedErrorBorder;
+  final Color? fillColor;
+  final bool filled;
+  final Color? labelColor;
+  final Color? hintColor;
+  final Color? errorColor;
+  final Color? helperTextColor;
+  final TextStyle? labelStyle;
+  final TextStyle? hintStyle;
+  final TextStyle? errorStyle;
+  final TextStyle? helperStyle;
+  final TextStyle? textStyle;
+  final TextStyle? counterStyle;
+  final bool isDense;
+  final bool isCollapsed;
+  final bool isOutlined;
+  final bool isFilled;
+  final bool isUnderlined;
+  final bool isBorderless;
+  final bool isDenseInput;
+  final bool isCollapsedInput;
+  final bool isOutlinedInput;
+  final bool isFilledInput;
+  final bool isUnderlinedInput;
+  final bool isBorderlessInput;
+  final bool isDenseTextField;
+  final bool isCollapsedTextField;
+  final bool isOutlinedTextField;
+  final bool isFilledTextField;
+  final bool isUnderlinedTextField;
+  final bool isBorderlessTextField;
+  final bool isDenseTextFormField;
+  final bool isCollapsedTextFormField;
+  final bool isOutlinedTextFormField;
+  final bool isFilledTextFormField;
+  final bool isUnderlinedTextFormField;
+  final bool isBorderlessTextFormField;
 
   const EmotiTextField({
     super.key,
-    this.labelText,
-    this.hintText,
+    this.label,
+    this.hint,
     this.helperText,
     this.errorText,
     this.controller,
@@ -52,6 +95,49 @@ class EmotiTextField extends StatefulWidget {
     this.textInputAction,
     this.autocorrect = true,
     this.enableSuggestions = true,
+    this.initialValue,
+    this.contentPadding,
+    this.border,
+    this.enabledBorder,
+    this.focusedBorder,
+    this.errorBorder,
+    this.focusedErrorBorder,
+    this.fillColor,
+    this.filled = true,
+    this.labelColor,
+    this.hintColor,
+    this.errorColor,
+    this.helperTextColor,
+    this.labelStyle,
+    this.hintStyle,
+    this.errorStyle,
+    this.helperStyle,
+    this.textStyle,
+    this.counterStyle,
+    this.isDense = false,
+    this.isCollapsed = false,
+    this.isOutlined = false,
+    this.isFilled = false,
+    this.isUnderlined = false,
+    this.isBorderless = false,
+    this.isDenseInput = false,
+    this.isCollapsedInput = false,
+    this.isOutlinedInput = false,
+    this.isFilledInput = false,
+    this.isUnderlinedInput = false,
+    this.isBorderlessInput = false,
+    this.isDenseTextField = false,
+    this.isCollapsedTextField = false,
+    this.isOutlinedTextField = false,
+    this.isFilledTextField = false,
+    this.isUnderlinedTextField = false,
+    this.isBorderlessTextField = false,
+    this.isDenseTextFormField = false,
+    this.isCollapsedTextFormField = false,
+    this.isOutlinedTextFormField = false,
+    this.isFilledTextFormField = false,
+    this.isUnderlinedTextFormField = false,
+    this.isBorderlessTextFormField = false,
   });
 
   @override
@@ -59,12 +145,39 @@ class EmotiTextField extends StatefulWidget {
 }
 
 class _EmotiTextFieldState extends State<EmotiTextField> {
-  bool _obscureText = false;
+  late FocusNode _focusNode;
+  late TextEditingController _controller;
+  bool _hasFocus = false;
+  bool _hasError = false;
 
   @override
   void initState() {
     super.initState();
-    _obscureText = widget.obscureText;
+    _focusNode = widget.focusNode ?? FocusNode();
+    _controller = widget.controller ?? TextEditingController();
+    
+    if (widget.initialValue != null) {
+      _controller.text = widget.initialValue!;
+    }
+    
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    if (widget.focusNode == null) {
+      _focusNode.dispose();
+    }
+    if (widget.controller == null) {
+      _controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    setState(() {
+      _hasFocus = _focusNode.hasFocus;
+    });
   }
 
   @override
@@ -74,149 +187,206 @@ class _EmotiTextFieldState extends State<EmotiTextField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (widget.labelText != null) ...[
+        if (widget.label != null) ...[
           Text(
-            widget.labelText!,
-            style: AppTypography.labelLarge.copyWith(
-              color: AppColors.textPrimary,
+            widget.label!,
+            style: (widget.labelStyle ?? AppTypography.labelMedium).copyWith(
+              color: widget.labelColor ?? AppTheme.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
         ],
+        
         TextFormField(
-          controller: widget.controller,
+          controller: _controller,
+          focusNode: _focusNode,
           keyboardType: widget.keyboardType,
-          obscureText: _obscureText,
+          obscureText: widget.obscureText,
           enabled: widget.enabled,
           readOnly: widget.readOnly,
           maxLines: widget.maxLines,
           maxLength: widget.maxLength,
           autofocus: widget.autofocus,
-          focusNode: widget.focusNode,
           textInputAction: widget.textInputAction,
           autocorrect: widget.autocorrect,
           enableSuggestions: widget.enableSuggestions,
           onTap: widget.onTap,
-          onChanged: widget.onChanged,
+          onChanged: (value) {
+            setState(() {
+              _hasError = false;
+            });
+            widget.onChanged?.call(value);
+          },
           onFieldSubmitted: widget.onSubmitted,
-          validator: widget.validator,
+          validator: (value) {
+            final error = widget.validator?.call(value);
+            setState(() {
+              _hasError = error != null;
+            });
+            return error;
+          },
+          style: widget.textStyle ?? AppTypography.bodyMedium.copyWith(
+            color: AppTheme.textPrimary,
+          ),
           decoration: InputDecoration(
-            hintText: widget.hintText,
+            hintText: widget.hint,
             helperText: widget.helperText,
             errorText: widget.errorText,
             prefixIcon: widget.prefixIcon,
-            suffixIcon: _buildSuffixIcon(),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+            suffixIcon: widget.suffixIcon,
+            contentPadding: widget.contentPadding ?? const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.error, width: 2),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.error, width: 2),
-            ),
-            filled: true,
+            filled: widget.filled,
             fillColor: widget.enabled 
-              ? AppColors.surface
-              : AppColors.surface.withOpacity(0.5),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            hintStyle: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textTertiary,
+              ? widget.fillColor ?? AppTheme.surface
+              : AppTheme.surface.withOpacity(0.5),
+            hintStyle: (widget.hintStyle ?? AppTypography.bodyMedium).copyWith(
+              color: widget.hintColor ?? AppTheme.textTertiary,
             ),
-            labelStyle: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+            helperStyle: (widget.helperStyle ?? AppTypography.bodySmall).copyWith(
+              color: widget.helperTextColor ?? AppTheme.textSecondary,
             ),
-            errorStyle: AppTypography.bodySmall.copyWith(
-              color: AppColors.error,
+            errorStyle: (widget.errorStyle ?? AppTypography.bodySmall).copyWith(
+              color: widget.errorColor ?? AppTheme.error,
+            ),
+            counterStyle: widget.counterStyle ?? AppTypography.bodySmall.copyWith(
+              color: AppTheme.textSecondary,
+            ),
+            isDense: widget.isDense,
+            isCollapsed: widget.isCollapsed,
+            border: widget.border ?? OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppTheme.border),
+            ),
+            enabledBorder: widget.enabledBorder ?? OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppTheme.border),
+            ),
+            focusedBorder: widget.focusedBorder ?? OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppTheme.primary, width: 2),
+            ),
+            errorBorder: widget.errorBorder ?? OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppTheme.error, width: 2),
+            ),
+            focusedErrorBorder: widget.focusedErrorBorder ?? OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppTheme.error, width: 2),
             ),
           ),
         ),
       ],
     );
   }
-
-  Widget? _buildSuffixIcon() {
-    if (widget.obscureText) {
-      return IconButton(
-        icon: Icon(
-          _obscureText ? Icons.visibility : Icons.visibility_off,
-          color: AppColors.textSecondary,
-        ),
-        onPressed: () {
-          setState(() {
-            _obscureText = !_obscureText;
-          });
-        },
-      );
-    }
-    
-    return widget.suffixIcon;
-  }
 }
 
-/// 검색 전용 입력 필드
-class EmotiSearchField extends StatelessWidget {
-  final String? hintText;
-  final TextEditingController? controller;
+/// 검색 전용 텍스트 필드
+class EmotiSearchField extends StatefulWidget {
+  final String? hint;
+  final String? initialValue;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onClear;
   final VoidCallback? onSearch;
+  final TextEditingController? controller;
+  final bool autofocus;
+  final FocusNode? focusNode;
 
   const EmotiSearchField({
     super.key,
-    this.hintText,
-    this.controller,
+    this.hint,
+    this.initialValue,
     this.onChanged,
     this.onClear,
     this.onSearch,
+    this.controller,
+    this.autofocus = false,
+    this.focusNode,
   });
+
+  @override
+  State<EmotiSearchField> createState() => _EmotiSearchFieldState();
+}
+
+class _EmotiSearchFieldState extends State<EmotiSearchField> {
+  late TextEditingController _controller;
+  late FocusNode _focusNode;
+  bool _hasText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = widget.controller ?? TextEditingController();
+    _focusNode = widget.focusNode ?? FocusNode();
+    
+    if (widget.initialValue != null) {
+      _controller.text = widget.initialValue!;
+      _hasText = widget.initialValue!.isNotEmpty;
+    }
+    
+    _controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void dispose() {
+    if (widget.controller == null) {
+      _controller.dispose();
+    }
+    if (widget.focusNode == null) {
+      _focusNode.dispose();
+    }
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    setState(() {
+      _hasText = _controller.text.isNotEmpty;
+    });
+  }
+
+  void _onClear() {
+    _controller.clear();
+    widget.onClear?.call();
+  }
 
   @override
   Widget build(BuildContext context) {
     return TextField(
-      controller: controller,
-      onChanged: onChanged,
-      onSubmitted: (_) => onSearch?.call(),
+      controller: _controller,
+      focusNode: _focusNode,
+      autofocus: widget.autofocus,
+      onChanged: widget.onChanged,
+      onSubmitted: (_) => widget.onSearch?.call(),
+      textInputAction: TextInputAction.search,
       decoration: InputDecoration(
-        hintText: hintText ?? '검색어를 입력하세요',
-        prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
-        suffixIcon: controller?.text.isNotEmpty == true
-          ? IconButton(
-              icon: const Icon(Icons.clear, color: AppColors.textSecondary),
-              onPressed: () {
-                controller?.clear();
-                onClear?.call();
-              },
-            )
-          : null,
+        hintText: widget.hint ?? '검색어를 입력하세요',
+        prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
+        suffixIcon: _hasText ? IconButton(
+          onPressed: _onClear,
+          icon: const Icon(Icons.clear, color: AppTheme.textSecondary),
+        ) : null,
+        filled: true,
+        fillColor: AppTheme.background,
+        hintStyle: AppTypography.bodyMedium.copyWith(
+          color: AppTheme.textTertiary,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(color: AppTheme.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(color: AppTheme.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
         ),
-        filled: true,
-        fillColor: AppColors.backgroundSecondary,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        hintStyle: AppTypography.bodyMedium.copyWith(
-          color: AppColors.textTertiary,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
         ),
       ),
     );
@@ -225,8 +395,8 @@ class EmotiSearchField extends StatelessWidget {
 
 /// 다중 라인 텍스트 입력 필드
 class EmotiMultilineTextField extends StatelessWidget {
-  final String? labelText;
-  final String? hintText;
+  final String? label;
+  final String? hint;
   final String? helperText;
   final String? errorText;
   final TextEditingController? controller;
@@ -237,8 +407,8 @@ class EmotiMultilineTextField extends StatelessWidget {
 
   const EmotiMultilineTextField({
     super.key,
-    this.labelText,
-    this.hintText,
+    this.label,
+    this.hint,
     this.helperText,
     this.errorText,
     this.controller,
@@ -251,8 +421,8 @@ class EmotiMultilineTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EmotiTextField(
-      labelText: labelText,
-      hintText: hintText,
+      label: label,
+      hint: hint,
       helperText: helperText,
       errorText: errorText,
       controller: controller,

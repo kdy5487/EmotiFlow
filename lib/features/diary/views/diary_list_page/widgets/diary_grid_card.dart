@@ -125,7 +125,7 @@ class DiaryGridCard extends StatelessWidget {
                             ),
                             child: Text(
                               entry.tags.first,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: AppColors.primary,
                                 fontSize: 9,
                                 fontWeight: FontWeight.w500,

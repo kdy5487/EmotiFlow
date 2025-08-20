@@ -1,22 +1,12 @@
-import '../../../../core/providers/auth_provider.dart';
-import '../../../../shared/widgets/inputs/emoti_text_field.dart';
-import '../../../../theme/app_colors.dart';
-import '../../../../theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'diary_write_view_model.dart';
-import '../drawing_canvas_page.dart';
-import 'dart:io';
-import 'package:image_picker/image_picker.dart';
-import '../../providers/diary_provider.dart';
-import '../../models/emotion.dart';
-import '../../models/diary_entry.dart';
+import 'package:emoti_flow/theme/app_theme.dart';
+import 'package:emoti_flow/theme/app_typography.dart';
+import 'package:emoti_flow/shared/widgets/cards/emoti_card.dart';
+import 'package:emoti_flow/shared/widgets/buttons/emoti_button.dart';
+import 'package:emoti_flow/shared/widgets/inputs/emoti_textfield.dart';
 
-
-
-
-/// 자유형 일기 작성 페이지
 class DiaryWritePage extends ConsumerStatefulWidget {
   const DiaryWritePage({super.key});
 
@@ -25,103 +15,135 @@ class DiaryWritePage extends ConsumerStatefulWidget {
 }
 
 class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
-  final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
-  final _titleFocusNode = FocusNode();
-  final _contentFocusNode = FocusNode();
-  final _tagController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    // 컨트롤러와 뷰모델 연결
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _titleController.addListener(() {
-        ref.read(diaryWriteProvider.notifier).setTitle(_titleController.text);
-      });
-      _contentController.addListener(() {
-        ref.read(diaryWriteProvider.notifier).setContent(_contentController.text);
-      });
-    });
-  }
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _contentController = TextEditingController();
+  final TextEditingController _moodController = TextEditingController();
+  
+  DateTime _selectedDate = DateTime.now();
+  List<String> _selectedEmotions = [];
+  bool _isPrivate = false;
+  bool _allowAI = false;
+  
+  final List<Map<String, dynamic>> _availableEmotions = [
+    {'name': '기쁨', 'color': AppTheme.joy, 'icon': Icons.sentiment_satisfied},
+    {'name': '사랑', 'color': AppTheme.love, 'icon': Icons.favorite},
+    {'name': '평온', 'color': AppTheme.calm, 'icon': Icons.sentiment_neutral},
+    {'name': '슬픔', 'color': AppTheme.sadness, 'icon': Icons.sentiment_dissatisfied},
+    {'name': '분노', 'color': AppTheme.anger, 'icon': Icons.sentiment_very_dissatisfied},
+    {'name': '두려움', 'color': AppTheme.fear, 'icon': Icons.sentiment_neutral},
+    {'name': '놀람', 'color': AppTheme.surprise, 'icon': Icons.sentiment_satisfied_alt},
+    {'name': '중립', 'color': AppTheme.neutral, 'icon': Icons.sentiment_neutral},
+  ];
 
   @override
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
-    _titleFocusNode.dispose();
-    _contentFocusNode.dispose();
-    _tagController.dispose();
+    _moodController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = ref.watch(diaryWriteProvider.notifier);
-    final state = ref.watch(diaryWriteProvider);
-    
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('자유형 일기 작성'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        title: const Text(
+          '일기 작성',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primary,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => _showDiscardDialog(context),
+        ),
         actions: [
           TextButton(
-            onPressed: viewModel.canSaveEntry ? _saveDiary : null,
-            child: const Text(
-              '저장',
-              style: TextStyle(color: Colors.white),
-            ),
+            onPressed: _saveDiary,
+            child: const Text('저장'),
           ),
         ],
       ),
-      body: GestureDetector(
-        onTap: () {
-          // 외부 터치 시 키보드 내리기
-          FocusScope.of(context).unfocus();
-        },
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 날짜 선택
+            _buildDateSelector(),
+            const SizedBox(height: 24),
+            
+            // 제목 입력
+            _buildTitleInput(),
+            const SizedBox(height: 24),
+            
+            // 감정 선택
+            _buildEmotionSelector(),
+            const SizedBox(height: 24),
+            
+            // 내용 입력
+            _buildContentInput(),
+            const SizedBox(height: 24),
+            
+            // 기분 점수
+            _buildMoodScore(),
+            const SizedBox(height: 24),
+            
+            // 설정 옵션
+            _buildSettingsOptions(),
+            const SizedBox(height: 24),
+            
+            // 저장 버튼
+            _buildSaveButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateSelector() {
+    return EmotiCard(
+      child: InkWell(
+        onTap: () => _selectDate(context),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
             children: [
-              // 날짜 선택
-              _buildDatePickerSection(viewModel),
-              const SizedBox(height: 16),
-              
-              // 제목 입력
-              _buildTitleSection(viewModel),
-              const SizedBox(height: 16),
-              
-              // 감정 선택
-              _buildEmotionSection(viewModel),
-              const SizedBox(height: 16),
-              
-              // 내용 입력
-              _buildContentSection(viewModel),
-              const SizedBox(height: 16),
-              
-              // 태그 입력
-              _buildTagSection(viewModel),
-              const SizedBox(height: 16),
-              
-              // 미디어 첨부
-              _buildMediaSection(viewModel),
-              const SizedBox(height: 16),
-              
-              // AI 분석 설정
-              _buildAIAnalysisSection(viewModel),
-              const SizedBox(height: 24),
-              
-              // 공개 설정
-              _buildPublicSection(viewModel),
-              const SizedBox(height: 24),
-              
-              // 에러 메시지
-              if (state.errorMessage != null)
-                _buildErrorMessage(state.errorMessage!),
-              
-              const SizedBox(height: 80), // 하단 여백
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+                ),
+                child: const Icon(Icons.calendar_today, size: 18, color: AppTheme.primary),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '날짜',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      '${_selectedDate.year}년 ${_selectedDate.month}월 ${_selectedDate.day}일',
+                      style: AppTypography.titleMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
             ],
           ),
         ),
@@ -129,791 +151,284 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     );
   }
 
-  /// 날짜 선택 섹션
-  Widget _buildDatePickerSection(DiaryWriteViewModel viewModel) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.calendar_today, size: 18, color: AppColors.primary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('날짜 선택', style: AppTypography.bodyLarge),
-                Text(
-                  _formatDate(viewModel.selectedDate),
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () => _selectDate(context, viewModel),
-            child: const Text('변경'),
-          ),
-        ],
-      ),
+  Widget _buildTitleInput() {
+    return EmotiTextField(
+      label: '제목',
+      hint: '오늘 하루를 한 줄로 요약해보세요',
+      controller: _titleController,
+      maxLines: 1,
     );
   }
 
-  /// 제목 입력 섹션
-  Widget _buildTitleSection(DiaryWriteViewModel viewModel) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('제목', style: AppTypography.titleMedium),
-        const SizedBox(height: 6),
-        EmotiTextField(
-          controller: _titleController,
-          focusNode: _titleFocusNode,
-          hintText: '오늘의 제목을 입력해주세요',
-          maxLines: 1,
-          textInputAction: TextInputAction.next,
-          onSubmitted: (_) {
-            _contentFocusNode.requestFocus();
-          },
-        ),
-      ],
-    );
-  }
-
-  /// 감정 선택 섹션
-  Widget _buildEmotionSection(DiaryWriteViewModel viewModel) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('오늘의 감정', style: AppTypography.titleMedium),
-        const SizedBox(height: 4),
-        Row(
+  Widget _buildEmotionSelector() {
+    return EmotiCard(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '감정 선택 (최대 3개까지 선택 가능)',
-              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-            ),
-            const Spacer(),
-            if (viewModel.selectedEmotions.length >= 3)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.warning.withOpacity(0.3)),
-                ),
-                child: Text(
-                  '최대 3개',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.warning,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        
-        // 감정 선택 그리드
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
-            crossAxisSpacing: 6,
-            mainAxisSpacing: 6,
-            childAspectRatio: 0.9,
-          ),
-          itemCount: Emotion.basicEmotions.length,
-          itemBuilder: (context, index) {
-            final emotion = Emotion.basicEmotions[index];
-            final isSelected = viewModel.selectedEmotions.contains(emotion.name);
-            
-            return GestureDetector(
-              onTap: () {
-                viewModel.toggleEmotion(emotion.name);
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isSelected ? emotion.color.withOpacity(0.2) : Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isSelected ? emotion.color : Colors.grey[300]!,
-                    width: isSelected ? 2 : 1,
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      emotion.emoji,
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      emotion.name,
-                      style: AppTypography.caption.copyWith(
-                        color: isSelected ? emotion.color : AppColors.textSecondary,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        fontSize: 10,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-        
-        // 선택된 감정들의 강도 조절
-        if (viewModel.selectedEmotions.isNotEmpty)
-          _buildEmotionIntensitySection(viewModel),
-      ],
-    );
-  }
-
-  /// 감정 강도 조절 섹션
-  Widget _buildEmotionIntensitySection(DiaryWriteViewModel viewModel) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        Text(
-          '감정 강도 조절',
-          style: AppTypography.titleLarge.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...viewModel.selectedEmotions.map<Widget>((emotionName) {
-          final emotion = Emotion.findByName(emotionName);
-          if (emotion == null) return const SizedBox.shrink();
-          
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: Row(
-              children: [
-                Text(
-                  emotion.emoji,
-                  style: const TextStyle(fontSize: 18),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Slider(
-                    value: viewModel.emotionIntensities[emotionName]?.toDouble() ?? 5.0,
-                    min: 1.0,
-                    max: 10.0,
-                    divisions: 9,
-                    activeColor: emotion.color,
-                    inactiveColor: emotion.color.withOpacity(0.3),
-                    onChanged: (value) {
-                      viewModel.setEmotionIntensity(emotionName, value.round());
-                    },
-                  ),
-                ),
-                const SizedBox(width: 6),
-                SizedBox(
-                  width: 24,
-                  child: Text(
-                    '${viewModel.emotionIntensities[emotionName] ?? 5}',
-                    style: AppTypography.bodyMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: emotion.color,
-                      fontSize: 12,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  /// 내용 입력 섹션
-  Widget _buildContentSection(DiaryWriteViewModel viewModel) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('내용', style: AppTypography.titleMedium),
-        const SizedBox(height: 6),
-        EmotiTextField(
-          controller: _contentController,
-          focusNode: _contentFocusNode,
-          hintText: '오늘 있었던 일이나 느낀 점을 자유롭게 작성해주세요...',
-          maxLines: 8,
-          maxLength: 1000,
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '${viewModel.contentLength}/1000자',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textSecondary,
+              '오늘의 감정',
+              style: AppTypography.titleMedium.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
-            Text(
-              '${viewModel.wordCount}단어',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  /// 태그 입력 섹션
-  Widget _buildTagSection(DiaryWriteViewModel viewModel) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('태그', style: AppTypography.titleMedium),
-        const SizedBox(height: 6),
-        Text(
-          '일기와 관련된 키워드를 태그로 추가해주세요',
-          style: AppTypography.bodySmall.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        
-        // 태그 입력 필드
-        Row(
-          children: [
-            Expanded(
-              child: EmotiTextField(
-                controller: _tagController,
-                hintText: '태그를 입력하고 Enter를 누르세요',
-                onSubmitted: (value) {
-                  if (value.trim().isNotEmpty) {
-                    viewModel.addTag(value.trim());
-                    _tagController.clear();
-                  }
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              onPressed: () {
-                if (_tagController.text.trim().isNotEmpty) {
-                  viewModel.addTag(_tagController.text.trim());
-                  _tagController.clear();
-                }
-              },
-              icon: const Icon(Icons.add, size: 18),
-              style: IconButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(36, 36),
-                padding: EdgeInsets.zero,
-              ),
-            ),
-          ],
-        ),
-        
-        // 태그 목록
-        if (viewModel.tags.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: viewModel.tags.map((tag) {
-              return Chip(
-                label: Text(tag),
-                onDeleted: () => viewModel.removeTag(tag),
-                backgroundColor: AppColors.primary.withOpacity(0.1),
-                labelStyle: TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 12,
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ],
-    );
-  }
-
-  /// 미디어 첨부 섹션
-  Widget _buildMediaSection(DiaryWriteViewModel viewModel) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('미디어 첨부', style: AppTypography.titleMedium),
-        const SizedBox(height: 6),
-        Text(
-          '사진, 그림, 음성 등을 첨부할 수 있습니다',
-          style: AppTypography.bodySmall.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 16),
-        
-        // 미디어 타입별 버튼
-        Row(
-          children: [
-            Expanded(
-              child: _buildMediaButton(
-                icon: Icons.photo_camera,
-                label: '사진',
-                onTap: () => _addImage(),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildMediaButton(
-                icon: Icons.brush,
-                label: '그림',
-                onTap: () => _addDrawing(),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildMediaButton(
-                icon: Icons.mic,
-                label: '음성',
-                onTap: () => _addVoice(),
-              ),
-            ),
-          ],
-        ),
-        
-        // 첨부된 미디어 목록 (썸네일/프리뷰)
-        if (viewModel.mediaCount > 0) ...[
-          const SizedBox(height: 16),
-          Text(
-            '첨부된 미디어 (${viewModel.mediaCount}개)',
-            style: AppTypography.titleMedium.copyWith(
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          // 여기에 미디어 썸네일 목록 표시
-          SizedBox(
-            height: 80,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: viewModel.mediaFiles.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final file = viewModel.mediaFiles[index];
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: _availableEmotions.map((emotion) {
+                final isSelected = _selectedEmotions.contains(emotion['name']);
+                return GestureDetector(
+                  onTap: () => _toggleEmotion(emotion['name']),
                   child: Container(
-                    width: 80,
-                    height: 80,
-                    color: Colors.grey[200],
-                    child: file.type == MediaType.image || file.type == MediaType.drawing
-                        ? Image.file(
-                            File(file.url),
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.grey),
-                          )
-                        : const Icon(Icons.audiotrack, color: Colors.grey),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? emotion['color'] : AppTheme.textSecondary,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          emotion['icon'],
+                          color: isSelected ? AppTheme.textPrimary : Colors.white,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          emotion['name'],
+                          style: TextStyle(
+                            color: isSelected ? AppTheme.textPrimary : Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
-              },
+              }).toList(),
             ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  /// 미디어 버튼
-  Widget _buildMediaButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return ElevatedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon),
-      label: Text(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.secondary.withOpacity(0.1),
-        foregroundColor: AppColors.secondary,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-      ),
-    );
-  }
-
-  /// AI 분석 설정 섹션
-  Widget _buildAIAnalysisSection(DiaryWriteViewModel viewModel) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.primary.withOpacity(0.3),
+          ],
         ),
       ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.psychology,
-            color: AppColors.primary,
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'AI 감정 분석',
-                  style: AppTypography.titleLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  '작성한 일기를 AI가 분석하여 감정 패턴을 파악합니다',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: viewModel.isAIAnalysisEnabled,
-            onChanged: (value) {
-              viewModel.toggleAIAnalysis();
-            },
-            activeColor: AppColors.primary,
-          ),
-        ],
-      ),
     );
   }
 
-  /// 공개 설정 섹션
-  Widget _buildPublicSection(DiaryWriteViewModel viewModel) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.secondary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.secondary.withOpacity(0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.public,
-            color: AppColors.secondary,
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '공개 설정',
-                  style: AppTypography.titleLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  '일기를 다른 사용자와 공유할 수 있습니다',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: viewModel.isPublic,
-            onChanged: (value) {
-              viewModel.togglePublic();
-            },
-            activeColor: AppColors.secondary,
-          ),
-        ],
-      ),
+  Widget _buildContentInput() {
+    return EmotiTextField(
+      label: '일기 내용',
+      hint: '오늘 있었던 일과 느낀 감정을 자유롭게 적어보세요...',
+      controller: _contentController,
+      maxLines: 10,
     );
   }
 
-  /// 에러 메시지 표시
-  Widget _buildErrorMessage(String message) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.red[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red[200]!),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.error_outline, color: Colors.red[600], size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: AppTypography.bodyMedium.copyWith(
-                color: Colors.red[700],
+  Widget _buildMoodScore() {
+    return EmotiCard(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '기분 점수',
+              style: AppTypography.titleMedium.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-          IconButton(
-            onPressed: () {
-              ref.read(diaryWriteProvider.notifier).clearError();
-            },
-            icon: Icon(Icons.close, color: Colors.red[600], size: 20),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: EmotiButton(
+                    text: '😢',
+                    onPressed: () => _setMoodScore(1),
+                    type: EmotiButtonType.outline,
+                    size: EmotiButtonSize.medium,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: EmotiButton(
+                    text: '😐',
+                    onPressed: () => _setMoodScore(5),
+                    type: EmotiButtonType.outline,
+                    size: EmotiButtonSize.medium,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: EmotiButton(
+                    text: '😊',
+                    onPressed: () => _setMoodScore(10),
+                    type: EmotiButtonType.outline,
+                    size: EmotiButtonSize.medium,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  /// 날짜 선택
-  Future<void> _selectDate(BuildContext context, DiaryWriteViewModel viewModel) async {
+  Widget _buildSettingsOptions() {
+    return EmotiCard(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '설정',
+              style: AppTypography.titleMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              title: const Text('비공개'),
+              subtitle: const Text('나만 볼 수 있는 일기'),
+              value: _isPrivate,
+              onChanged: (value) {
+                setState(() {
+                  _isPrivate = value;
+                });
+              },
+              activeColor: AppTheme.primary,
+            ),
+            SwitchListTile(
+              title: const Text('AI 분석 허용'),
+              subtitle: const Text('감정 분석 및 개선 방안 제시'),
+              value: _allowAI,
+              onChanged: (value) {
+                setState(() {
+                  _allowAI = value;
+                });
+              },
+              activeColor: AppTheme.secondary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return EmotiButton(
+      text: '일기 저장하기',
+      onPressed: _saveDiary,
+      type: EmotiButtonType.primary,
+      size: EmotiButtonSize.large,
+      icon: Icons.save,
+      isFullWidth: true,
+    );
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: viewModel.selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now(),
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
     );
-    
-    if (picked != null && picked != viewModel.selectedDate) {
-      viewModel.setSelectedDate(picked);
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
     }
   }
 
-  /// 이미지 추가
-  void _addImage() {
-    _pickImage();
-  }
-
-  /// 그림 추가
-  void _addDrawing() {
-    _openDrawing();
-  }
-
-  /// 음성 추가
-  void _addVoice() {
-    // TODO: 음성 녹음 기능 구현
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('음성 녹음 기능은 추후 구현 예정입니다.')),
-    );
-  }
-
-  /// 이미지 선택 (image_picker)
-  Future<void> _pickImage() async {
-    try {
-      final picker = ImagePicker();
-      final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-      if (picked == null) return;
-      final vm = ref.read(diaryWriteProvider.notifier);
-      vm.addMediaFile(MediaFile(
-        id: picked.path,
-        url: picked.path,
-        type: MediaType.image,
-      ));
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('이미지가 추가되었습니다.')),
-        );
+  void _toggleEmotion(String emotionName) {
+    setState(() {
+      if (_selectedEmotions.contains(emotionName)) {
+        _selectedEmotions.remove(emotionName);
+      } else {
+        _selectedEmotions.add(emotionName);
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('이미지 추가 실패: $e')),
-        );
-      }
-    }
+    });
   }
 
-  /// 그림 그리기 화면 열기
-  Future<void> _openDrawing() async {
-    final path = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(builder: (_) => const DrawingCanvasPage()),
-    );
-    if (path == null) return;
-    final vm = ref.read(diaryWriteProvider.notifier);
-    vm.addMediaFile(MediaFile(
-      id: path,
-      url: path,
-      type: MediaType.drawing,
-    ));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('그림이 추가되었습니다.')),
-      );
-    }
+  void _setMoodScore(int score) {
+    // 기분 점수 설정 로직
+    print('기분 점수: $score');
   }
 
-  /// 일기 저장
-  Future<void> _saveDiary() async {
-    final viewModel = ref.read(diaryWriteProvider.notifier);
-    
-    // 유효성 검사
-    final validationError = viewModel.validateForm();
-    if (validationError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(validationError),
-          backgroundColor: Colors.red,
-        ),
-      );
+  void _saveDiary() {
+    if (_titleController.text.trim().isEmpty) {
+      _showErrorDialog('제목을 입력해주세요');
       return;
     }
 
-    // 저장 진행
-    try {
-      final diaryNotifier = ref.read(diaryProvider.notifier);
-      final authState = ref.read(authProvider);
-      final currentUser = authState.user?.uid;
-      
-      if (currentUser == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('로그인이 필요합니다.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-      
-      final entry = viewModel.createDiaryEntry(currentUser);
-      await diaryNotifier.createDiaryEntry(entry);
-
-      if (!mounted) return;
-      // 저장 직후 결과 미리보기
-      await showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) {
-          return Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.green),
-                      const SizedBox(width: 8),
-                      Text('저장 완료', style: AppTypography.titleLarge),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text('제목', style: AppTypography.titleMedium),
-                  const SizedBox(height: 4),
-                  Text(entry.title, style: AppTypography.bodyLarge),
-                  const SizedBox(height: 12),
-                  Text('내용', style: AppTypography.titleMedium),
-                  const SizedBox(height: 4),
-                  Text(entry.content, style: AppTypography.bodyMedium),
-                  const SizedBox(height: 12),
-                  if (entry.mediaCount > 0) ...[
-                    Text('첨부된 미디어', style: AppTypography.titleMedium),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 80,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: entry.mediaFiles.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
-                        itemBuilder: (context, index) {
-                          final file = entry.mediaFiles[index];
-                          return ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              width: 80,
-                              height: 80,
-                              color: Colors.grey[200],
-                              child: file.type == MediaType.image || file.type == MediaType.drawing
-                                  ? Image.asset(
-                                      file.url,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.grey),
-                                    )
-                                  : const Icon(Icons.audiotrack, color: Colors.grey),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.check),
-                      label: const Text('확인'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-
-      if (mounted) context.pop();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('저장 중 오류가 발생했습니다: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    if (_contentController.text.trim().isEmpty) {
+      _showErrorDialog('일기 내용을 입력해주세요');
+      return;
     }
+
+    if (_selectedEmotions.isEmpty) {
+      _showErrorDialog('감정을 선택해주세요');
+      return;
+    }
+
+    // 일기 저장 로직
+    print('일기 저장 완료');
+    print('제목: ${_titleController.text.trim()}');
+    print('내용: ${_contentController.text.trim()}');
+    print('날짜: $_selectedDate');
+    print('감정: $_selectedEmotions');
+    print('비공개: $_isPrivate');
+    print('AI 분석: $_allowAI');
+    
+    // TODO: 실제 저장 로직 구현
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('일기가 저장되었습니다')),
+    );
+    
+    context.pop();
   }
 
-  /// 날짜 포맷팅
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final targetDate = DateTime(date.year, date.month, date.day);
-    
-    if (targetDate == today) {
-      return '오늘';
-    } else if (targetDate == today.subtract(const Duration(days: 1))) {
-      return '어제';
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('입력 오류'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDiscardDialog(BuildContext context) {
+    if (_titleController.text.isNotEmpty || _contentController.text.isNotEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('작성 취소'),
+          content: const Text('작성 중인 내용이 있습니다. 정말로 나가시겠습니까?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('계속 작성'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                context.pop();
+              },
+              child: const Text('나가기'),
+            ),
+          ],
+        ),
+      );
     } else {
-      return '${date.month}월 ${date.day}일';
+      context.pop();
     }
   }
 }

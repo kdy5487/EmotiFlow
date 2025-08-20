@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:emoti_flow/features/home/views/home_page.dart';
-import 'package:emoti_flow/core/providers/auth_provider.dart';
 import 'package:emoti_flow/features/diary/views/diary_write_page/diary_write_page.dart';
 import 'package:emoti_flow/features/diary/views/diary_chat_write_page/diary_chat_write_page.dart';
 import 'package:emoti_flow/features/diary/views/diary_list_page/diary_list_page.dart';
 import 'package:emoti_flow/features/diary/views/diary_detail_page/diary_detail_page.dart';
 import 'package:emoti_flow/features/ai/views/ai_page.dart';
-// TODO: 각 뷰 생성 전까지는 라우트를 최소화 유지
-import 'package:emoti_flow/features/auth/pages/login_page.dart' as login;
+import 'package:emoti_flow/features/auth/pages/login_page.dart';
+import 'package:emoti_flow/features/profile/views/profile_page.dart';
+import 'package:emoti_flow/features/settings/views/settings_page.dart';
 
 // 라우트 이름 상수
 class AppRoutes {
   static const String home = '/';
   static const String auth = '/auth';
   static const String login = '/auth/login';
-  static const String signup = '/auth/signup';
-  static const String forgotPassword = '/auth/forgot-password';
   static const String diary = '/diary';
   static const String diaryCreate = '/diary/create';
   static const String diaryDetail = '/diary/detail';
@@ -52,22 +49,12 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.auth,
         name: 'auth',
-         builder: (context, state) => const login.LoginPage(),
+        builder: (context, state) => const LoginPage(),
         routes: [
           GoRoute(
             path: 'login',
             name: 'login',
-             builder: (context, state) => const login.LoginPage(),
-          ),
-          GoRoute(
-            path: 'signup',
-            name: 'signup',
-            builder: (context, state) => const SignupPage(),
-          ),
-          GoRoute(
-            path: 'forgot-password',
-            name: 'forgot-password',
-            builder: (context, state) => const ForgotPasswordPage(),
+            builder: (context, state) => const LoginPage(),
           ),
         ],
       ),
@@ -146,70 +133,6 @@ class AppRouter {
   }
 }
 
-
-
-class AuthPage extends StatelessWidget {
-  const AuthPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('인증')),
-      body: const Center(child: Text('인증 페이지')),
-    );
-  }
-}
-
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('로그인')),
-      body: const Center(child: Text('로그인 페이지')),
-    );
-  }
-}
-
-class SignupPage extends StatelessWidget {
-  const SignupPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('회원가입')),
-      body: const Center(child: Text('회원가입 페이지')),
-    );
-  }
-}
-
-class ForgotPasswordPage extends StatelessWidget {
-  const ForgotPasswordPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('비밀번호 찾기')),
-      body: const Center(child: Text('비밀번호 찾기 페이지')),
-    );
-  }
-}
-
-class DiaryPage extends StatelessWidget {
-  const DiaryPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('일기')),
-      body: const Center(child: Text('일기 페이지')),
-    );
-  }
-}
-
-
-
 // 임시 플레이스홀더 페이지들
 
 class AnalyticsPage extends StatelessWidget {
@@ -241,28 +164,6 @@ class CommunityPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('커뮤니티')),
       body: const Center(child: Text('커뮤니티 페이지 - 개발 중')),
-    );
-  }
-}
-
-class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('설정')),
-      body: const Center(child: Text('설정 페이지 - 개발 중')),
-    );
-  }
-}
-
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('프로필')),
-      body: const Center(child: Text('프로필 페이지 - 개발 중')),
     );
   }
 }

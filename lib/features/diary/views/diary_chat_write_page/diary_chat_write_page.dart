@@ -22,7 +22,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   
   bool _isTyping = false;
   bool _showResult = false;
-  List<String> _conversationHistory = [];
+  final List<String> _conversationHistory = [];
   String? _selectedEmotion; // 선택된 감정
   bool _emotionSelected = false; // 감정이 선택되었는지 여부
   String? _aiGeneratedImageUrl; // AI 생성 이미지 URL
@@ -137,7 +137,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       print('AI 응답 생성 실패: $e');
       
       // Fallback 응답
-      final fallbackResponse = '흥미로운 이야기네요! 더 자세히 들려주세요.';
+      const fallbackResponse = '흥미로운 이야기네요! 더 자세히 들려주세요.';
       
       final aiMessage = ChatMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -283,11 +283,11 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Row(
+          title: const Row(
             children: [
               Icon(Icons.edit_note, color: AppColors.primary),
-              const SizedBox(width: 8),
-              const Text('오늘의 일기'),
+              SizedBox(width: 8),
+              Text('오늘의 일기'),
             ],
           ),
           content: Column(
@@ -297,7 +297,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
               if (_selectedEmotion != null) ...[
                 Row(
                   children: [
-                    Icon(Icons.emoji_emotions, color: AppColors.primary),
+                    const Icon(Icons.emoji_emotions, color: AppColors.primary),
                     const SizedBox(width: 8),
                     Text(
                       '오늘의 감정: $_selectedEmotion',
@@ -334,7 +334,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.auto_awesome, color: AppColors.primary),
+                                const Icon(Icons.auto_awesome, color: AppColors.primary),
                                 const SizedBox(width: 8),
                                 Text(
                                   'AI 그림 생성',
@@ -479,7 +479,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Row(
         children: [
-          CircleAvatar(
+          const CircleAvatar(
             backgroundColor: AppColors.primary,
             radius: 16,
             child: Icon(Icons.psychology, color: Colors.white, size: 16),
@@ -494,7 +494,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
@@ -650,7 +650,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       // Fallback 응답
       final aiMessage = ChatMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        content: '${emotion}한 하루를 보내셨군요. 더 자세히 들려주세요!',
+        content: '$emotion한 하루를 보내셨군요. 더 자세히 들려주세요!',
         isFromAI: true,
         timestamp: DateTime.now(),
       );
@@ -706,7 +706,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       // 성공 메시지 표시
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('채팅 일기가 저장되었습니다!'),
             backgroundColor: AppColors.primary,
           ),
@@ -716,7 +716,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       print('채팅 일기 저장 실패: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('일기 저장에 실패했습니다. 다시 시도해주세요.'),
             backgroundColor: Colors.red,
           ),
@@ -840,7 +840,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
           if (isAI) ...[
-            CircleAvatar(
+            const CircleAvatar(
               backgroundColor: AppColors.primary,
               radius: 16,
               child: Icon(Icons.psychology, color: Colors.white, size: 16),
@@ -872,7 +872,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
           
           if (!isAI) ...[
             const SizedBox(width: 8),
-            CircleAvatar(
+            const CircleAvatar(
               backgroundColor: AppColors.secondary,
               radius: 16,
               child: Icon(Icons.person, color: Colors.white, size: 16),
@@ -934,7 +934,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
           const SizedBox(width: 8),
           IconButton(
             onPressed: _sendMessage,
-            icon: Icon(Icons.send, color: AppColors.primary),
+            icon: const Icon(Icons.send, color: AppColors.primary),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.primary.withOpacity(0.1),
               padding: const EdgeInsets.all(12),

@@ -61,8 +61,8 @@ dependencies:
   # HTTP 통신 (나중에 추가)
   # dio: ^5.4.0
   
-  # 로컬 저장소 (나중에 추가)
-  # shared_preferences: ^2.2.2
+  # 로컬 저장소
+  shared_preferences: ^2.2.2
   # hive: ^2.2.3
   # hive_flutter: ^1.1.0
   
