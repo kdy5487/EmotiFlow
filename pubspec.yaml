@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.8
   
   # 환경 변수 관리
@@ -76,7 +78,7 @@ dependencies:
   # fl_chart: ^0.66.0
   
   # 유틸리티 (나중에 추가)
-  # intl: ^0.19.0
+  intl: ^0.19.0
   # uuid: ^4.2.1
   # image_picker: ^1.0.4
   # permission_handler: ^11.1.0

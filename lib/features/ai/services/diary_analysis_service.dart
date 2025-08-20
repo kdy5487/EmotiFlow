@@ -202,7 +202,6 @@ class DiaryAnalysisService {
 
   DiaryAnalysisResult _performMultipleAnalysis(List<DiaryEntry> entries) {
     final patterns = analyzeEmotionPatterns(entries);
-    final dominantEmotions = patterns['dominantEmotions'] as List<String>;
     
     return DiaryAnalysisResult(
       summary: '${entries.length}개의 일기를 분석했습니다.',

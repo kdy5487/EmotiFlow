@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
 import '../models/user_profile.dart';
 import '../services/profile_service.dart';
 
@@ -34,6 +36,7 @@ class ProfileState {
 /// 프로필 관리 클래스
 class ProfileProvider extends StateNotifier<ProfileState> {
   final ProfileService _profileService = ProfileService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   
   ProfileProvider() : super(const ProfileState()) {
     _init();
@@ -49,6 +52,16 @@ class ProfileProvider extends StateNotifier<ProfileState> {
     state = state.copyWith(isLoading: true, error: null);
     
     try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        state = state.copyWith(
+          profile: null,
+          stats: null,
+          isLoading: false,
+        );
+        return;
+      }
+
       final profile = await _profileService.getCurrentUserProfile();
       if (profile != null) {
         state = state.copyWith(profile: profile);
@@ -99,195 +112,118 @@ class ProfileProvider extends StateNotifier<ProfileState> {
     }
   }
 
-  /// 닉네임 업데이트
-  Future<bool> updateNickname(String nickname) async {
-    final profile = state.profile;
-    if (profile == null) return false;
-    
-    state = state.copyWith(isLoading: true, error: null);
-    
+  /// 프로필 이미지 업로드
+  Future<String?> uploadProfileImage(String imagePath) async {
     try {
-      final success = await _profileService.updateNickname(profile.id, nickname);
-      
-      if (success) {
-        final updatedProfile = profile.copyWith(nickname: nickname);
-        state = state.copyWith(profile: updatedProfile);
-        return true;
-      } else {
-        state = state.copyWith(error: '이미 사용 중인 닉네임입니다');
-        return false;
+      final user = _auth.currentUser;
+      if (user == null) return null;
+
+      final imageUrl = await _profileService.uploadProfileImage(
+        File(imagePath),
+        user.uid,
+      );
+
+      if (imageUrl != null) {
+        final updatedProfile = state.profile?.copyWith(
+          profileImageUrl: imageUrl,
+          updatedAt: DateTime.now(),
+        );
+        
+        if (updatedProfile != null) {
+          await updateProfile(updatedProfile);
+        }
       }
+
+      return imageUrl;
     } catch (e) {
-      state = state.copyWith(error: '닉네임 업데이트 실패: $e');
-      return false;
-    } finally {
-      state = state.copyWith(isLoading: false);
+      print('❌ 프로필 이미지 업로드 실패: $e');
+      return null;
     }
   }
 
-  /// 생년월일 업데이트
-  Future<bool> updateBirthDate(DateTime birthDate) async {
-    final profile = state.profile;
-    if (profile == null) return false;
-    
-    state = state.copyWith(isLoading: true, error: null);
-    
+  /// 프로필 이미지 삭제
+  Future<bool> deleteProfileImage() async {
     try {
-      final success = await _profileService.updateBirthDate(profile.id, birthDate);
-      
-      if (success) {
-        final updatedProfile = profile.copyWith(birthDate: birthDate);
-        state = state.copyWith(profile: updatedProfile);
-        return true;
-      } else {
-        state = state.copyWith(error: '생년월일 업데이트 실패');
-        return false;
-      }
-    } catch (e) {
-      state = state.copyWith(error: '생년월일 업데이트 실패: $e');
-      return false;
-    } finally {
-      state = state.copyWith(isLoading: false);
-    }
-  }
+      final user = _auth.currentUser;
+      if (user == null) return false;
 
-  /// 자기소개 업데이트
-  Future<bool> updateBio(String bio) async {
-    final profile = state.profile;
-    if (profile == null) return false;
-    
-    state = state.copyWith(isLoading: true, error: null);
-    
-    try {
-      final success = await _profileService.updateBio(profile.id, bio);
+      final success = await _profileService.deleteProfileImage(user.uid);
       
       if (success) {
-        final updatedProfile = profile.copyWith(bio: bio);
-        state = state.copyWith(profile: updatedProfile);
-        return true;
-      } else {
-        state = state.copyWith(error: '자기소개 업데이트 실패');
-        return false;
+        final updatedProfile = state.profile?.copyWith(
+          profileImageUrl: null,
+          updatedAt: DateTime.now(),
+        );
+        
+        if (updatedProfile != null) {
+          await updateProfile(updatedProfile);
+        }
       }
-    } catch (e) {
-      state = state.copyWith(error: '자기소개 업데이트 실패: $e');
-      return false;
-    } finally {
-      state = state.copyWith(isLoading: false);
-    }
-  }
 
-  /// 프로필 이미지 업데이트
-  Future<bool> updateProfileImage(String imageUrl) async {
-    final profile = state.profile;
-    if (profile == null) return false;
-    
-    state = state.copyWith(isLoading: true, error: null);
-    
-    try {
-      final success = await _profileService.updateProfileImage(profile.id, imageUrl);
-      
-      if (success) {
-        final updatedProfile = profile.copyWith(profileImageUrl: imageUrl);
-        state = state.copyWith(profile: updatedProfile);
-        return true;
-      } else {
-        state = state.copyWith(error: '프로필 이미지 업데이트 실패');
-        return false;
-      }
+      return success;
     } catch (e) {
-      state = state.copyWith(error: '프로필 이미지 업데이트 실패: $e');
+      print('❌ 프로필 이미지 삭제 실패: $e');
       return false;
-    } finally {
-      state = state.copyWith(isLoading: false);
-    }
-  }
-
-  /// 감정 프로필 업데이트
-  Future<bool> updateEmotionProfile(EmotionProfile emotionProfile) async {
-    final profile = state.profile;
-    if (profile == null) return false;
-    
-    state = state.copyWith(isLoading: true, error: null);
-    
-    try {
-      final success = await _profileService.updateEmotionProfile(profile.id, emotionProfile);
-      
-      if (success) {
-        final updatedProfile = profile.copyWith(emotionProfile: emotionProfile);
-        state = state.copyWith(profile: updatedProfile);
-        return true;
-      } else {
-        state = state.copyWith(error: '감정 프로필 업데이트 실패');
-        return false;
-      }
-    } catch (e) {
-      state = state.copyWith(error: '감정 프로필 업데이트 실패: $e');
-      return false;
-    } finally {
-      state = state.copyWith(isLoading: false);
-    }
-  }
-
-  /// 개인정보 설정 업데이트
-  Future<bool> updatePrivacySettings(PrivacySettings privacySettings) async {
-    final profile = state.profile;
-    if (profile == null) return false;
-    
-    state = state.copyWith(isLoading: true, error: null);
-    
-    try {
-      final success = await _profileService.updatePrivacySettings(profile.id, privacySettings);
-      
-      if (success) {
-        final updatedProfile = profile.copyWith(privacySettings: privacySettings);
-        state = state.copyWith(profile: updatedProfile);
-        return true;
-      } else {
-        state = state.copyWith(error: '개인정보 설정 업데이트 실패');
-        return false;
-      }
-    } catch (e) {
-      state = state.copyWith(error: '개인정보 설정 업데이트 실패: $e');
-      return false;
-    } finally {
-      state = state.copyWith(isLoading: false);
     }
   }
 
   /// 프로필 삭제
   Future<bool> deleteProfile() async {
-    final profile = state.profile;
-    if (profile == null) return false;
-    
-    state = state.copyWith(isLoading: true, error: null);
-    
     try {
-      final success = await _profileService.deleteProfile(profile.id);
+      final user = _auth.currentUser;
+      if (user == null) return false;
+
+      final success = await _profileService.deleteProfile(user.uid);
       
       if (success) {
-        state = const ProfileState();
-        return true;
-      } else {
-        state = state.copyWith(error: '프로필 삭제 실패');
-        return false;
+        state = state.copyWith(
+          profile: null,
+          stats: null,
+        );
       }
+
+      return success;
     } catch (e) {
-      state = state.copyWith(error: '프로필 삭제 실패: $e');
+      print('❌ 프로필 삭제 실패: $e');
       return false;
-    } finally {
-      state = state.copyWith(isLoading: false);
     }
   }
 
-  /// 에러 초기화
-  void clearError() {
-    state = state.copyWith(error: null);
+  /// 사용자 로그아웃
+  Future<void> signOut() async {
+    try {
+      await _auth.signOut();
+      state = state.copyWith(
+        profile: null,
+        stats: null,
+      );
+    } catch (e) {
+      print('❌ 로그아웃 실패: $e');
+    }
   }
 
-  /// 로딩 상태 설정
-  void setLoading(bool loading) {
-    state = state.copyWith(isLoading: loading);
+  /// 사용자 계정 삭제
+  Future<bool> deleteAccount() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return false;
+
+      // 프로필 삭제
+      await deleteProfile();
+      
+      // Firebase Auth 계정 삭제
+      await user.delete();
+      
+      state = state.copyWith(
+        profile: null,
+        stats: null,
+      );
+
+      return true;
+    } catch (e) {
+      print('❌ 계정 삭제 실패: $e');
+      return false;
+    }
   }
 }
 

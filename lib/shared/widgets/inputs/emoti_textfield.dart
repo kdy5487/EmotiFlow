@@ -147,8 +147,6 @@ class EmotiTextField extends StatefulWidget {
 class _EmotiTextFieldState extends State<EmotiTextField> {
   late FocusNode _focusNode;
   late TextEditingController _controller;
-  bool _hasFocus = false;
-  bool _hasError = false;
 
   @override
   void initState() {
@@ -176,14 +174,12 @@ class _EmotiTextFieldState extends State<EmotiTextField> {
 
   void _onFocusChange() {
     setState(() {
-      _hasFocus = _focusNode.hasFocus;
+      // Focus 상태 변경 시 UI 업데이트
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -211,20 +207,9 @@ class _EmotiTextFieldState extends State<EmotiTextField> {
           autocorrect: widget.autocorrect,
           enableSuggestions: widget.enableSuggestions,
           onTap: widget.onTap,
-          onChanged: (value) {
-            setState(() {
-              _hasError = false;
-            });
-            widget.onChanged?.call(value);
-          },
+          onChanged: widget.onChanged,
           onFieldSubmitted: widget.onSubmitted,
-          validator: (value) {
-            final error = widget.validator?.call(value);
-            setState(() {
-              _hasError = error != null;
-            });
-            return error;
-          },
+          validator: widget.validator,
           style: widget.textStyle ?? AppTypography.bodyMedium.copyWith(
             color: AppTheme.textPrimary,
           ),

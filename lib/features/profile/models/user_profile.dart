@@ -10,8 +10,6 @@ class UserProfile {
   final String? bio;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final EmotionProfile emotionProfile;
-  final PrivacySettings privacySettings;
 
   const UserProfile({
     required this.id,
@@ -22,8 +20,6 @@ class UserProfile {
     this.bio,
     required this.createdAt,
     required this.updatedAt,
-    required this.emotionProfile,
-    required this.privacySettings,
   });
 
   /// Firestore에서 UserProfile 생성
@@ -41,8 +37,6 @@ class UserProfile {
       bio: data['bio'],
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
-      emotionProfile: EmotionProfile.fromMap(data['emotionProfile'] ?? {}),
-      privacySettings: PrivacySettings.fromMap(data['privacySettings'] ?? {}),
     );
   }
 
@@ -56,8 +50,6 @@ class UserProfile {
       'bio': bio,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
-      'emotionProfile': emotionProfile.toMap(),
-      'privacySettings': privacySettings.toMap(),
     };
   }
 
@@ -71,8 +63,6 @@ class UserProfile {
     String? bio,
     DateTime? createdAt,
     DateTime? updatedAt,
-    EmotionProfile? emotionProfile,
-    PrivacySettings? privacySettings,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -83,8 +73,6 @@ class UserProfile {
       bio: bio ?? this.bio,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      emotionProfile: emotionProfile ?? this.emotionProfile,
-      privacySettings: privacySettings ?? this.privacySettings,
     );
   }
 
@@ -100,127 +88,31 @@ class UserProfile {
     return age;
   }
 
-  @override
-  String toString() {
-    return 'UserProfile(id: $id, email: $email, nickname: $nickname, age: $age)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is UserProfile && other.id == id;
-  }
-
-  @override
-  int get hashCode => id.hashCode;
-}
-
-/// 감정 프로필 모델
-class EmotionProfile {
-  final List<String> preferredEmotions;
-  final Map<String, int> emotionImportance;
-  final List<String> expressionPreferences;
-  final Map<String, dynamic> emotionPatterns;
-  final DateTime lastUpdated;
-
-  const EmotionProfile({
-    required this.preferredEmotions,
-    required this.emotionImportance,
-    required this.expressionPreferences,
-    required this.emotionPatterns,
-    required this.lastUpdated,
-  });
-
-  factory EmotionProfile.fromMap(Map<String, dynamic> map) {
-    return EmotionProfile(
-      preferredEmotions: List<String>.from(map['preferredEmotions'] ?? []),
-      emotionImportance: Map<String, int>.from(map['emotionImportance'] ?? {}),
-      expressionPreferences: List<String>.from(map['expressionPreferences'] ?? []),
-      emotionPatterns: Map<String, dynamic>.from(map['emotionPatterns'] ?? {}),
-      lastUpdated: map['lastUpdated'] != null 
-          ? (map['lastUpdated'] as Timestamp).toDate() 
-          : DateTime.now(),
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'preferredEmotions': preferredEmotions,
-      'emotionImportance': emotionImportance,
-      'expressionPreferences': expressionPreferences,
-      'emotionPatterns': emotionPatterns,
-      'lastUpdated': Timestamp.fromDate(lastUpdated),
-    };
-  }
-
-  EmotionProfile copyWith({
-    List<String>? preferredEmotions,
-    Map<String, int>? emotionImportance,
-    List<String>? expressionPreferences,
-    Map<String, dynamic>? emotionPatterns,
-    DateTime? lastUpdated,
+  /// 기본 프로필 생성
+  factory UserProfile.createDefault({
+    required String id,
+    required String email,
+    String? nickname,
   }) {
-    return EmotionProfile(
-      preferredEmotions: preferredEmotions ?? this.preferredEmotions,
-      emotionImportance: emotionImportance ?? this.emotionImportance,
-      expressionPreferences: expressionPreferences ?? this.expressionPreferences,
-      emotionPatterns: emotionPatterns ?? this.emotionPatterns,
-      lastUpdated: lastUpdated ?? this.lastUpdated,
-    );
-  }
-}
-
-/// 개인정보 설정 모델
-class PrivacySettings {
-  final bool isProfilePublic;
-  final bool isEmotionDataShared;
-  final bool isAnalyticsShared;
-  final List<String> allowedViewers;
-  final DateTime lastUpdated;
-
-  const PrivacySettings({
-    required this.isProfilePublic,
-    required this.isEmotionDataShared,
-    required this.isAnalyticsShared,
-    required this.allowedViewers,
-    required this.lastUpdated,
-  });
-
-  factory PrivacySettings.fromMap(Map<String, dynamic> map) {
-    return PrivacySettings(
-      isProfilePublic: map['isProfilePublic'] ?? false,
-      isEmotionDataShared: map['isEmotionDataShared'] ?? false,
-      isAnalyticsShared: map['isAnalyticsShared'] ?? false,
-      allowedViewers: List<String>.from(map['allowedViewers'] ?? []),
-      lastUpdated: map['lastUpdated'] != null 
-          ? (map['lastUpdated'] as Timestamp).toDate() 
-          : DateTime.now(),
+    final now = DateTime.now();
+    return UserProfile(
+      id: id,
+      email: email,
+      nickname: nickname ?? '사용자',
+      createdAt: now,
+      updatedAt: now,
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'isProfilePublic': isProfilePublic,
-      'isEmotionDataShared': isEmotionDataShared,
-      'isAnalyticsShared': isAnalyticsShared,
-      'allowedViewers': allowedViewers,
-      'lastUpdated': Timestamp.fromDate(lastUpdated),
-    };
-  }
-
-  PrivacySettings copyWith({
-    bool? isProfilePublic,
-    bool? isEmotionDataShared,
-    bool? isAnalyticsShared,
-    List<String>? allowedViewers,
-    DateTime? lastUpdated,
-  }) {
-    return PrivacySettings(
-      isProfilePublic: isProfilePublic ?? this.isProfilePublic,
-      isEmotionDataShared: isEmotionDataShared ?? this.isEmotionDataShared,
-      isAnalyticsShared: isAnalyticsShared ?? this.isAnalyticsShared,
-      allowedViewers: allowedViewers ?? this.allowedViewers,
-      lastUpdated: lastUpdated ?? this.lastUpdated,
+  /// 빈 프로필 생성
+  factory UserProfile.empty() {
+    final now = DateTime.now();
+    return UserProfile(
+      id: '',
+      email: '',
+      nickname: '',
+      createdAt: now,
+      updatedAt: now,
     );
   }
 }

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
 import 'package:emoti_flow/theme/app_typography.dart';
 import 'package:emoti_flow/shared/widgets/cards/emoti_card.dart';
-import 'package:emoti_flow/shared/widgets/buttons/emoti_button.dart';
+
 
 class AIPage extends ConsumerStatefulWidget {
   const AIPage({super.key});

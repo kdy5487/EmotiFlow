@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../shared/widgets/layout/emoti_appbar.dart';
-import '../../../shared/widgets/buttons/emoti_button.dart';
-import '../../../theme/app_theme.dart';
-import '../../../theme/app_colors.dart';
-import '../providers/profile_provider.dart';
-import '../models/user_profile.dart';
-import '../viewmodels/profile_edit_view_model.dart';
+import 'dart:io';
+import 'package:emoti_flow/theme/app_theme.dart';
+import 'package:emoti_flow/features/profile/providers/profile_provider.dart';
+import 'package:emoti_flow/core/providers/auth_provider.dart';
 
 /// 프로필 편집 페이지
 class ProfileEditPage extends ConsumerStatefulWidget {
@@ -21,52 +20,66 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   final _formKey = GlobalKey<FormState>();
   final _nicknameController = TextEditingController();
   final _bioController = TextEditingController();
-  late final ProfileEditViewModel _viewModel;
+  final ImagePicker _imagePicker = ImagePicker();
   
   String? _selectedImagePath;
+  File? _selectedImageFile;
   DateTime? _selectedBirthDate;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _viewModel = ProfileEditViewModel(ref);
-    _viewModel.loadCurrentProfile();
     _initializeControllers();
   }
 
   void _initializeControllers() {
-    final profile = ref.read(profileProvider).profile;
-    if (profile != null) {
-      _nicknameController.text = profile.nickname ?? '';
-      _bioController.text = profile.bio ?? '';
-      _selectedBirthDate = profile.birthDate;
-      _selectedImagePath = profile.profileImageUrl;
-    }
+    // 현재 프로필 정보로 초기화
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profile = ref.read(profileProvider).profile;
+      if (profile != null) {
+        _nicknameController.text = profile.nickname;
+        _bioController.text = profile.bio ?? '';
+        _selectedBirthDate = profile.birthDate;
+        _selectedImagePath = profile.profileImageUrl;
+      }
+    });
   }
 
   @override
   void dispose() {
     _nicknameController.dispose();
     _bioController.dispose();
-    _viewModel.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final profile = ref.watch(profileProvider).profile;
+    final profileState = ref.watch(profileProvider);
+    final authState = ref.watch(authProvider);
     
-    if (profile == null) {
+    if (profileState.isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      appBar: EmotiAppBar(
-        title: '프로필 편집',
-        showBackButton: true,
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        title: const Text(
+          '프로필 편집',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primary,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
         actions: [
           TextButton(
             onPressed: _isLoading ? null : _saveProfile,
@@ -80,52 +93,107 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           ),
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // 프로필 이미지
-            _buildProfileImageSection(context, profile),
-            const SizedBox(height: 24),
-            
-            // 기본 정보
-            _buildBasicInfoSection(context, profile),
-            const SizedBox(height: 24),
-            
-            // 자기소개
-            _buildBioSection(context, profile),
-            const SizedBox(height: 24),
-            
-            // 저장 버튼
-            EmotiButton(
-              text: '프로필 저장',
-              onPressed: _isLoading ? null : _saveProfile,
-              isFullWidth: true,
-            ),
-          ],
+      body: GestureDetector(
+        onTap: () {
+          // 키보드 외부 터치 시 키보드 내리기
+          FocusScope.of(context).unfocus();
+        },
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // 프로필 이미지
+              _buildProfileImageSection(),
+              const SizedBox(height: 24),
+              
+              // 기본 정보
+              _buildBasicInfoSection(authState.user),
+              const SizedBox(height: 24),
+              
+              // 자기소개
+              _buildBioSection(),
+              const SizedBox(height: 24),
+              
+              // 저장 버튼
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _saveProfile,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          '프로필 저장',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   /// 프로필 이미지 섹션
-  Widget _buildProfileImageSection(BuildContext context, UserProfile profile) {
-    return Center(
-      child: Column(
-        children: [
-          // 프로필 이미지
-          GestureDetector(
+  Widget _buildProfileImageSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // 섹션 제목
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.camera_alt,
+              color: AppTheme.primary,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '프로필 이미지',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        
+        // 프로필 이미지
+        Center(
+          child: GestureDetector(
             onTap: _showImagePickerDialog,
             child: Stack(
               children: [
                 CircleAvatar(
                   radius: 60,
-                  backgroundColor: AppColors.backgroundSecondary,
-                  backgroundImage: _selectedImagePath != null
-                      ? NetworkImage(_selectedImagePath!)
-                      : null,
-                  child: _selectedImagePath == null
+                  backgroundColor: AppTheme.surface,
+                  backgroundImage: _selectedImageFile != null
+                      ? FileImage(_selectedImageFile!)
+                      : (_selectedImagePath != null && _selectedImagePath!.startsWith('http'))
+                          ? NetworkImage(_selectedImagePath!)
+                          : null,
+                  child: (_selectedImageFile == null && (_selectedImagePath == null || _selectedImagePath!.startsWith('http')))
                       ? const Icon(
                           Icons.person,
                           size: 60,
@@ -152,28 +220,42 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          
-          // 이미지 변경 버튼
-          TextButton(
-            onPressed: _showImagePickerDialog,
-            child: const Text('프로필 이미지 변경'),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 16),
+        
+        // 이미지 변경 버튼
+        TextButton(
+          onPressed: _showImagePickerDialog,
+          child: const Text('프로필 이미지 변경'),
+        ),
+      ],
     );
   }
 
   /// 기본 정보 섹션
-  Widget _buildBasicInfoSection(BuildContext context, UserProfile profile) {
+  Widget _buildBasicInfoSection(User? user) {
+    final currentProfile = ref.read(profileProvider).profile;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '기본 정보',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          children: [
+            Icon(
+              Icons.person_outline,
+              color: AppTheme.primary,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '기본 정보',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         
@@ -204,34 +286,67 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         const SizedBox(height: 16),
         
         // 생년월일
-        _buildBirthDateField(context),
+        _buildBirthDateField(),
         const SizedBox(height: 16),
         
         // 이메일 (읽기 전용)
-        TextFormField(
-          initialValue: profile.email,
-          decoration: InputDecoration(
-            labelText: '이메일',
-            prefixIcon: const Icon(Icons.email),
-            helperText: '이메일은 변경할 수 없습니다',
-            border: OutlineInputBorder(
+        InkWell(
+          onTap: null,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppTheme.border),
               borderRadius: BorderRadius.circular(12),
+              color: AppTheme.surface.withOpacity(0.5),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.email,
+                  color: AppTheme.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '이메일',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        currentProfile?.email ?? user?.email ?? '이메일 없음',
+                        style: TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          enabled: false,
         ),
       ],
     );
   }
 
   /// 생년월일 필드
-  Widget _buildBirthDateField(BuildContext context) {
+  Widget _buildBirthDateField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '생년월일',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          style: const TextStyle(
+            fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -259,7 +374,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                     _selectedBirthDate != null
                         ? '${_selectedBirthDate!.year}년 ${_selectedBirthDate!.month}월 ${_selectedBirthDate!.day}일'
                         : '생년월일을 선택하세요',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: TextStyle(
                       color: _selectedBirthDate != null
                           ? AppTheme.textPrimary
                           : AppTheme.textTertiary,
@@ -279,15 +394,27 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   }
 
   /// 자기소개 섹션
-  Widget _buildBioSection(BuildContext context, UserProfile profile) {
+  Widget _buildBioSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '자기소개',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          children: [
+            Icon(
+              Icons.edit_note,
+              color: AppTheme.primary,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '자기소개',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         
@@ -296,11 +423,11 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           decoration: InputDecoration(
             labelText: '자기소개',
             hintText: '자신에 대해 간단히 소개해주세요',
-            prefixIcon: const Icon(Icons.edit_note),
             helperText: '${_bioController.text.length}/200',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
             ),
+            contentPadding: const EdgeInsets.all(16),
           ),
           maxLines: 4,
           maxLength: 200,
@@ -322,7 +449,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               title: const Text('갤러리에서 선택'),
               onTap: () {
                 Navigator.of(context).pop();
-                _pickImage(ImageSource.gallery);
+                _pickImage();
               },
             ),
             ListTile(
@@ -330,7 +457,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               title: const Text('카메라로 촬영'),
               onTap: () {
                 Navigator.of(context).pop();
-                _pickImage(ImageSource.camera);
+                _pickImageFromCamera();
               },
             ),
             ListTile(
@@ -340,6 +467,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                 Navigator.of(context).pop();
                 setState(() {
                   _selectedImagePath = null;
+                  _selectedImageFile = null;
                 });
               },
             ),
@@ -349,53 +477,111 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     );
   }
 
-  /// 이미지 선택
-  Future<void> _pickImage(ImageSource source) async {
+  /// 이미지 선택 (갤러리)
+  Future<void> _pickImage() async {
     try {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(
-        source: source,
-        maxWidth: 800,
-        maxHeight: 800,
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
         imageQuality: 80,
       );
-
-      if (pickedFile != null) {
+      
+      if (image != null) {
         setState(() {
-          _selectedImagePath = pickedFile.path;
+          _selectedImageFile = File(image.path);
+          _selectedImagePath = image.path;
         });
         
-        // TODO: 이미지 업로드 및 URL 가져오기
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('이미지가 선택되었습니다')),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('이미지 선택에 실패했습니다: $e')),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('이미지 선택 중 오류가 발생했습니다: $e')),
+        );
+      }
+    }
+  }
+
+  /// 이미지 선택 (카메라)
+  Future<void> _pickImageFromCamera() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 80,
       );
+      
+      if (image != null) {
+        setState(() {
+          _selectedImageFile = File(image.path);
+          _selectedImagePath = image.path;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이미지가 촬영되었습니다')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('카메라 촬영 중 오류가 발생했습니다: $e')),
+        );
+      }
     }
   }
 
   /// 날짜 선택기 표시
   Future<void> _showDatePicker(BuildContext context) async {
-    final currentDate = DateTime.now();
-    final initialDate = _selectedBirthDate ?? DateTime(currentDate.year - 20, 1, 1);
-    final firstDate = DateTime(currentDate.year - 100, 1, 1);
-    final lastDate = currentDate;
+    try {
+      final currentDate = DateTime.now();
+      final initialDate = _selectedBirthDate ?? DateTime(currentDate.year - 20, 1, 1);
+      final firstDate = DateTime(currentDate.year - 100, 1, 1);
+      final lastDate = currentDate;
 
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: firstDate,
-      lastDate: lastDate,
-      locale: const Locale('ko', 'KR'),
-    );
+      final pickedDate = await showDatePicker(
+        context: context,
+        initialDate: initialDate,
+        firstDate: firstDate,
+        lastDate: lastDate,
+        locale: const Locale('ko', 'KR'),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: ColorScheme.light(
+                primary: AppTheme.primary,
+                onPrimary: Colors.white,
+                surface: AppTheme.surface,
+                onSurface: AppTheme.textPrimary,
+              ),
+            ),
+            child: child!,
+          );
+        },
+        errorFormatText: '올바른 날짜 형식을 입력하세요',
+        errorInvalidText: '올바른 날짜를 입력하세요',
+        fieldLabelText: '생년월일',
+        fieldHintText: 'YYYY/MM/DD',
+        helpText: '생년월일을 선택하세요',
+        cancelText: '취소',
+        confirmText: '확인',
+      );
 
-    if (pickedDate != null) {
-      setState(() {
-        _selectedBirthDate = pickedDate;
-      });
+      if (pickedDate != null) {
+        setState(() {
+          _selectedBirthDate = pickedDate;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('날짜 선택 중 오류가 발생했습니다: $e')),
+        );
+      }
     }
   }
 
@@ -410,17 +596,37 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     });
 
     try {
-      final profile = ref.read(profileProvider).profile;
-      if (profile == null) return;
+      final currentProfile = ref.read(profileProvider).profile;
+      final authState = ref.read(authProvider);
+      
+      if (currentProfile == null || authState.user == null) {
+        throw Exception('사용자 정보를 찾을 수 없습니다');
+      }
 
-      final updatedProfile = profile.copyWith(
+      // 이미지가 선택된 경우 업로드
+      String? finalImageUrl = _selectedImagePath;
+      if (_selectedImageFile != null) {
+        try {
+          final uploadedUrl = await ref.read(profileProvider.notifier).uploadProfileImage(_selectedImageFile!.path);
+          if (uploadedUrl != null) {
+            finalImageUrl = uploadedUrl;
+          }
+        } catch (e) {
+          print('이미지 업로드 실패: $e');
+          // 이미지 업로드 실패 시 기존 이미지 URL 유지
+        }
+      }
+
+      // 업데이트된 프로필 생성
+      final updatedProfile = currentProfile.copyWith(
         nickname: _nicknameController.text.trim(),
         birthDate: _selectedBirthDate,
         bio: _bioController.text.trim().isEmpty ? null : _bioController.text.trim(),
-        profileImageUrl: _selectedImagePath,
+        profileImageUrl: finalImageUrl,
         updatedAt: DateTime.now(),
       );
 
+      // 프로필 저장
       final success = await ref.read(profileProvider.notifier).updateProfile(updatedProfile);
 
       if (success) {
@@ -428,7 +634,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('프로필이 저장되었습니다')),
           );
-          Navigator.of(context).pop();
+          context.pop();
         }
       } else {
         if (mounted) {

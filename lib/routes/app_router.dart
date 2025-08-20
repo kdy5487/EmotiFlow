@@ -8,7 +8,13 @@ import 'package:emoti_flow/features/diary/views/diary_detail_page/diary_detail_p
 import 'package:emoti_flow/features/ai/views/ai_page.dart';
 import 'package:emoti_flow/features/auth/pages/login_page.dart';
 import 'package:emoti_flow/features/profile/views/profile_page.dart';
+import 'package:emoti_flow/features/profile/views/profile_edit_page.dart';
 import 'package:emoti_flow/features/settings/views/settings_page.dart';
+import 'package:emoti_flow/features/settings/views/notification_settings_page.dart';
+import 'package:emoti_flow/features/settings/views/theme_settings_page.dart';
+import 'package:emoti_flow/features/settings/views/language_settings_page.dart';
+import 'package:emoti_flow/features/settings/views/font_settings_page.dart';
+import 'package:emoti_flow/features/settings/views/account_settings_page.dart';
 
 // 라우트 이름 상수
 class AppRoutes {
@@ -31,9 +37,6 @@ class AppRouter {
     return GoRouter(
       initialLocation: AppRoutes.home,
       redirect: (context, state) {
-        // Riverpod을 사용하지 않으므로 기본 리다이렉트 로직만 구현
-        final String loc = state.uri.toString();
-        
         // 로그인 상태는 각 페이지에서 개별적으로 처리
         return null;
       },
@@ -114,18 +117,52 @@ class AppRouter {
         builder: (context, state) => const CommunityPage(),
       ),
       
-      // 설정 라우트
-      GoRoute(
-        path: AppRoutes.settings,
-        name: 'settings',
-        builder: (context, state) => const SettingsPage(),
-      ),
-      
       // 프로필 라우트
       GoRoute(
         path: AppRoutes.profile,
         name: 'profile',
         builder: (context, state) => const ProfilePage(),
+        routes: [
+          GoRoute(
+            path: 'edit',
+            name: 'profile-edit',
+            builder: (context, state) => const ProfileEditPage(),
+          ),
+        ],
+      ),
+      
+      // 설정 라우트
+      GoRoute(
+        path: AppRoutes.settings,
+        name: 'settings',
+        builder: (context, state) => const SettingsPage(),
+        routes: [
+          GoRoute(
+            path: 'notifications',
+            name: 'notification-settings',
+            builder: (context, state) => const NotificationSettingsPage(),
+          ),
+          GoRoute(
+            path: 'theme',
+            name: 'theme-settings',
+            builder: (context, state) => const ThemeSettingsPage(),
+          ),
+          GoRoute(
+            path: 'language',
+            name: 'language-settings',
+            builder: (context, state) => const LanguageSettingsPage(),
+          ),
+          GoRoute(
+            path: 'font',
+            name: 'font-settings',
+            builder: (context, state) => const FontSettingsPage(),
+          ),
+          GoRoute(
+            path: 'account',
+            name: 'account-settings',
+            builder: (context, state) => const AccountSettingsPage(),
+          ),
+        ],
       ),
       ],
       errorBuilder: (context, state) => const ErrorPage(),
