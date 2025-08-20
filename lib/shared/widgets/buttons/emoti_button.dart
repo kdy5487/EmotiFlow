@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_colors.dart';
+import '../../../theme/app_theme.dart';
 import '../../../theme/app_typography.dart';
 
 /// EmotiFlow 앱의 버튼 시스템
@@ -55,10 +55,10 @@ class EmotiButton extends StatelessWidget {
         button = ElevatedButton(
           onPressed: (isLoading || isDisabled) ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.textInverse,
+            backgroundColor: AppTheme.primary,
+            foregroundColor: Colors.white,
             elevation: 4,
-            shadowColor: AppColors.primary.withOpacity(0.3),
+            shadowColor: AppTheme.primary.withOpacity(0.3),
             padding: _getPadding(),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(_getBorderRadius()),
@@ -73,10 +73,10 @@ class EmotiButton extends StatelessWidget {
         button = ElevatedButton(
           onPressed: (isLoading || isDisabled) ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.secondary,
-            foregroundColor: AppColors.textInverse,
+            backgroundColor: AppTheme.secondary,
+            foregroundColor: Colors.white,
             elevation: 3,
-            shadowColor: AppColors.secondary.withOpacity(0.25),
+            shadowColor: AppTheme.secondary.withOpacity(0.25),
             padding: _getPadding(),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(_getBorderRadius()),
@@ -91,8 +91,8 @@ class EmotiButton extends StatelessWidget {
         button = OutlinedButton(
           onPressed: (isLoading || isDisabled) ? null : onPressed,
           style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.primary,
-            side: const BorderSide(color: AppColors.primary, width: 1.5),
+            foregroundColor: AppTheme.primary,
+            side: const BorderSide(color: AppTheme.primary, width: 1.5),
             padding: _getPadding(),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(_getBorderRadius()),
@@ -107,7 +107,7 @@ class EmotiButton extends StatelessWidget {
         button = TextButton(
           onPressed: (isLoading || isDisabled) ? null : onPressed,
           style: TextButton.styleFrom(
-            foregroundColor: AppColors.primary,
+            foregroundColor: AppTheme.primary,
             padding: _getPadding(),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(_getBorderRadius()),
@@ -122,10 +122,10 @@ class EmotiButton extends StatelessWidget {
         button = ElevatedButton(
           onPressed: (isLoading || isDisabled) ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.error,
-            foregroundColor: AppColors.textInverse,
+            backgroundColor: AppTheme.error,
+            foregroundColor: Colors.white,
             elevation: 3,
-            shadowColor: AppColors.error.withOpacity(0.25),
+            shadowColor: AppTheme.error.withOpacity(0.25),
             padding: _getPadding(),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(_getBorderRadius()),
@@ -154,7 +154,7 @@ class EmotiButton extends StatelessWidget {
         height: _getIconSize(),
         child: const CircularProgressIndicator(
           strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.textInverse),
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
         ),
       );
     }
@@ -287,8 +287,8 @@ class EmotiIconButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? AppColors.primary,
-          foregroundColor: foregroundColor ?? AppColors.textInverse,
+          backgroundColor: backgroundColor ?? AppTheme.primary,
+          foregroundColor: foregroundColor ?? Colors.white,
           elevation: 2,
           padding: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
@@ -301,7 +301,7 @@ class EmotiIconButton extends StatelessWidget {
                 height: _getIconSize(),
                 child: const CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.textInverse),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
             : Icon(icon, size: _getIconSize()),

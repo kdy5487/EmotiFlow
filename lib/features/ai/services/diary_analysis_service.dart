@@ -79,7 +79,7 @@ class DiaryAnalysisService {
     final emotionScores = _calculateEmotionScores(emotions);
     
     return DiaryAnalysisResult(
-      summary: aiResponse.length > 100 ? aiResponse.substring(0, 100) + '...' : aiResponse,
+      summary: aiResponse.length > 100 ? '${aiResponse.substring(0, 100)}...' : aiResponse,
       keywords: _extractKeywords(entry.content),
       emotionScores: emotionScores,
       advice: aiResponse,
@@ -202,7 +202,6 @@ class DiaryAnalysisService {
 
   DiaryAnalysisResult _performMultipleAnalysis(List<DiaryEntry> entries) {
     final patterns = analyzeEmotionPatterns(entries);
-    final dominantEmotions = patterns['dominantEmotions'] as List<String>;
     
     return DiaryAnalysisResult(
       summary: '${entries.length}개의 일기를 분석했습니다.',
@@ -380,8 +379,9 @@ class DiaryAnalysisService {
     final recentMood = _calculateAverageMood(recentEntries);
     final olderMood = _calculateAverageMood(olderEntries);
     
-    if (recentMood > olderMood + 1) return '개선';
-    else if (recentMood < olderMood - 1) return '악화';
+    if (recentMood > olderMood + 1) {
+      return '개선';
+    } else if (recentMood < olderMood - 1) return '악화';
     else return '안정';
   }
 

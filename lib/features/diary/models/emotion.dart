@@ -38,7 +38,7 @@ class Emotion {
 
   /// 기본 감정 데이터 (문서 명세에 따른 8가지)
   static final List<Emotion> basicEmotions = [
-    Emotion(
+    const Emotion(
       id: 'joy',
       name: '기쁨',
       emoji: '😊',
@@ -49,7 +49,7 @@ class Emotion {
       relatedEmotions: ['감사', '설렘', '평온'],
       moodType: 'positive',
     ),
-    Emotion(
+    const Emotion(
       id: 'sadness',
       name: '슬픔',
       emoji: '😢',
@@ -60,7 +60,7 @@ class Emotion {
       relatedEmotions: ['걱정', '지루함'],
       moodType: 'negative',
     ),
-    Emotion(
+    const Emotion(
       id: 'anger',
       name: '분노',
       emoji: '😠',
@@ -71,7 +71,7 @@ class Emotion {
       relatedEmotions: ['걱정', '슬픔'],
       moodType: 'negative',
     ),
-    Emotion(
+    const Emotion(
       id: 'calm',
       name: '평온',
       emoji: '😌',
@@ -82,7 +82,7 @@ class Emotion {
       relatedEmotions: ['감사', '기쁨'],
       moodType: 'positive',
     ),
-    Emotion(
+    const Emotion(
       id: 'excitement',
       name: '설렘',
       emoji: '🤩',
@@ -93,7 +93,7 @@ class Emotion {
       relatedEmotions: ['기쁨', '감사'],
       moodType: 'positive',
     ),
-    Emotion(
+    const Emotion(
       id: 'worry',
       name: '걱정',
       emoji: '😰',
@@ -104,7 +104,7 @@ class Emotion {
       relatedEmotions: ['슬픔', '지루함'],
       moodType: 'negative',
     ),
-    Emotion(
+    const Emotion(
       id: 'gratitude',
       name: '감사',
       emoji: '🙏',
@@ -115,7 +115,7 @@ class Emotion {
       relatedEmotions: ['기쁨', '평온'],
       moodType: 'positive',
     ),
-    Emotion(
+    const Emotion(
       id: 'boredom',
       name: '지루함',
       emoji: '😐',

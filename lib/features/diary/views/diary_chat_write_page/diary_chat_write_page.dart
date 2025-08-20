@@ -1,12 +1,16 @@
+import '../../../../core/ai/gemini/gemini_service.dart';
+import '../../../../core/providers/auth_provider.dart';
+import '../../../../theme/app_colors.dart';
+import '../../../../theme/app_typography.dart';
+import '../../../../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../theme/app_colors.dart';
-import '../../../theme/app_typography.dart';
-import '../../../core/ai/gemini/gemini_service.dart';
-import '../../../core/providers/auth_provider.dart';
-import '../models/diary_entry.dart';
-import '../viewmodels/diary_write_view_model.dart';
-import '../providers/diary_provider.dart';
+import '../../models/diary_entry.dart';
+import '../diary_write_page/diary_write_view_model.dart';
+import '../../providers/diary_provider.dart';
+import '../../../settings/providers/settings_provider.dart';
+import '../../../music/providers/music_prompt_provider.dart';
+import '../../../music/providers/music_provider.dart';
 
 /// AI 대화형 일기 작성 페이지
 class DiaryChatWritePage extends ConsumerStatefulWidget {
@@ -22,8 +26,8 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   
   bool _isTyping = false;
   bool _showResult = false;
-  List<String> _conversationHistory = [];
-  String? _selectedEmotion; // 선택된 감정
+  final List<String> _conversationHistory = [];
+  String? _selectedEmotion; // 선택된 감정 (하나만)
   bool _emotionSelected = false; // 감정이 선택되었는지 여부
   String? _aiGeneratedImageUrl; // AI 생성 이미지 URL
 
@@ -104,7 +108,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       final extractedEmotion = _extractEmotionFromMessage(message);
       if (extractedEmotion != null) {
         setState(() {
-          _selectedEmotion = extractedEmotion;
+                  _selectedEmotion = extractedEmotion;
           _emotionSelected = true;
         });
       }
@@ -137,7 +141,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       print('AI 응답 생성 실패: $e');
       
       // Fallback 응답
-      final fallbackResponse = '흥미로운 이야기네요! 더 자세히 들려주세요.';
+      const fallbackResponse = '흥미로운 이야기네요! 더 자세히 들려주세요.';
       
       final aiMessage = ChatMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -243,10 +247,10 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     setState(() => _isTyping = true);
     
     try {
-      final diarySummary = await GeminiService.instance.generateDiarySummary(
-        _conversationHistory,
-        _selectedEmotion ?? '자연스러운',
-      );
+              final diarySummary = await GeminiService.instance.generateDiarySummary(
+          _conversationHistory,
+          _selectedEmotion ?? '자연스러운',
+        );
       
       final summaryMessage = ChatMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -263,6 +267,16 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       });
       
       setState(() => _isTyping = false);
+      
+      // 홈에서 음악 전환 안내 예약 (AI 분석 후)
+      final musicSettings = ref.read(settingsProvider).settings.musicSettings;
+      if (musicSettings.enabled && musicSettings.showPostAiAnalysisMusicTip && _selectedEmotion != null) {
+        ref.read(pendingMusicPromptProvider.notifier).state = PendingMusicPrompt(
+          emotion: _selectedEmotion!,
+          intensity: 8,
+          source: EmotionSource.aiAnalysis,
+        );
+      }
       
       // 별도 다이얼로그로 결과 표시
       _showDiaryResultDialog(diarySummary);
@@ -283,11 +297,11 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Row(
+          title: const Row(
             children: [
               Icon(Icons.edit_note, color: AppColors.primary),
-              const SizedBox(width: 8),
-              const Text('오늘의 일기'),
+              SizedBox(width: 8),
+              Text('오늘의 일기'),
             ],
           ),
           content: Column(
@@ -297,7 +311,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
               if (_selectedEmotion != null) ...[
                 Row(
                   children: [
-                    Icon(Icons.emoji_emotions, color: AppColors.primary),
+                    const Icon(Icons.emoji_emotions, color: AppColors.primary),
                     const SizedBox(width: 8),
                     Text(
                       '오늘의 감정: $_selectedEmotion',
@@ -310,7 +324,8 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                 ),
                 const SizedBox(height: 16),
               ],
-              Expanded(
+              SizedBox(
+                height: 280,
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,7 +349,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.auto_awesome, color: AppColors.primary),
+                                const Icon(Icons.auto_awesome, color: AppColors.primary),
                                 const SizedBox(width: 8),
                                 Text(
                                   'AI 그림 생성',
@@ -347,23 +362,8 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'AI가 오늘의 감정과 경험을 바탕으로 그림을 그려드릴 수 있어요!',
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: () => _generateAIImage(diarySummary),
-                                icon: const Icon(Icons.brush),
-                                label: const Text('AI가 그림 그려주기'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.white,
-                                ),
-                              ),
+                              '일기 내용을 바탕으로 감정을 담은 이미지를 생성해보세요.',
+                              style: AppTypography.bodyMedium,
                             ),
                           ],
                         ),
@@ -375,13 +375,17 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
             ],
           ),
           actions: [
+            // 뒤로 가기 (저장하지 않고 채팅 페이지로 돌아가기)
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _startNewConversation(); // 새 대화 시작
-              },
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('뒤로 가기'),
+            ),
+            // 새 일기 작성
+            TextButton(
+              onPressed: () => _showNewDiaryConfirmation(),
               child: const Text('새 일기 작성'),
             ),
+            // 저장 후 완료
             ElevatedButton(
               onPressed: () async {
                 // 채팅 일기를 일기 목록에 저장
@@ -394,6 +398,64 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                 foregroundColor: Colors.white,
               ),
               child: const Text('저장 후 완료'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 추후 개발 예정 기능 안내 다이얼로그
+  void _showComingSoonDialog(String featureName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.construction, color: Colors.orange),
+              const SizedBox(width: 8),
+              Text('$featureName'),
+            ],
+          ),
+          content: const Text(
+            '이 기능은 현재 개발 중입니다.\n\n추후 업데이트를 통해 제공될 예정이니\n잠시만 기다려주세요!',
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 새 일기 작성 확인창
+  void _showNewDiaryConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('새 일기 작성'),
+          content: const Text('기존 작성 내용이 모두 사라집니다.\n정말 새로 시작하시겠습니까?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 확인창 닫기
+                Navigator.of(context).pop(); // 결과창 닫기
+                _startNewConversation(); // 새 대화 시작
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('새로 시작'),
             ),
           ],
         );
@@ -479,7 +541,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Row(
         children: [
-          CircleAvatar(
+          const CircleAvatar(
             backgroundColor: AppColors.primary,
             radius: 16,
             child: Icon(Icons.psychology, color: Colors.white, size: 16),
@@ -494,7 +556,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
@@ -521,32 +583,32 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   /// 감정 선택 UI
   Widget _buildEmotionSelectionUI() {
     final emotions = [
-      {'name': '기쁨', 'emoji': '😊', 'color': Colors.yellow},
-      {'name': '슬픔', 'emoji': '😢', 'color': Colors.blue},
-      {'name': '화남', 'emoji': '😠', 'color': Colors.red},
-      {'name': '평온', 'emoji': '😌', 'color': Colors.green},
-      {'name': '설렘', 'emoji': '🥰', 'color': Colors.pink},
-      {'name': '피곤함', 'emoji': '😴', 'color': Colors.grey},
-      {'name': '놀람', 'emoji': '😲', 'color': Colors.orange},
-      {'name': '걱정', 'emoji': '😰', 'color': Colors.purple},
+      {'name': '기쁨', 'icon': Icons.sentiment_very_satisfied, 'color': AppTheme.joy},
+      {'name': '사랑', 'icon': Icons.favorite, 'color': AppTheme.love},
+      {'name': '평온', 'icon': Icons.sentiment_satisfied, 'color': AppTheme.calm},
+      {'name': '슬픔', 'icon': Icons.sentiment_dissatisfied, 'color': AppTheme.sadness},
+      {'name': '분노', 'icon': Icons.sentiment_very_dissatisfied, 'color': AppTheme.anger},
+      {'name': '두려움', 'icon': Icons.visibility, 'color': AppTheme.fear},
+      {'name': '놀람', 'icon': Icons.sentiment_satisfied_alt, 'color': AppTheme.sadness},
+      {'name': '중립', 'icon': Icons.sentiment_neutral, 'color': AppTheme.neutral},
     ];
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.05),
+        color: AppTheme.primary.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+        border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
       ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
             '오늘의 감정을 선택해주세요',
             style: AppTypography.bodyLarge.copyWith(
               fontWeight: FontWeight.w600,
-              color: AppColors.primary,
+              color: AppTheme.primary,
             ),
           ),
           const SizedBox(height: 12),
@@ -555,72 +617,86 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
             runSpacing: 6,
             children: emotions.map((emotion) {
               final isSelected = _selectedEmotion == emotion['name'] as String;
+              
               return GestureDetector(
                 onTap: () => _selectEmotion(emotion['name'] as String),
-                child: Container(
-                  width: 80, // 고정 너비로 통일
-                  height: 36, // 고정 높이로 통일
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isSelected 
-                        ? AppColors.primary 
-                        : (emotion['color'] as Color).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
+                                  child: Container(
+                    width: 80, // 고정 너비로 통일
+                    height: 36, // 고정 높이로 통일
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    decoration: BoxDecoration(
                       color: isSelected 
-                          ? AppColors.primary 
-                          : (emotion['color'] as Color).withOpacity(0.3),
-                      width: isSelected ? 2 : 1,
+                          ? AppTheme.primary 
+                          : (emotion['color'] as Color).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isSelected 
+                            ? AppTheme.primary 
+                            : (emotion['color'] as Color).withOpacity(0.3),
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          emotion['icon'] as IconData,
+                          size: 16,
+                          color: isSelected ? Colors.white : emotion['color'] as Color,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            emotion['name'] as String,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: isSelected ? Colors.white : emotion['color'] as Color,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                        emotion['emoji'] as String,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          emotion['name'] as String,
-                          style: AppTypography.bodySmall.copyWith(
-                            color: isSelected ? Colors.white : emotion['color'] as Color,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                          ),
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-                ),
               );
             }).toList(),
           ),
-            const SizedBox(height: 12),
+          
+
+          
+          const SizedBox(height: 12),
           Text(
             '감정을 선택하거나 자유롭게 이야기해주세요!',
             style: AppTypography.bodySmall.copyWith(
-              color: Colors.grey[600],
+              color: Colors.grey[400],
               fontStyle: FontStyle.italic,
             ),
           ),
-          ],
+        ],
       ),
     );
   }
 
-  /// 감정 선택 처리
+  /// 감정 선택 처리 (하나만)
   void _selectEmotion(String emotion) {
     setState(() {
-      _selectedEmotion = emotion;
-      _emotionSelected = true;
+      if (_selectedEmotion == emotion) {
+        // 같은 감정을 다시 클릭하면 선택 해제
+        _selectedEmotion = null;
+        _emotionSelected = false;
+      } else {
+        // 새로운 감정 선택
+        _selectedEmotion = emotion;
+        _emotionSelected = true;
+      }
     });
     
     // 감정 선택 후 AI가 맞춤형 질문하도록
-    _sendEmotionBasedQuestion(emotion);
+    if (_selectedEmotion != null) {
+      _sendEmotionBasedQuestion(emotion);
+    }
   }
 
   /// 감정 기반 AI 질문 전송
@@ -650,7 +726,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       // Fallback 응답
       final aiMessage = ChatMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        content: '${emotion}한 하루를 보내셨군요. 더 자세히 들려주세요!',
+        content: '$emotion한 하루를 보내셨군요. 더 자세히 들려주세요!',
         isFromAI: true,
         timestamp: DateTime.now(),
       );
@@ -675,9 +751,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
         title: _generateDiaryTitle(diarySummary),
         content: diarySummary,
         emotions: _selectedEmotion != null ? [_selectedEmotion!] : [],
-        emotionIntensities: _selectedEmotion != null 
-            ? {_selectedEmotion!: 8} 
-            : {},
+        emotionIntensities: _selectedEmotion != null ? {_selectedEmotion!: 8} : {},
         tags: _extractTagsFromSummary(diarySummary),
         diaryType: DiaryType.aiChat, // AI 대화형 일기
         isPublic: false,
@@ -706,7 +780,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       // 성공 메시지 표시
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('채팅 일기가 저장되었습니다!'),
             backgroundColor: AppColors.primary,
           ),
@@ -716,7 +790,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       print('채팅 일기 저장 실패: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('일기 저장에 실패했습니다. 다시 시도해주세요.'),
             backgroundColor: Colors.red,
           ),
@@ -748,7 +822,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       // AI 이미지 생성 요청 (채팅 내용과 감정 기반)
       final imageUrl = await GeminiService.instance.generateImage(
         diarySummary, 
-        _selectedEmotion, 
+        _selectedEmotion ?? '자연스러운', 
         _conversationHistory
       );
       
@@ -764,7 +838,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (imageUrl != null)
+                if (imageUrl != null && imageUrl.isNotEmpty)
                   Image.network(
                     imageUrl,
                     width: 300,
@@ -774,7 +848,23 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                       const Icon(Icons.error, size: 100, color: Colors.red),
                   )
                 else
-                  const Text('이미지 생성에 실패했습니다.'),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.image_not_supported, size: 100, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      const Text(
+                        '이미지 생성에 실패했습니다.',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '현재 Gemini API는 텍스트 기반 이미지 생성에 제한이 있습니다.\n다른 이미지 생성 서비스를 사용하거나\n텍스트로만 일기를 완성해주세요.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
               ],
             ),
             actions: [
@@ -816,9 +906,9 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     final tags = <String>[];
     
     // 감정 관련 태그
-    if (_selectedEmotion != null) {
-      tags.add(_selectedEmotion!);
-    }
+            if (_selectedEmotion != null) {
+          tags.add(_selectedEmotion!);
+        }
     
     // 일반적인 태그들
     if (summary.contains('일') || summary.contains('하루')) tags.add('일상');
@@ -840,7 +930,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
           if (isAI) ...[
-            CircleAvatar(
+            const CircleAvatar(
               backgroundColor: AppColors.primary,
               radius: 16,
               child: Icon(Icons.psychology, color: Colors.white, size: 16),
@@ -872,7 +962,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
           
           if (!isAI) ...[
             const SizedBox(width: 8),
-            CircleAvatar(
+            const CircleAvatar(
               backgroundColor: AppColors.secondary,
               radius: 16,
               child: Icon(Icons.person, color: Colors.white, size: 16),
@@ -934,7 +1024,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
           const SizedBox(width: 8),
           IconButton(
             onPressed: _sendMessage,
-            icon: Icon(Icons.send, color: AppColors.primary),
+            icon: const Icon(Icons.send, color: AppColors.primary),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.primary.withOpacity(0.1),
               padding: const EdgeInsets.all(12),

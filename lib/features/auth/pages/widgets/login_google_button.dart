@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/providers/auth_provider.dart';
 import '../../../../shared/widgets/buttons/emoti_button.dart';
 
 /// Google 로그인 버튼 위젯

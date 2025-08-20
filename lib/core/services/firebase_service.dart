@@ -1,4 +1,4 @@
-import 'package:firebase_core/firebase_core.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -20,10 +20,8 @@ class FirebaseService {
   /// Firebase 서비스들 초기화
   Future<void> initialize() async {
     try {
-      // Firebase Core 초기화
-      await Firebase.initializeApp();
-      
-      // 각 서비스 초기화
+      // Firebase Core는 main.dart에서 이미 초기화됨
+      // 각 서비스 인스턴스만 가져오기
       _auth = FirebaseAuth.instance;
       _firestore = FirebaseFirestore.instance;
       _storage = FirebaseStorage.instance;

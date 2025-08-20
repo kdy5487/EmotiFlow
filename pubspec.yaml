@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.8
   
   # 환경 변수 관리
@@ -61,8 +63,8 @@ dependencies:
   # HTTP 통신 (나중에 추가)
   # dio: ^5.4.0
   
-  # 로컬 저장소 (나중에 추가)
-  # shared_preferences: ^2.2.2
+  # 로컬 저장소
+  shared_preferences: ^2.2.2
   # hive: ^2.2.3
   # hive_flutter: ^1.1.0
   
@@ -71,12 +73,14 @@ dependencies:
   cached_network_image: ^3.3.0
   image: ^4.1.7
   # shimmer: ^3.0.0
+  just_audio: ^0.9.36
+  audio_session: ^0.1.18
   
   # 차트 및 데이터 시각화 (나중에 추가)
   # fl_chart: ^0.66.0
   
   # 유틸리티 (나중에 추가)
-  # intl: ^0.19.0
+  intl: ^0.19.0
   # uuid: ^4.2.1
   # image_picker: ^1.0.4
   # permission_handler: ^11.1.0

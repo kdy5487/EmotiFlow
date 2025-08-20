@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
+import 'app_theme.dart';
 
 /// EmotiFlow 앱의 타이포그래피 시스템
 /// UI/UX 가이드에 정의된 모든 텍스트 스타일을 포함
@@ -13,7 +13,7 @@ class AppTypography {
     fontWeight: FontWeight.w700,
     height: 1.2,
     letterSpacing: -0.5,
-    color: AppColors.textPrimary,
+    color: AppTheme.textPrimary,
   );
 
   static const TextStyle displayMedium = TextStyle(
@@ -21,7 +21,7 @@ class AppTypography {
     fontWeight: FontWeight.w600,
     height: 1.3,
     letterSpacing: -0.3,
-    color: AppColors.textPrimary,
+    color: AppTheme.textPrimary,
   );
 
   static const TextStyle displaySmall = TextStyle(
@@ -29,7 +29,7 @@ class AppTypography {
     fontWeight: FontWeight.w600,
     height: 1.4,
     letterSpacing: -0.2,
-    color: AppColors.textPrimary,
+    color: AppTheme.textPrimary,
   );
 
   // Headline Styles (제목)
@@ -38,7 +38,7 @@ class AppTypography {
     fontWeight: FontWeight.w600,
     height: 1.4,
     letterSpacing: -0.1,
-    color: AppColors.textPrimary,
+    color: AppTheme.textPrimary,
   );
 
   static const TextStyle headlineMedium = TextStyle(
@@ -46,7 +46,7 @@ class AppTypography {
     fontWeight: FontWeight.w600,
     height: 1.4,
     letterSpacing: 0,
-    color: AppColors.textPrimary,
+    color: AppTheme.textPrimary,
   );
 
   static const TextStyle headlineSmall = TextStyle(
@@ -54,7 +54,7 @@ class AppTypography {
     fontWeight: FontWeight.w600,
     height: 1.4,
     letterSpacing: 0,
-    color: AppColors.textPrimary,
+    color: AppTheme.textPrimary,
   );
 
   // Title Styles (소제목)
@@ -63,7 +63,7 @@ class AppTypography {
     fontWeight: FontWeight.w600,
     height: 1.5,
     letterSpacing: 0,
-    color: AppColors.textPrimary,
+    color: AppTheme.textPrimary,
   );
 
   static const TextStyle titleMedium = TextStyle(
@@ -71,7 +71,7 @@ class AppTypography {
     fontWeight: FontWeight.w500,
     height: 1.5,
     letterSpacing: 0,
-    color: AppColors.textPrimary,
+    color: AppTheme.textPrimary,
   );
 
   static const TextStyle titleSmall = TextStyle(
@@ -79,7 +79,7 @@ class AppTypography {
     fontWeight: FontWeight.w500,
     height: 1.5,
     letterSpacing: 0.1,
-    color: AppColors.textSecondary,
+    color: AppTheme.textSecondary,
   );
 
   // Body Styles (본문)
@@ -88,7 +88,7 @@ class AppTypography {
     fontWeight: FontWeight.w400,
     height: 1.5,
     letterSpacing: 0,
-    color: AppColors.textPrimary,
+    color: AppTheme.textPrimary,
   );
 
   static const TextStyle bodyMedium = TextStyle(
@@ -96,7 +96,7 @@ class AppTypography {
     fontWeight: FontWeight.w400,
     height: 1.5,
     letterSpacing: 0,
-    color: AppColors.textPrimary,
+    color: AppTheme.textPrimary,
   );
 
   static const TextStyle bodySmall = TextStyle(
@@ -104,7 +104,7 @@ class AppTypography {
     fontWeight: FontWeight.w400,
     height: 1.5,
     letterSpacing: 0.1,
-    color: AppColors.textSecondary,
+    color: AppTheme.textSecondary,
   );
 
   // Caption Styles (부가 정보)
@@ -113,7 +113,7 @@ class AppTypography {
     fontWeight: FontWeight.w400,
     height: 1.4,
     letterSpacing: 0.2,
-    color: AppColors.textTertiary,
+    color: AppTheme.textTertiary,
   );
 
   static const TextStyle captionSmall = TextStyle(
@@ -121,7 +121,7 @@ class AppTypography {
     fontWeight: FontWeight.w400,
     height: 1.4,
     letterSpacing: 0.3,
-    color: AppColors.textTertiary,
+    color: AppTheme.textTertiary,
   );
 
   // Button Styles (버튼)
@@ -130,7 +130,7 @@ class AppTypography {
     fontWeight: FontWeight.w600,
     height: 1.4,
     letterSpacing: 0.1,
-    color: AppColors.textInverse,
+    color: Colors.white,
   );
 
   static const TextStyle buttonMedium = TextStyle(
@@ -138,7 +138,7 @@ class AppTypography {
     fontWeight: FontWeight.w600,
     height: 1.4,
     letterSpacing: 0.1,
-    color: AppColors.textInverse,
+    color: Colors.white,
   );
 
   static const TextStyle buttonSmall = TextStyle(
@@ -146,7 +146,7 @@ class AppTypography {
     fontWeight: FontWeight.w600,
     height: 1.4,
     letterSpacing: 0.1,
-    color: AppColors.textInverse,
+    color: Colors.white,
   );
 
   // Label Styles (라벨)
@@ -155,7 +155,7 @@ class AppTypography {
     fontWeight: FontWeight.w500,
     height: 1.4,
     letterSpacing: 0.1,
-    color: AppColors.textPrimary,
+    color: AppTheme.textPrimary,
   );
 
   static const TextStyle labelMedium = TextStyle(
@@ -163,7 +163,7 @@ class AppTypography {
     fontWeight: FontWeight.w500,
     height: 1.4,
     letterSpacing: 0.1,
-    color: AppColors.textSecondary,
+    color: AppTheme.textSecondary,
   );
 
   static const TextStyle labelSmall = TextStyle(
@@ -171,7 +171,7 @@ class AppTypography {
     fontWeight: FontWeight.w500,
     height: 1.4,
     letterSpacing: 0.1,
-    color: AppColors.textTertiary,
+    color: AppTheme.textTertiary,
   );
 
   // Override Styles (색상 오버라이드)
@@ -187,7 +187,7 @@ class AppTypography {
     fontWeight: FontWeight.w700,
     height: 1.2,
     letterSpacing: -0.5,
-    color: AppColors.darkTextPrimary,
+    color: AppTheme.darkTextPrimary,
   );
 
   static const TextStyle darkBodyLarge = TextStyle(
@@ -195,7 +195,7 @@ class AppTypography {
     fontWeight: FontWeight.w400,
     height: 1.5,
     letterSpacing: 0,
-    color: AppColors.darkTextPrimary,
+    color: AppTheme.darkTextPrimary,
   );
 
   static const TextStyle darkBodyMedium = TextStyle(
@@ -203,7 +203,7 @@ class AppTypography {
     fontWeight: FontWeight.w400,
     height: 1.5,
     letterSpacing: 0,
-    color: AppColors.darkTextPrimary,
+    color: AppTheme.darkTextPrimary,
   );
 
   static const TextStyle darkBodySmall = TextStyle(
@@ -211,7 +211,7 @@ class AppTypography {
     fontWeight: FontWeight.w400,
     height: 1.5,
     letterSpacing: 0.1,
-    color: AppColors.darkTextSecondary,
+    color: AppTheme.darkTextSecondary,
   );
 
   // Light Theme TextTheme

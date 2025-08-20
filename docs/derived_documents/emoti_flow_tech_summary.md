@@ -27,6 +27,7 @@
 ### **AI Services**
 - **OpenAI GPT-4 API**: 감정 분석 및 AI 대화형 일기
 - **OpenAI DALL-E API**: 감정 기반 이미지 생성
+- **Gemini 1.5 Flash API**: 감정 기반 음악 추천 및 대화형 인터페이스
 
 ### **Data Visualization & Media**
 - **fl_chart**: 감정 통계 차트
@@ -34,6 +35,9 @@
 - **Custom Paint & Canvas API**: 그림 그리기 기능
 - **audioplayers/just_audio**: 음원 재생
 - **video_player**: 영상 재생 및 제작
+- **spotify_sdk**: Spotify API 연동 및 음악 재생
+- **youtube_explode_dart**: YouTube Music API 연동
+- **flutter_audio_query**: 로컬 음악 라이브러리 접근
 
 ### **Local Storage & Offline**
 - **SharedPreferences**: 간단한 설정 데이터 저장
@@ -1135,3 +1139,138 @@ lib/
 - `emoti_flow_page_definition.md`: 페이지 정의서
 - `emoti_flow_functional_spec.md`: 기능 상세 명세서
 - `emoti_flow_uiux_guide.md`: UI/UX 상세 가이드
+
+---
+
+## 🎵 감정 기반 음악 기능 구현 방식
+
+### **1. 전체 아키텍처 및 데이터 흐름**
+
+#### **감정 → 음악 매핑 시스템**
+- **감정 분류**: 기존 8가지 감정 (기쁨, 슬픔, 분노, 평온, 설렘, 우울, 불안, 희망)
+- **음악 태그 시스템**: 각 감정별로 적합한 음악 장르, BPM, 분위기 태그 정의
+- **실시간 매칭**: 사용자의 현재 감정 상태를 분석하여 최적의 음악 추천
+
+#### **데이터 소스 및 API 연동**
+- **Spotify Web API**: 음악 검색, 재생, 플레이리스트 생성
+- **YouTube Music API**: 대안 음악 소스 (무료 사용자용)
+- **로컬 음악 라이브러리**: 사용자 기기 내 음악 파일 활용
+
+### **2. 핵심 기능 구현 방식**
+
+#### **감정 분석 및 음악 매칭**
+```
+사용자 감정 입력 → 감정 강도 분석 → 음악 태그 생성 → API 검색 → 결과 필터링 → 추천 목록 생성
+```
+
+#### **음악 추천 알고리즘**
+- **감정 기반 필터링**: 감정과 음악의 분위기 매칭
+- **BPM 기반 매칭**: 감정 강도에 따른 템포 조절
+- **사용자 선호도 학습**: 이전 재생 기록 기반 개인화
+- **실시간 피드백**: 좋아요/싫어요로 추천 정확도 향상
+
+#### **재생 시스템**
+- **자동 재생**: 감정 선택 시 자동으로 적합한 음악 재생
+- **플레이리스트 생성**: 감정별 맞춤 플레이리스트 자동 구성
+- **연속 재생**: 감정 변화에 따른 음악 자동 전환
+- **백그라운드 재생**: 다른 앱 사용 중에도 음악 계속 재생
+
+### **3. 기술적 구현 세부사항**
+
+#### **백엔드 서비스**
+- **감정-음악 매핑 데이터베이스**: 감정별 음악 태그 및 메타데이터
+- **음악 추천 엔진**: 머신러닝 기반 개인화 추천 시스템
+- **API 프록시 서버**: 외부 음악 서비스 API 통합 관리
+- **사용자 선호도 분석**: 재생 패턴 및 피드백 데이터 수집
+
+#### **프론트엔드 구현**
+- **음악 플레이어 위젯**: 재생/일시정지, 볼륨, 진행바
+- **플레이리스트 뷰**: 감정별 음악 목록 및 재생 순서
+- **음악 검색 및 필터**: 장르, 아티스트, BPM별 필터링
+- **사용자 피드백 UI**: 좋아요/싫어요, 건너뛰기 버튼
+
+#### **데이터 모델**
+```dart
+// 감정-음악 매핑 모델
+class EmotionMusicMapping {
+  final String emotion;
+  final List<String> musicTags;
+  final int targetBPM;
+  final List<String> genres;
+  final String mood;
+}
+
+// 음악 트랙 모델
+class MusicTrack {
+  final String id;
+  final String title;
+  final String artist;
+  final String album;
+  final String albumArt;
+  final int duration;
+  final int bpm;
+  final List<String> genres;
+  final List<String> moods;
+  final String previewUrl;
+  final String fullTrackUrl;
+}
+
+// 사용자 음악 선호도 모델
+class UserMusicPreference {
+  final String userId;
+  final Map<String, double> emotionGenrePreferences;
+  final Map<String, double> artistPreferences;
+  final List<String> favoriteTracks;
+  final List<String> dislikedTracks;
+  final Map<String, int> playCounts;
+}
+```
+
+### **4. 사용자 경험 (UX) 설계**
+
+#### **음악 선택 및 재생 플로우**
+1. **감정 선택**: 일기 작성 시 또는 홈 화면에서 감정 선택
+2. **자동 추천**: 감정에 맞는 음악 3-5곡 자동 추천
+3. **음악 미리듣기**: 30초 미리듣기로 적합성 확인
+4. **플레이리스트 생성**: 마음에 드는 곡들로 자동 플레이리스트 구성
+5. **연속 재생**: 감정 변화에 따른 음악 자동 전환
+
+#### **개인화 기능**
+- **감정 히스토리**: 과거 감정별 음악 선호도 학습
+- **시간대별 추천**: 아침/점심/저녁 시간대별 적합한 음악
+- **활동별 매칭**: 운동, 휴식, 작업 등 활동에 맞는 음악
+- **계절별 감정**: 계절 변화에 따른 감정과 음악 연계
+
+### **5. 구현 단계 및 우선순위**
+
+#### **Phase 1: 기본 기능 (MVP)**
+- 감정별 음악 태그 시스템 구축
+- Spotify API 연동 및 기본 음악 검색
+- 간단한 음악 플레이어 구현
+- 감정 선택 시 음악 추천 표시
+
+#### **Phase 2: 고급 기능**
+- 개인화 추천 알고리즘 구현
+- 플레이리스트 자동 생성
+- 사용자 피드백 시스템
+- 음악 재생 히스토리 관리
+
+#### **Phase 3: 고도화**
+- 머신러닝 기반 추천 시스템
+- 실시간 감정 변화 감지
+- 소셜 기능 (음악 공유, 추천)
+- 오프라인 재생 지원
+
+### **6. 기술적 도전과제 및 해결방안**
+
+#### **API 제한 및 비용**
+- **해결방안**: YouTube Music API 활용, 로컬 음악 라이브러리 통합
+- **대안**: 오픈소스 음악 데이터베이스 활용
+
+#### **음악 저작권 문제**
+- **해결방안**: 미리듣기만 제공, 전체 곡은 외부 서비스로 연결
+- **대안**: 로열티 프리 음악 데이터베이스 활용
+
+#### **개인화 정확도**
+- **해결방안**: 사용자 피드백 데이터 수집 및 분석
+- **대안**: 감정별 기본 추천 알고리즘으로 시작

@@ -29,10 +29,8 @@ class FirestoreProvider {
       final docRef = entry.id.isEmpty ? collection.doc() : collection.doc(entry.id);
       final data = {
         ...entry.toFirestore(),
-        // 저장 시점에 createdAt이 비어있지 않도록 보장
-        'createdAt': entry.createdAt == null
-            ? Timestamp.fromDate(DateTime.now())
-            : Timestamp.fromDate(entry.createdAt),
+        // 저장 시점에 createdAt 설정
+        'createdAt': Timestamp.fromDate(entry.createdAt),
         // 문서 ID 동기화
         'id': docRef.id,
       };
@@ -40,7 +38,7 @@ class FirestoreProvider {
       print('✅ 일기 저장 성공: ${entry.id}');
     } catch (e) {
       print('❌ 일기 저장 실패: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -54,7 +52,7 @@ class FirestoreProvider {
       print('✅ 일기 업데이트 성공: ${entry.id}');
     } catch (e) {
       print('❌ 일기 업데이트 실패: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -68,7 +66,7 @@ class FirestoreProvider {
       print('✅ 일기 삭제 성공: $entryId');
     } catch (e) {
       print('❌ 일기 삭제 실패: $e');
-      throw e;
+      rethrow;
     }
   }
 

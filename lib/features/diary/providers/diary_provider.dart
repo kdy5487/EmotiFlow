@@ -207,7 +207,7 @@ class DiaryProvider extends StateNotifier<DiaryState> {
       print('일기 생성 완료: ${savedEntry.id}');
     } catch (e) {
       print('일기 생성 실패: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -265,7 +265,29 @@ class DiaryProvider extends StateNotifier<DiaryState> {
       print('일기 삭제 완료: $entryId');
     } catch (e) {
       print('일기 삭제 실패: $e');
-      throw e;
+      rethrow;
+    }
+  }
+
+  /// 일괄 삭제
+  Future<void> deleteDiaryEntries(List<String> entryIds) async {
+    try {
+      final batch = _firestore.batch();
+      for (final id in entryIds) {
+        final docRef = _firestore.collection('diaries').doc(id);
+        batch.delete(docRef);
+      }
+      await batch.commit();
+
+      final updatedEntries = state.diaryEntries.where((e) => !entryIds.contains(e.id)).toList();
+      state = state.copyWith(
+        diaryEntries: updatedEntries,
+        filteredEntries: updatedEntries,
+      );
+      print('일괄 삭제 완료: ${entryIds.length}개');
+    } catch (e) {
+      print('일괄 삭제 실패: $e');
+      rethrow;
     }
   }
 

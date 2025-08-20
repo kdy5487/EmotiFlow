@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_colors.dart';
-import '../../../theme/app_typography.dart';
+import '../../../theme/app_theme.dart';
 
 class EmotiCard extends StatelessWidget {
   final Widget child;
@@ -173,7 +172,7 @@ class StatsCard extends StatelessWidget {
               if (icon != null) ...[
                 Icon(
                   icon,
-                  color: iconColor ?? AppColors.primary,
+                  color: iconColor ?? AppTheme.primary,
                   size: 24,
                 ),
                 const SizedBox(width: 12),
