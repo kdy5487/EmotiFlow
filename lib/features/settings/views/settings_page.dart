@@ -156,6 +156,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   subtitle: '백업에서 데이터 복원',
                   onTap: () => context.push('/settings/restore'),
                 ),
+
                 _buildSettingItem(
                   icon: Icons.delete_forever,
                   title: '데이터 삭제',

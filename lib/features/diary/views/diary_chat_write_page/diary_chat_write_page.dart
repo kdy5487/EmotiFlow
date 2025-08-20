@@ -2,6 +2,7 @@ import '../../../../core/ai/gemini/gemini_service.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../../theme/app_typography.dart';
+import '../../../../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/diary_entry.dart';
@@ -521,14 +522,14 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   /// 감정 선택 UI
   Widget _buildEmotionSelectionUI() {
     final emotions = [
-      {'name': '기쁨', 'emoji': '😊', 'color': Colors.yellow},
-      {'name': '슬픔', 'emoji': '😢', 'color': Colors.blue},
-      {'name': '화남', 'emoji': '😠', 'color': Colors.red},
-      {'name': '평온', 'emoji': '😌', 'color': Colors.green},
-      {'name': '설렘', 'emoji': '🥰', 'color': Colors.pink},
-      {'name': '피곤함', 'emoji': '😴', 'color': Colors.grey},
-      {'name': '놀람', 'emoji': '😲', 'color': Colors.orange},
-      {'name': '걱정', 'emoji': '😰', 'color': Colors.purple},
+      {'name': '기쁨', 'icon': Icons.sentiment_very_satisfied, 'color': AppTheme.joy},
+      {'name': '사랑', 'icon': Icons.favorite, 'color': AppTheme.love},
+      {'name': '평온', 'icon': Icons.sentiment_satisfied, 'color': AppTheme.calm},
+      {'name': '슬픔', 'icon': Icons.sentiment_dissatisfied, 'color': AppTheme.sadness},
+      {'name': '분노', 'icon': Icons.sentiment_very_dissatisfied, 'color': AppTheme.anger},
+      {'name': '두려움', 'icon': Icons.visibility, 'color': AppTheme.fear},
+      {'name': '놀람', 'icon': Icons.sentiment_satisfied_alt, 'color': AppTheme.sadness},
+      {'name': '중립', 'icon': Icons.sentiment_neutral, 'color': AppTheme.neutral},
     ];
 
     return Container(
@@ -576,10 +577,11 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                        emotion['emoji'] as String,
-                        style: const TextStyle(fontSize: 16),
+                    children: [
+                      Icon(
+                        emotion['icon'] as IconData,
+                        size: 16,
+                        color: isSelected ? Colors.white : emotion['color'] as Color,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -591,10 +593,10 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                           ),
                           textAlign: TextAlign.center,
                           overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }).toList(),
@@ -612,15 +614,24 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     );
   }
 
-  /// 감정 선택 처리
+  /// 감정 선택 처리 (최대 2개)
   void _selectEmotion(String emotion) {
     setState(() {
-      _selectedEmotion = emotion;
-      _emotionSelected = true;
+      if (_selectedEmotion == emotion) {
+        // 같은 감정을 다시 클릭하면 선택 해제
+        _selectedEmotion = null;
+        _emotionSelected = false;
+      } else {
+        // 새로운 감정 선택
+        _selectedEmotion = emotion;
+        _emotionSelected = true;
+      }
     });
     
     // 감정 선택 후 AI가 맞춤형 질문하도록
-    _sendEmotionBasedQuestion(emotion);
+    if (_selectedEmotion != null) {
+      _sendEmotionBasedQuestion(emotion);
+    }
   }
 
   /// 감정 기반 AI 질문 전송

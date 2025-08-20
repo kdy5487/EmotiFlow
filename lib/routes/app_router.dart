@@ -5,6 +5,7 @@ import 'package:emoti_flow/features/diary/views/diary_write_page/diary_write_pag
 import 'package:emoti_flow/features/diary/views/diary_chat_write_page/diary_chat_write_page.dart';
 import 'package:emoti_flow/features/diary/views/diary_list_page/diary_list_page.dart';
 import 'package:emoti_flow/features/diary/views/diary_detail_page/diary_detail_page.dart';
+import 'package:emoti_flow/features/diary/views/drawing_canvas_page.dart';
 import 'package:emoti_flow/features/ai/views/ai_page.dart';
 import 'package:emoti_flow/features/auth/pages/login_page.dart';
 import 'package:emoti_flow/features/profile/views/profile_page.dart';
@@ -15,6 +16,7 @@ import 'package:emoti_flow/features/settings/views/theme_settings_page.dart';
 import 'package:emoti_flow/features/settings/views/language_settings_page.dart';
 import 'package:emoti_flow/features/settings/views/font_settings_page.dart';
 import 'package:emoti_flow/features/settings/views/account_settings_page.dart';
+
 
 // 라우트 이름 상수
 class AppRoutes {
@@ -85,6 +87,11 @@ class AppRouter {
               final id = state.pathParameters['id'] ?? '';
               return DiaryDetailPage(diaryId: id);
             },
+          ),
+          GoRoute(
+            path: 'drawing-canvas',
+            name: 'drawing-canvas',
+            builder: (context, state) => const DrawingCanvasPage(),
           ),
         ],
       ),
@@ -162,6 +169,7 @@ class AppRouter {
             name: 'account-settings',
             builder: (context, state) => const AccountSettingsPage(),
           ),
+
         ],
       ),
       ],

@@ -97,10 +97,6 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             elevation: 0,
             actions: [
               IconButton(
-                onPressed: () => _editDiary(diaryEntry),
-                icon: const Icon(Icons.edit),
-              ),
-              IconButton(
                 onPressed: () => _showMoreOptions(diaryEntry),
                 icon: const Icon(Icons.more_vert),
               ),
@@ -111,18 +107,18 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 헤더 섹션
-                _buildHeaderSection(diaryEntry),
-                const SizedBox(height: 24),
-                
-                // 감정 섹션
-                if (diaryEntry.emotions.isNotEmpty) ...[
-                  _buildEmotionsSection(diaryEntry),
-                  const SizedBox(height: 24),
-                ],
+                        // 헤더 섹션
+        _buildHeaderSection(diaryEntry),
+        const SizedBox(height: 16),
+        
+        // 감정 섹션
+        if (diaryEntry.emotions.isNotEmpty) ...[
+          _buildEmotionsSection(diaryEntry),
+          const SizedBox(height: 24),
+        ],
                 
                 // 미디어 섹션
-                if (diaryEntry.mediaCount > 0) ...[
+                if (diaryEntry.mediaFiles.isNotEmpty) ...[
                   _buildMediaSection(diaryEntry),
                   const SizedBox(height: 24),
                 ],
@@ -185,7 +181,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
               color: AppTheme.textPrimary,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
         ],
       ],
     );
@@ -327,7 +323,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  '${entry.mediaCount}개',
+                  '${entry.mediaFiles.length}개',
                   style: TextStyle(
                     color: AppTheme.primary,
                     fontSize: 12,
@@ -351,12 +347,15 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             itemCount: entry.mediaFiles.length,
             itemBuilder: (context, index) {
               final file = entry.mediaFiles[index];
-              return Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  image: DecorationImage(
-                    image: NetworkImage(file.url),
-                    fit: BoxFit.cover,
+              return GestureDetector(
+                onTap: () => _showFullScreenImage(context, file.url),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    image: DecorationImage(
+                      image: NetworkImage(file.url),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               );
@@ -408,37 +407,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             ),
           ),
           
-          // AI 대화 기록이 있는 경우 간단한 안내
-          if (entry.diaryType == DiaryType.aiChat && entry.chatHistory.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    color: AppTheme.primary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'AI와의 대화 기록이 있습니다. 설정에서 전체 대화 내용을 확인할 수 있습니다.',
-                      style: TextStyle(
-                        color: AppTheme.primary,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+
         ],
       ),
     );
@@ -450,6 +419,155 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     context.push('/diary/write', extra: entry);
   }
 
+  /// 전체화면 이미지 표시
+  void _showFullScreenImage(BuildContext context, String imageUrl) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            elevation: 0,
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              boundaryMargin: EdgeInsets.zero,
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Icon(
+                      Icons.error,
+                      color: Colors.white,
+                      size: 64,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// AI 대화 기록 표시
+  void _showAIChatHistory(DiaryEntry entry) {
+    // 디버깅을 위한 로그 추가
+    print('AI 대화 기록 표시: ${entry.chatHistory.length}개 메시지');
+    for (int i = 0; i < entry.chatHistory.length; i++) {
+      final message = entry.chatHistory[i];
+      print('메시지 $i: isFromAI=${message.isFromAI}, content=${message.content.substring(0, message.content.length > 50 ? 50 : message.content.length)}...');
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(entry.title.isNotEmpty ? entry.title : 'AI 대화 기록'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400,
+          child: ListView.builder(
+            itemCount: entry.chatHistory.length,
+            itemBuilder: (context, index) {
+              final message = entry.chatHistory[index];
+              final isAI = message.isFromAI;
+              
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isAI 
+                      ? AppTheme.primary.withOpacity(0.1)
+                      : AppTheme.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isAI 
+                        ? AppTheme.primary.withOpacity(0.3)
+                        : AppTheme.border,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: isAI 
+                                ? AppTheme.primary
+                                : AppTheme.textTertiary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isAI ? Icons.smart_toy : Icons.person,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          isAI ? 'AI' : '나',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isAI 
+                                ? AppTheme.primary 
+                                : AppTheme.textSecondary,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          _formatTime(message.timestamp),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppTheme.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      message.content,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('닫기'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 더 많은 옵션 표시
   void _showMoreOptions(DiaryEntry entry) {
     showModalBottomSheet(
@@ -457,6 +575,23 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text('편집'),
+            onTap: () {
+              Navigator.pop(context);
+              _editDiary(entry);
+            },
+          ),
+          if (entry.diaryType == DiaryType.aiChat && entry.chatHistory.isNotEmpty)
+            ListTile(
+              leading: const Icon(Icons.chat_bubble),
+              title: const Text('AI 대화 기록'),
+              onTap: () {
+                Navigator.pop(context);
+                _showAIChatHistory(entry);
+              },
+            ),
           ListTile(
             leading: const Icon(Icons.share),
             title: const Text('공유'),

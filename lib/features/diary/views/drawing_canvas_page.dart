@@ -18,8 +18,38 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   final List<_Stroke> _redo = [];
   Color _currentColor = Colors.black;
   double _currentWidth = 4.0;
+  bool _isEraser = false;
+  bool _showColorPalette = false;
+  bool _showBrushSizes = false;
 
   _Stroke? _active;
+
+  // 더 다양한 색상 팔레트
+  final List<Color> _colorPalette = [
+    Colors.black,
+    Colors.red,
+    Colors.pink,
+    Colors.purple,
+    Colors.deepPurple,
+    Colors.indigo,
+    Colors.blue,
+    Colors.lightBlue,
+    Colors.cyan,
+    Colors.teal,
+    Colors.green,
+    Colors.lightGreen,
+    Colors.lime,
+    Colors.yellow,
+    Colors.amber,
+    Colors.orange,
+    Colors.deepOrange,
+    Colors.brown,
+    Colors.grey,
+    Colors.blueGrey,
+  ];
+
+  // 브러시 크기 옵션
+  final List<double> _brushSizes = [2.0, 4.0, 6.0, 8.0, 12.0, 16.0, 20.0, 24.0];
 
   Future<String?> _exportToImage() async {
     try {
@@ -38,7 +68,11 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   }
 
   void _startStroke(Offset pos) {
-    _active = _Stroke(color: _currentColor, width: _currentWidth, points: [pos]);
+    _active = _Stroke(
+      color: _isEraser ? const Color(0xFFF7F7F7) : _currentColor, 
+      width: _currentWidth, 
+      points: [pos]
+    );
     _redo.clear();
     setState(() {
       _strokes.add(_active!);
@@ -74,9 +108,231 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
       ),
       body: Column(
         children: [
+          // 상단 도구 바
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              children: [
+                // 메인 도구 버튼들
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.undo),
+                      onPressed: _strokes.isNotEmpty
+                          ? () {
+                              setState(() {
+                                _redo.add(_strokes.removeLast());
+                              });
+                            }
+                          : null,
+                      tooltip: '실행 취소',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.redo),
+                      onPressed: _redo.isNotEmpty
+                          ? () {
+                              setState(() {
+                                _strokes.add(_redo.removeLast());
+                              });
+                            }
+                          : null,
+                      tooltip: '다시 실행',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        setState(() {
+                          _strokes.clear();
+                          _redo.clear();
+                        });
+                      },
+                      tooltip: '모두 지우기',
+                    ),
+                    const Spacer(),
+                    
+                    // 그림펜 버튼
+                    IconButton(
+                      icon: Icon(
+                        Icons.edit,
+                        color: !_isEraser ? Colors.blue : Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isEraser = false;
+                        });
+                      },
+                      tooltip: '그림펜',
+                    ),
+                    
+                    // 지우개 버튼
+                    IconButton(
+                      icon: Icon(
+                        Icons.auto_fix_normal,
+                        color: _isEraser ? Colors.red : Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isEraser = true;
+                        });
+                      },
+                      tooltip: '지우개',
+                    ),
+                    
+                    // 색상 선택 버튼
+                    IconButton(
+                      icon: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: _currentColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.black, width: 2),
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _showColorPalette = !_showColorPalette;
+                          _showBrushSizes = false;
+                        });
+                      },
+                      tooltip: '색상 선택',
+                    ),
+                    
+                    // 브러시 크기 버튼
+                    IconButton(
+                      icon: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.black, width: 2),
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: _currentWidth / 2,
+                            height: _currentWidth / 2,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _showBrushSizes = !_showBrushSizes;
+                          _showColorPalette = false;
+                        });
+                      },
+                      tooltip: '브러시 크기',
+                    ),
+                  ],
+                ),
+                
+                // 색상 팔레트 (상단에 표시)
+                if (_showColorPalette) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('색상 선택:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _colorPalette.map((color) => GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _currentColor = color;
+                                _isEraser = false;
+                              });
+                            },
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: _currentColor == color ? Colors.black : Colors.grey,
+                                  width: _currentColor == color ? 3 : 1,
+                                ),
+                              ),
+                            ),
+                          )).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                
+                // 브러시 크기 선택 (상단에 표시)
+                if (_showBrushSizes) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('브러시 크기:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _brushSizes.map((size) => GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _currentWidth = size;
+                              });
+                            },
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: _currentWidth == size ? Colors.blue : Colors.grey[300],
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: _currentWidth == size ? Colors.blue : Colors.grey,
+                                  width: _currentWidth == size ? 2 : 1,
+                                ),
+                              ),
+                              child: Center(
+                                child: Container(
+                                  width: size / 2,
+                                  height: size / 2,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          
+          // 그림 캔버스
           Expanded(
             child: Container(
-              color: const Color(0xFFF7F7F7), // 연회색 배경으로 선명하게
+              color: const Color(0xFFF7F7F7),
               child: GestureDetector(
                 onPanStart: (d) => _startStroke(d.localPosition),
                 onPanUpdate: (d) => _extendStroke(d.localPosition),
@@ -89,80 +345,6 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                   ),
                 ),
               ),
-            ),
-          ),
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.undo),
-                  onPressed: _strokes.isNotEmpty
-                      ? () {
-                          setState(() {
-                            _redo.add(_strokes.removeLast());
-                          });
-                        }
-                      : null,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.redo),
-                  onPressed: _redo.isNotEmpty
-                      ? () {
-                          setState(() {
-                            _strokes.add(_redo.removeLast());
-                          });
-                        }
-                      : null,
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    setState(() {
-                      _strokes.clear();
-                      _redo.clear();
-                    });
-                  },
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  tooltip: '펜(검정)',
-                  onPressed: () {
-                    _currentColor = Colors.black;
-                    setState(() {});
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.color_lens),
-                  tooltip: '색상 변경',
-                  onPressed: () {
-                    final colors = [Colors.black, Colors.red, Colors.blue, Colors.green, Colors.orange];
-                    _currentColor = colors[(colors.indexOf(_currentColor) + 1) % colors.length];
-                    setState(() {});
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.brush),
-                  tooltip: '두께 변경',
-                  onPressed: () {
-                    _currentWidth = _currentWidth + 2;
-                    if (_currentWidth > 16) _currentWidth = 4;
-                    setState(() {});
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.auto_fix_normal),
-                  tooltip: '지우개',
-                  onPressed: () {
-                    // 배경색으로 그려서 지우개처럼
-                    _currentColor = const Color(0xFFF7F7F7);
-                    setState(() {});
-                  },
-                ),
-              ],
             ),
           ),
         ],
@@ -184,7 +366,6 @@ class _CanvasPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 배경은 부모 컨테이너 색상으로 채워짐
     for (final s in strokes) {
       final paint = Paint()
         ..color = s.color
