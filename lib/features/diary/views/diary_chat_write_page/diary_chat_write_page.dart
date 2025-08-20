@@ -24,7 +24,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   bool _isTyping = false;
   bool _showResult = false;
   final List<String> _conversationHistory = [];
-  String? _selectedEmotion; // 선택된 감정
+  List<String> _selectedEmotions = []; // 선택된 감정들 (최대 2개)
   bool _emotionSelected = false; // 감정이 선택되었는지 여부
   String? _aiGeneratedImageUrl; // AI 생성 이미지 URL
 
@@ -51,7 +51,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     setState(() {
       _showResult = false;
       _conversationHistory.clear();
-      _selectedEmotion = null;
+      _selectedEmotions.clear();
       _emotionSelected = false;
     });
     _messageController.clear();
@@ -105,7 +105,9 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       final extractedEmotion = _extractEmotionFromMessage(message);
       if (extractedEmotion != null) {
         setState(() {
-          _selectedEmotion = extractedEmotion;
+          if (!_selectedEmotions.contains(extractedEmotion)) {
+            _selectedEmotions.add(extractedEmotion);
+          }
           _emotionSelected = true;
         });
       }
@@ -246,7 +248,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     try {
       final diarySummary = await GeminiService.instance.generateDiarySummary(
         _conversationHistory,
-        _selectedEmotion ?? '자연스러운',
+        _selectedEmotions.isNotEmpty ? _selectedEmotions.first : '자연스러운',
       );
       
       final summaryMessage = ChatMessage(
@@ -295,13 +297,13 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (_selectedEmotion != null) ...[
+              if (_selectedEmotions.isNotEmpty) ...[
                 Row(
                   children: [
                     const Icon(Icons.emoji_emotions, color: AppColors.primary),
                     const SizedBox(width: 8),
                     Text(
-                      '오늘의 감정: $_selectedEmotion',
+                      '오늘의 감정: ${_selectedEmotions.join(', ')}',
                       style: AppTypography.bodyLarge.copyWith(
                         fontWeight: FontWeight.w600,
                         color: AppColors.primary,
@@ -536,41 +538,63 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.05),
+        color: AppTheme.primary.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+        border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
       ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-          Text(
-            '오늘의 감정을 선택해주세요',
-            style: AppTypography.bodyLarge.copyWith(
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-            ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                '오늘의 감정을 선택해주세요',
+                style: AppTypography.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.primary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '최대 2개',
+                  style: TextStyle(
+                    color: AppTheme.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 6,
             runSpacing: 6,
             children: emotions.map((emotion) {
-              final isSelected = _selectedEmotion == emotion['name'] as String;
+              final isSelected = _selectedEmotions.contains(emotion['name'] as String);
+              final isDisabled = !isSelected && _selectedEmotions.length >= 2;
+              
               return GestureDetector(
-                onTap: () => _selectEmotion(emotion['name'] as String),
+                onTap: isDisabled ? null : () => _selectEmotion(emotion['name'] as String),
                 child: Container(
                   width: 80, // 고정 너비로 통일
                   height: 36, // 고정 높이로 통일
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(
                     color: isSelected 
-                        ? AppColors.primary 
-                        : (emotion['color'] as Color).withOpacity(0.1),
+                        ? AppTheme.primary 
+                        : (isDisabled ? Colors.grey[300] : (emotion['color'] as Color).withOpacity(0.1)),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
                       color: isSelected 
-                          ? AppColors.primary 
-                          : (emotion['color'] as Color).withOpacity(0.3),
+                          ? AppTheme.primary 
+                          : (isDisabled ? Colors.grey[400]! : (emotion['color'] as Color).withOpacity(0.3)),
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -581,14 +605,18 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                       Icon(
                         emotion['icon'] as IconData,
                         size: 16,
-                        color: isSelected ? Colors.white : emotion['color'] as Color,
+                        color: isSelected 
+                            ? Colors.white 
+                            : (isDisabled ? Colors.grey[600] : emotion['color'] as Color),
                       ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           emotion['name'] as String,
                           style: AppTypography.bodySmall.copyWith(
-                            color: isSelected ? Colors.white : emotion['color'] as Color,
+                            color: isSelected 
+                                ? Colors.white 
+                                : (isDisabled ? Colors.grey[600] : emotion['color'] as Color),
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                           ),
                           textAlign: TextAlign.center,
@@ -601,7 +629,41 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
               );
             }).toList(),
           ),
+          
+          // 감정 선택 제한 안내 메시지
+          if (_selectedEmotions.length >= 2) ...[
             const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: AppTheme.primary,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '감정은 최대 2개까지 선택할 수 있습니다.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          
+          const SizedBox(height: 12),
           Text(
             '감정을 선택하거나 자유롭게 이야기해주세요!',
             style: AppTypography.bodySmall.copyWith(
@@ -609,7 +671,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
               fontStyle: FontStyle.italic,
             ),
           ),
-          ],
+        ],
       ),
     );
   }
@@ -617,19 +679,24 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   /// 감정 선택 처리 (최대 2개)
   void _selectEmotion(String emotion) {
     setState(() {
-      if (_selectedEmotion == emotion) {
-        // 같은 감정을 다시 클릭하면 선택 해제
-        _selectedEmotion = null;
-        _emotionSelected = false;
+      if (_selectedEmotions.contains(emotion)) {
+        // 이미 선택된 감정이면 제거
+        _selectedEmotions.remove(emotion);
+        if (_selectedEmotions.isEmpty) {
+          _emotionSelected = false;
+        }
       } else {
-        // 새로운 감정 선택
-        _selectedEmotion = emotion;
-        _emotionSelected = true;
+        // 새로운 감정 선택 (최대 2개)
+        if (_selectedEmotions.length < 2) {
+          _selectedEmotions.add(emotion);
+          _emotionSelected = true;
+        }
+        // 이미 2개가 선택된 경우에는 아무것도 하지 않음
       }
     });
     
     // 감정 선택 후 AI가 맞춤형 질문하도록
-    if (_selectedEmotion != null) {
+    if (_selectedEmotions.isNotEmpty) {
       _sendEmotionBasedQuestion(emotion);
     }
   }
@@ -685,10 +752,8 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       final diaryEntry = DiaryEntry(
         title: _generateDiaryTitle(diarySummary),
         content: diarySummary,
-        emotions: _selectedEmotion != null ? [_selectedEmotion!] : [],
-        emotionIntensities: _selectedEmotion != null 
-            ? {_selectedEmotion!: 8} 
-            : {},
+        emotions: _selectedEmotions,
+        emotionIntensities: _selectedEmotions.asMap().map((index, emotion) => MapEntry(emotion, 8)),
         tags: _extractTagsFromSummary(diarySummary),
         diaryType: DiaryType.aiChat, // AI 대화형 일기
         isPublic: false,
@@ -759,7 +824,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       // AI 이미지 생성 요청 (채팅 내용과 감정 기반)
       final imageUrl = await GeminiService.instance.generateImage(
         diarySummary, 
-        _selectedEmotion, 
+        _selectedEmotions.isNotEmpty ? _selectedEmotions.first : '자연스러운', 
         _conversationHistory
       );
       
@@ -827,9 +892,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     final tags = <String>[];
     
     // 감정 관련 태그
-    if (_selectedEmotion != null) {
-      tags.add(_selectedEmotion!);
-    }
+            tags.addAll(_selectedEmotions);
     
     // 일반적인 태그들
     if (summary.contains('일') || summary.contains('하루')) tags.add('일상');

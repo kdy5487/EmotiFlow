@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../providers/firestore_provider.dart';
 import '../../models/diary_entry.dart';
 import '../../../../theme/app_theme.dart';
+import 'dart:io';
 
 /// 일기 상세 페이지
 class DiaryDetailPage extends ConsumerStatefulWidget {
@@ -353,7 +354,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     image: DecorationImage(
-                      image: NetworkImage(file.url),
+                      image: _getImageProvider(file.url),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -419,6 +420,15 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     context.push('/diary/write', extra: entry);
   }
 
+  /// 이미지 프로바이더 생성 (로컬 파일 또는 네트워크)
+  ImageProvider _getImageProvider(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return NetworkImage(url);
+    } else {
+      return FileImage(File(url));
+    }
+  }
+
   /// 전체화면 이미지 표시
   void _showFullScreenImage(BuildContext context, String imageUrl) {
     Navigator.of(context).push(
@@ -435,36 +445,57 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
               boundaryMargin: EdgeInsets.zero,
               minScale: 0.5,
               maxScale: 4.0,
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.contain,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Icon(
-                      Icons.error,
-                      color: Colors.white,
-                      size: 64,
-                    ),
-                  );
-                },
-              ),
+              child: _buildFullScreenImage(imageUrl),
             ),
           ),
         ),
       ),
     );
+  }
+
+  /// 전체화면 이미지 위젯
+  Widget _buildFullScreenImage(String imageUrl) {
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.contain,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return const Center(
+            child: Icon(
+              Icons.error,
+              color: Colors.white,
+              size: 64,
+            ),
+          );
+        },
+      );
+    } else {
+      return Image.file(
+        File(imageUrl),
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return const Center(
+            child: Icon(
+              Icons.error,
+              color: Colors.white,
+              size: 64,
+            ),
+          );
+        },
+      );
+    }
   }
 
   /// AI 대화 기록 표시
