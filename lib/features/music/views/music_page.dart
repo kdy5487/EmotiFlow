@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../theme/app_theme.dart';
 import '../providers/music_provider.dart';
+import '../../settings/providers/settings_provider.dart';
 import '../models/music_track.dart';
 
 class MusicPage extends ConsumerWidget {
@@ -11,6 +12,7 @@ class MusicPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(musicProvider);
+    final musicSettings = ref.watch(settingsProvider).settings.musicSettings;
     final notifier = ref.read(musicProvider.notifier);
 
     return Scaffold(
@@ -43,10 +45,13 @@ class MusicPage extends ConsumerWidget {
                       ? null
                       : () {
                           // 데모: 평온 감정 기준, 강도는 5로.
+                          final src = musicSettings.defaultSource == 'todayDiary'
+                              ? EmotionSource.todayDiary
+                              : EmotionSource.aiAnalysis;
                           notifier.loadRecommendations(
                             emotion: state.currentEmotion ?? '평온',
                             intensity: state.currentIntensity,
-                            source: state.emotionSource,
+                            source: src,
                           );
                         },
                   child: state.isLoading
@@ -58,6 +63,167 @@ class MusicPage extends ConsumerWidget {
                       : const Text('추천 불러오기'),
                 ),
               ],
+            ),
+            const SizedBox(height: 16),
+
+            // 음악 설정 버튼(모달 시트)
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.tune, size: 18),
+                label: const Text('음악 설정'),
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.white,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                    ),
+                    builder: (_) {
+                      return Consumer(
+                        builder: (context, ref, __) {
+                          final musicSettings = ref.watch(settingsProvider).settings.musicSettings;
+                          return DraggableScrollableSheet(
+                            expand: false,
+                            initialChildSize: 0.5,
+                            minChildSize: 0.3,
+                            maxChildSize: 0.9,
+                            builder: (context, controller) {
+                              return SafeArea(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                                  child: ListView(
+                                    controller: controller,
+                                    children: [
+                                      Row(
+                                        children: const [
+                                          Icon(Icons.tune, color: AppTheme.primary),
+                                          SizedBox(width: 8),
+                                          Text('음악 설정', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        children: [
+                                          const Expanded(child: Text('음악 사용')),
+                                          Switch(
+                                            value: musicSettings.enabled,
+                                            onChanged: (v) {
+                                              final newSettings = musicSettings.copyWith(enabled: v);
+                                              ref.read(settingsProvider.notifier).updateMusicSettings(newSettings);
+                                              if (!v) {
+                                                ref.read(musicProvider.notifier).stop();
+                                              } else {
+                                                final now = ref.read(musicProvider).nowPlaying;
+                                                if (now != null) {
+                                                  ref.read(musicProvider.notifier).play(now);
+                                                }
+                                              }
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          const Expanded(child: Text('자동재생')),
+                                          Switch(
+                                            value: musicSettings.autoPlay,
+                                            onChanged: (v) {
+                                              final newSettings = musicSettings.copyWith(autoPlay: v);
+                                              ref.read(settingsProvider.notifier).updateMusicSettings(newSettings);
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          const Text('기본 소스'),
+                                          const SizedBox(width: 12),
+                                          DropdownButton<String>(
+                                            value: musicSettings.defaultSource,
+                                            items: const [
+                                              DropdownMenuItem(value: 'todayDiary', child: Text('오늘의 감정')),
+                                              DropdownMenuItem(value: 'aiAnalysis', child: Text('AI 분석 결과')),
+                                            ],
+                                            onChanged: (v) {
+                                              if (v == null) return;
+                                              final newSettings = musicSettings.copyWith(defaultSource: v);
+                                              ref.read(settingsProvider.notifier).updateMusicSettings(newSettings);
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          const Expanded(child: Text('감정 변경 시 안내')),
+                                          Switch(
+                                            value: musicSettings.promptOnEmotionChange,
+                                            onChanged: (v) {
+                                              final newSettings = musicSettings.copyWith(promptOnEmotionChange: v);
+                                              ref.read(settingsProvider.notifier).updateMusicSettings(newSettings);
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          const Text('볼륨'),
+                                          Expanded(
+                                            child: Slider(
+                                              value: musicSettings.volume,
+                                              min: 0.0,
+                                              max: 1.0,
+                                              onChanged: (v) {
+                                                final newSettings = musicSettings.copyWith(volume: v);
+                                                ref.read(settingsProvider.notifier).updateMusicSettings(newSettings);
+                                                ref.read(musicProvider.notifier).setVolume(v);
+                                              },
+                                            ),
+                                          ),
+                                          Text('${(musicSettings.volume * 100).round()}%'),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          const Expanded(child: Text('툴팁 다시 보지 않기(일기 저장 후)')),
+                                          Switch(
+                                            value: musicSettings.showPostDiaryMusicTip,
+                                            onChanged: (v) {
+                                              ref.read(settingsProvider.notifier).updateMusicSettings(
+                                                    musicSettings.copyWith(showPostDiaryMusicTip: v),
+                                                  );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          const Expanded(child: Text('툴팁 다시 보지 않기(AI 분석 후)')),
+                                          Switch(
+                                            value: musicSettings.showPostAiAnalysisMusicTip,
+                                            onChanged: (v) {
+                                              ref.read(settingsProvider.notifier).updateMusicSettings(
+                                                    musicSettings.copyWith(showPostAiAnalysisMusicTip: v),
+                                                  );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 16),
 

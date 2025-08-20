@@ -38,6 +38,11 @@ class AudioPlayerService {
     await _player.stop();
   }
 
+  Future<void> setVolume(double volume) async {
+    final safe = volume.clamp(0.0, 1.0);
+    await _player.setVolume(safe);
+  }
+
   Future<void> dispose() async {
     await _player.dispose();
   }

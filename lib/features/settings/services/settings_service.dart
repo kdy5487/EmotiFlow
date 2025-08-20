@@ -19,21 +19,23 @@ class SettingsService {
   /// 앱 설정 가져오기
   Future<AppSettings> getAppSettings() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final settingsJson = prefs.getString(_settingsKey);
-      
-      if (settingsJson != null) {
-        try {
-          // 저장 시 toString()으로 저장했으므로 간단 파싱 처리 (개선 필요)
-          // 여기서는 실패 시 기본값 사용
-          // 실제 구현에서는 jsonEncode/jsonDecode로 교체 권장
-        } catch (e) {
-          print('❌ 설정 JSON 파싱 실패, 기본값 사용: $e');
-        }
-      }
-      
-      // 기본 설정 반환
-      return AppSettings.defaultSettings();
+      // 개별 카테고리 설정을 각각 로드하여 조합
+      final theme = await getThemeSettings();
+      final notification = await getNotificationSettings();
+      final data = await getDataSettings();
+      final security = await getSecuritySettings();
+      final accessibility = await getAccessibilitySettings();
+      final music = await getMusicSettings();
+
+      return AppSettings(
+        themeSettings: theme,
+        notificationSettings: notification,
+        dataSettings: data,
+        securitySettings: security,
+        accessibilitySettings: accessibility,
+        musicSettings: music,
+        lastUpdated: DateTime.now(),
+      );
     } catch (e) {
       print('❌ 설정 가져오기 실패: $e');
       return AppSettings.defaultSettings();
@@ -52,6 +54,43 @@ class SettingsService {
       return true;
     } catch (e) {
       print('❌ 앱 설정 저장 실패: $e');
+      return false;
+    }
+  }
+
+  /// 음악 설정 가져오기
+  Future<MusicSettings> getMusicSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return MusicSettings(
+        enabled: prefs.getBool('music_enabled') ?? true,
+        autoPlay: prefs.getBool('music_auto_play') ?? true,
+        promptOnEmotionChange: prefs.getBool('music_prompt_on_emotion_change') ?? true,
+        defaultSource: prefs.getString('music_default_source') ?? 'aiAnalysis',
+        volume: prefs.getDouble('music_volume') ?? 0.7,
+        showPostDiaryMusicTip: prefs.getBool('music_tip_post_diary') ?? true,
+        showPostAiAnalysisMusicTip: prefs.getBool('music_tip_post_ai') ?? true,
+      );
+    } catch (e) {
+      print('❌ 음악 설정 가져오기 실패: $e');
+      return MusicSettings.defaultSettings();
+    }
+  }
+
+  /// 음악 설정 저장
+  Future<bool> saveMusicSettings(MusicSettings settings) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('music_enabled', settings.enabled);
+      await prefs.setBool('music_auto_play', settings.autoPlay);
+      await prefs.setBool('music_prompt_on_emotion_change', settings.promptOnEmotionChange);
+      await prefs.setString('music_default_source', settings.defaultSource);
+      await prefs.setDouble('music_volume', settings.volume);
+      await prefs.setBool('music_tip_post_diary', settings.showPostDiaryMusicTip);
+      await prefs.setBool('music_tip_post_ai', settings.showPostAiAnalysisMusicTip);
+      return true;
+    } catch (e) {
+      print('❌ 음악 설정 저장 실패: $e');
       return false;
     }
   }

@@ -90,6 +90,8 @@ class MusicSettings {
   final bool promptOnEmotionChange; // 감정 변경 시 안내 다이얼로그
   final String defaultSource; // 'todayDiary' | 'aiAnalysis'
   final double volume; // 0.0 ~ 1.0
+  final bool showPostDiaryMusicTip; // 일기 저장 후 음악 설정 안내 노출
+  final bool showPostAiAnalysisMusicTip; // AI 분석 후 음악 설정 안내 노출
 
   const MusicSettings({
     required this.enabled,
@@ -97,6 +99,8 @@ class MusicSettings {
     required this.promptOnEmotionChange,
     required this.defaultSource,
     required this.volume,
+    required this.showPostDiaryMusicTip,
+    required this.showPostAiAnalysisMusicTip,
   });
 
   factory MusicSettings.defaultSettings() {
@@ -106,6 +110,8 @@ class MusicSettings {
       promptOnEmotionChange: true,
       defaultSource: 'aiAnalysis',
       volume: 0.7,
+      showPostDiaryMusicTip: true,
+      showPostAiAnalysisMusicTip: true,
     );
   }
 
@@ -116,6 +122,8 @@ class MusicSettings {
       promptOnEmotionChange: map['promptOnEmotionChange'] ?? true,
       defaultSource: map['defaultSource'] ?? 'aiAnalysis',
       volume: (map['volume'] ?? 0.7).toDouble(),
+      showPostDiaryMusicTip: map['showPostDiaryMusicTip'] ?? true,
+      showPostAiAnalysisMusicTip: map['showPostAiAnalysisMusicTip'] ?? true,
     );
   }
 
@@ -126,6 +134,8 @@ class MusicSettings {
       'promptOnEmotionChange': promptOnEmotionChange,
       'defaultSource': defaultSource,
       'volume': volume,
+      'showPostDiaryMusicTip': showPostDiaryMusicTip,
+      'showPostAiAnalysisMusicTip': showPostAiAnalysisMusicTip,
     };
   }
 
@@ -135,6 +145,8 @@ class MusicSettings {
     bool? promptOnEmotionChange,
     String? defaultSource,
     double? volume,
+    bool? showPostDiaryMusicTip,
+    bool? showPostAiAnalysisMusicTip,
   }) {
     return MusicSettings(
       enabled: enabled ?? this.enabled,
@@ -142,6 +154,8 @@ class MusicSettings {
       promptOnEmotionChange: promptOnEmotionChange ?? this.promptOnEmotionChange,
       defaultSource: defaultSource ?? this.defaultSource,
       volume: volume ?? this.volume,
+      showPostDiaryMusicTip: showPostDiaryMusicTip ?? this.showPostDiaryMusicTip,
+      showPostAiAnalysisMusicTip: showPostAiAnalysisMusicTip ?? this.showPostAiAnalysisMusicTip,
     );
   }
 }

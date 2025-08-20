@@ -103,12 +103,24 @@ class MusicNotifier extends StateNotifier<MusicState> {
     _audio.pause();
   }
 
+  void stop() {
+    _audio.stop();
+  }
+
+  void setVolume(double volume) {
+    _audio.setVolume(volume);
+  }
+
   void next() {
     final list = state.recommendations;
     if (state.nowPlaying == null || list.isEmpty) return;
     final idx = list.indexWhere((t) => t.id == state.nowPlaying!.id);
     final nextIdx = (idx + 1) % list.length;
     state = state.copyWith(nowPlaying: list[nextIdx]);
+    final settings = _ref.read(settingsProvider).settings.musicSettings;
+    if (settings.enabled) {
+      _audio.playUrl(list[nextIdx].previewUrl, volume: settings.volume);
+    }
   }
 
   void previous() {

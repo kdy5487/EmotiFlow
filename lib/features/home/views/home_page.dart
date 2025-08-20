@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
 import 'package:emoti_flow/shared/widgets/cards/emoti_card.dart';
+import 'package:emoti_flow/features/music/providers/music_prompt_provider.dart';
+import 'package:emoti_flow/features/music/providers/music_provider.dart';
+import 'package:emoti_flow/features/settings/providers/settings_provider.dart';
 import 'package:emoti_flow/shared/widgets/buttons/emoti_button.dart';
 
 class HomePage extends ConsumerWidget {
@@ -11,6 +14,33 @@ class HomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 홈 진입 시, 예약된 음악 전환 안내가 있으면 모달을 통해 간단하게 표시
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final pending = ref.read(pendingMusicPromptProvider);
+      if (pending != null) {
+        final settings = ref.read(settingsProvider).settings.musicSettings;
+        if (settings.enabled && settings.showPostDiaryMusicTip) {
+          final confirm = await showModalBottomSheet<bool>(
+            context: context,
+            backgroundColor: Colors.white,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            builder: (_) => _musicPromptSheet(context, emotion: pending.emotion, intensity: pending.intensity),
+          );
+          if (confirm == true) {
+            await ref.read(musicProvider.notifier).loadRecommendations(
+                  emotion: pending.emotion,
+                  intensity: pending.intensity,
+                  source: pending.source,
+                );
+          }
+        }
+        // 소비하고 초기화
+        ref.read(pendingMusicPromptProvider.notifier).state = null;
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -95,6 +125,49 @@ class HomePage extends ConsumerWidget {
         ),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(context),
+    );
+  }
+
+  /// 간단한 음악 전환 프롬프트 시트
+  Widget _musicPromptSheet(BuildContext context, {required String emotion, required int intensity}) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.music_note, color: AppTheme.primary),
+                const SizedBox(width: 8),
+                const Text('음악 전환', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text('오늘의 감정("$emotion", 강도 $intensity)에 맞춰 음악을 바꿀까요?'),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('나중에'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white),
+                    child: const Text('바꾸기'),
+                  ),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
     );
   }
 

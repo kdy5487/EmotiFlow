@@ -8,6 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/diary_entry.dart';
 import '../diary_write_page/diary_write_view_model.dart';
 import '../../providers/diary_provider.dart';
+import '../../../settings/providers/settings_provider.dart';
+import '../../../music/providers/music_prompt_provider.dart';
+import '../../../music/providers/music_provider.dart';
 
 /// AI 대화형 일기 작성 페이지
 class DiaryChatWritePage extends ConsumerStatefulWidget {
@@ -265,6 +268,16 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       
       setState(() => _isTyping = false);
       
+      // 홈에서 음악 전환 안내 예약 (AI 분석 후)
+      final musicSettings = ref.read(settingsProvider).settings.musicSettings;
+      if (musicSettings.enabled && musicSettings.showPostAiAnalysisMusicTip && _selectedEmotion != null) {
+        ref.read(pendingMusicPromptProvider.notifier).state = PendingMusicPrompt(
+          emotion: _selectedEmotion!,
+          intensity: 8,
+          source: EmotionSource.aiAnalysis,
+        );
+      }
+      
       // 별도 다이얼로그로 결과 표시
       _showDiaryResultDialog(diarySummary);
       
@@ -311,7 +324,8 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                 ),
                 const SizedBox(height: 16),
               ],
-              Expanded(
+              SizedBox(
+                height: 280,
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -348,24 +362,8 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'AI가 오늘의 감정과 경험을 바탕으로 그림을 그려드릴 수 있어요!\n(추후 개발 예정)',
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: Colors.grey[600],
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: () => _showComingSoonDialog('AI 그림 그리기'),
-                                icon: const Icon(Icons.brush),
-                                label: const Text('AI가 그림 그려주기'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey[400],
-                                  foregroundColor: Colors.white,
-                                ),
-                              ),
+                              '일기 내용을 바탕으로 감정을 담은 이미지를 생성해보세요.',
+                              style: AppTypography.bodyMedium,
                             ),
                           ],
                         ),

@@ -13,6 +13,7 @@ import 'package:emoti_flow/features/diary/models/diary_entry.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
 import 'package:emoti_flow/features/settings/providers/settings_provider.dart';
 import 'package:emoti_flow/features/music/providers/music_provider.dart';
+import 'package:emoti_flow/features/music/providers/music_prompt_provider.dart';
 
 class DiaryWritePage extends ConsumerStatefulWidget {
   const DiaryWritePage({super.key});
@@ -686,33 +687,17 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
         const SnackBar(content: Text('일기가 저장되었습니다')),
       );
 
-      // 음악 전환 안내: 설정에서 안내 허용 시
+      // 음악 전환 안내는 홈으로 돌아간 뒤 표시되도록 예약
       final musicSettings = ref.read(settingsProvider).settings.musicSettings;
-      if (musicSettings.enabled && musicSettings.promptOnEmotionChange) {
-        final emotion = _selectedEmotions.first;
-        if (context.mounted) {
-          final confirm = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('음악 전환'),
-              content: Text('오늘의 감정("$emotion")에 맞춰 음악을 변경하시겠습니까?'),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('아니오')),
-                TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('예')),
-              ],
-            ),
-          );
-          if (confirm == true) {
-            // 추천 로드 및 자동재생
-            await ref.read(musicProvider.notifier).loadRecommendations(
-                  emotion: emotion,
-                  intensity: _emotionIntensities[emotion] ?? 5,
-                  source: EmotionSource.todayDiary,
-                );
-          }
-        }
+      if (musicSettings.enabled && musicSettings.promptOnEmotionChange && musicSettings.showPostDiaryMusicTip) {
+        final emotion = _selectedEmotions.isNotEmpty ? _selectedEmotions.first : '평온';
+        ref.read(pendingMusicPromptProvider.notifier).state = PendingMusicPrompt(
+          emotion: emotion,
+          intensity: _emotionIntensities[emotion] ?? 5,
+          source: EmotionSource.todayDiary,
+        );
       }
-      
+
       context.pop();
     } catch (e) {
       print('일기 저장 오류: $e');

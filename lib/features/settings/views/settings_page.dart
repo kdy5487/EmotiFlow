@@ -117,6 +117,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   onTap: () => _showComingSoonDialog('알림 설정'),
                 ),
                 _buildSettingItem(
+                  icon: Icons.music_note,
+                  title: '음악 설정',
+                  subtitle: '감정 기반 음악, 자동재생, 볼륨, 툴팁 노출',
+                  onTap: () => context.push('/music'),
+                ),
+                _buildSettingItem(
                   icon: Icons.dark_mode,
                   title: '테마 설정',
                   subtitle: '라이트/다크 모드 및 컬러 (추후 개발 예정)',

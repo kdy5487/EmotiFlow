@@ -217,15 +217,18 @@ class SettingsProvider extends StateNotifier<SettingsState> {
   Future<bool> updateMusicSettings(MusicSettings musicSettings) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final current = state.settings;
-      final newSettings = current.copyWith(musicSettings: musicSettings);
-      final success = await _settingsService.saveAppSettings(newSettings);
-      if (success) {
-        state = state.copyWith(settings: newSettings);
-        return true;
+      // 낙관적 업데이트: 먼저 반영 후 저장
+      final previous = state.settings;
+      final updated = previous.copyWith(musicSettings: musicSettings);
+      state = state.copyWith(settings: updated);
+
+      final success = await _settingsService.saveMusicSettings(musicSettings);
+      if (!success) {
+        // 실패 시 롤백
+        state = state.copyWith(settings: previous, error: '음악 설정 저장 실패');
+        return false;
       }
-      state = state.copyWith(error: '음악 설정 저장 실패');
-      return false;
+      return true;
     } catch (e) {
       state = state.copyWith(error: '음악 설정 저장 실패: $e');
       return false;
