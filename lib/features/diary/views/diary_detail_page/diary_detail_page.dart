@@ -599,6 +599,34 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     );
   }
 
+  /// 추후 개발 예정 기능 안내 다이얼로그
+  void _showComingSoonDialog(String featureName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.construction, color: Colors.orange),
+              const SizedBox(width: 8),
+              Text('$featureName'),
+            ],
+          ),
+          content: const Text(
+            '이 기능은 현재 개발 중입니다.\n\n추후 업데이트를 통해 제공될 예정이니\n잠시만 기다려주세요!',
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   /// 더 많은 옵션 표시
   void _showMoreOptions(DiaryEntry entry) {
     showModalBottomSheet(
@@ -626,17 +654,19 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
           ListTile(
             leading: const Icon(Icons.share),
             title: const Text('공유'),
+            subtitle: const Text('추후 개발 예정'),
             onTap: () {
               Navigator.pop(context);
-              // TODO: 공유 기능 구현
+              _showComingSoonDialog('공유 기능');
             },
           ),
           ListTile(
             leading: const Icon(Icons.delete),
             title: const Text('삭제'),
+            subtitle: const Text('추후 개발 예정'),
             onTap: () {
               Navigator.pop(context);
-              // TODO: 삭제 기능 구현
+              _showComingSoonDialog('삭제 기능');
             },
           ),
         ],

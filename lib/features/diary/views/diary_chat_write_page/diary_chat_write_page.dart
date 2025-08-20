@@ -348,20 +348,21 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'AI가 오늘의 감정과 경험을 바탕으로 그림을 그려드릴 수 있어요!',
+                              'AI가 오늘의 감정과 경험을 바탕으로 그림을 그려드릴 수 있어요!\n(추후 개발 예정)',
                               style: AppTypography.bodyMedium.copyWith(
-                                color: Colors.grey[700],
+                                color: Colors.grey[600],
+                                fontStyle: FontStyle.italic,
                               ),
                             ),
                             const SizedBox(height: 12),
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton.icon(
-                                onPressed: () => _generateAIImage(diarySummary),
+                                onPressed: () => _showComingSoonDialog('AI 그림 그리기'),
                                 icon: const Icon(Icons.brush),
                                 label: const Text('AI가 그림 그려주기'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
+                                  backgroundColor: Colors.grey[400],
                                   foregroundColor: Colors.white,
                                 ),
                               ),
@@ -376,13 +377,17 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
             ],
           ),
           actions: [
+            // 뒤로 가기 (저장하지 않고 채팅 페이지로 돌아가기)
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _startNewConversation(); // 새 대화 시작
-              },
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('뒤로 가기'),
+            ),
+            // 새 일기 작성
+            TextButton(
+              onPressed: () => _showNewDiaryConfirmation(),
               child: const Text('새 일기 작성'),
             ),
+            // 저장 후 완료
             ElevatedButton(
               onPressed: () async {
                 // 채팅 일기를 일기 목록에 저장
@@ -395,6 +400,64 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                 foregroundColor: Colors.white,
               ),
               child: const Text('저장 후 완료'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 추후 개발 예정 기능 안내 다이얼로그
+  void _showComingSoonDialog(String featureName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.construction, color: Colors.orange),
+              const SizedBox(width: 8),
+              Text('$featureName'),
+            ],
+          ),
+          content: const Text(
+            '이 기능은 현재 개발 중입니다.\n\n추후 업데이트를 통해 제공될 예정이니\n잠시만 기다려주세요!',
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 새 일기 작성 확인창
+  void _showNewDiaryConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('새 일기 작성'),
+          content: const Text('기존 작성 내용이 모두 사라집니다.\n정말 새로 시작하시겠습니까?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 확인창 닫기
+                Navigator.of(context).pop(); // 결과창 닫기
+                _startNewConversation(); // 새 대화 시작
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('새로 시작'),
             ),
           ],
         );
@@ -759,11 +822,11 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       );
       
       // AI 이미지 생성 요청 (채팅 내용과 감정 기반)
-              final imageUrl = await GeminiService.instance.generateImage(
-          diarySummary, 
-          _selectedEmotion ?? '자연스러운', 
-          _conversationHistory
-        );
+      final imageUrl = await GeminiService.instance.generateImage(
+        diarySummary, 
+        _selectedEmotion ?? '자연스러운', 
+        _conversationHistory
+      );
       
       // 로딩 다이얼로그 닫기
       Navigator.of(context).pop();
@@ -777,7 +840,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (imageUrl != null)
+                if (imageUrl != null && imageUrl.isNotEmpty)
                   Image.network(
                     imageUrl,
                     width: 300,
@@ -787,7 +850,23 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                       const Icon(Icons.error, size: 100, color: Colors.red),
                   )
                 else
-                  const Text('이미지 생성에 실패했습니다.'),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.image_not_supported, size: 100, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      const Text(
+                        '이미지 생성에 실패했습니다.',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '현재 Gemini API는 텍스트 기반 이미지 생성에 제한이 있습니다.\n다른 이미지 생성 서비스를 사용하거나\n텍스트로만 일기를 완성해주세요.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
               ],
             ),
             actions: [

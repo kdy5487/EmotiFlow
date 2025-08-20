@@ -27,14 +27,39 @@ class HomePage extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {
-              // TODO: 알림 페이지로 이동
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Row(
+                      children: [
+                        const Icon(Icons.construction, color: Colors.orange),
+                        const SizedBox(width: 8),
+                        const Text('알림'),
+                      ],
+                    ),
+                    content: const Text(
+                      '이 기능은 현재 개발 중입니다.\n\n추후 업데이트를 통해 제공될 예정이니\n잠시만 기다려주세요!',
+                      textAlign: TextAlign.center,
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('확인'),
+                      ),
+                    ],
+                  );
+                },
+              );
             },
+            tooltip: '알림',
           ),
           IconButton(
             icon: const Icon(Icons.person_outline),
             onPressed: () {
               context.push('/profile');
             },
+            tooltip: '프로필',
           ),
         ],
       ),

@@ -22,6 +22,34 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     'danger': false,
   };
 
+  /// 추후 개발 예정 기능 안내 다이얼로그
+  void _showComingSoonDialog(String featureName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.construction, color: Colors.orange),
+              const SizedBox(width: 8),
+              Text('$featureName'),
+            ],
+          ),
+          content: const Text(
+            '이 기능은 현재 개발 중입니다.\n\n추후 업데이트를 통해 제공될 예정이니\n잠시만 기다려주세요!',
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,26 +113,26 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 _buildSettingItem(
                   icon: Icons.notifications,
                   title: '알림 설정',
-                  subtitle: '푸시 알림 및 이메일 설정',
-                  onTap: () => context.push('/settings/notifications'),
+                  subtitle: '푸시 알림 및 이메일 설정 (추후 개발 예정)',
+                  onTap: () => _showComingSoonDialog('알림 설정'),
                 ),
                 _buildSettingItem(
                   icon: Icons.dark_mode,
                   title: '테마 설정',
-                  subtitle: '라이트/다크 모드 및 컬러',
-                  onTap: () => context.push('/settings/theme'),
+                  subtitle: '라이트/다크 모드 및 컬러 (추후 개발 예정)',
+                  onTap: () => _showComingSoonDialog('테마 설정'),
                 ),
                 _buildSettingItem(
                   icon: Icons.language,
                   title: '언어 설정',
-                  subtitle: '앱 언어 및 지역 설정',
-                  onTap: () => context.push('/settings/language'),
+                  subtitle: '앱 언어 및 지역 설정 (추후 개발 예정)',
+                  onTap: () => _showComingSoonDialog('언어 설정'),
                 ),
                 _buildSettingItem(
                   icon: Icons.text_fields,
                   title: '폰트 설정',
-                  subtitle: '폰트 크기 및 스타일',
-                  onTap: () => context.push('/settings/font'),
+                  subtitle: '폰트 크기 및 스타일 (추후 개발 예정)',
+                  onTap: () => _showComingSoonDialog('폰트 설정'),
                 ),
               ],
             ),
@@ -119,20 +147,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 _buildSettingItem(
                   icon: Icons.security,
                   title: '보안 설정',
-                  subtitle: '계정 보안 및 인증',
-                  onTap: () => context.push('/settings/security'),
+                  subtitle: '계정 보안 및 인증 (추후 개발 예정)',
+                  onTap: () => _showComingSoonDialog('보안 설정'),
                 ),
                 _buildSettingItem(
                   icon: Icons.visibility,
                   title: '프라이버시 설정',
-                  subtitle: '데이터 공개 범위 설정',
-                  onTap: () => context.push('/settings/privacy'),
+                  subtitle: '데이터 공개 범위 설정 (추후 개발 예정)',
+                  onTap: () => _showComingSoonDialog('프라이버시 설정'),
                 ),
                 _buildSettingItem(
                   icon: Icons.data_usage,
                   title: '데이터 공유 설정',
-                  subtitle: '분석 데이터 수집 설정',
-                  onTap: () => context.push('/settings/data-sharing'),
+                  subtitle: '분석 데이터 수집 설정 (추후 개발 예정)',
+                  onTap: () => _showComingSoonDialog('데이터 공유 설정'),
                 ),
               ],
             ),
@@ -147,21 +175,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 _buildSettingItem(
                   icon: Icons.backup,
                   title: '데이터 백업',
-                  subtitle: '클라우드에 데이터 백업',
-                  onTap: () => context.push('/settings/backup'),
+                  subtitle: '클라우드에 데이터 백업 (추후 개발 예정)',
+                  onTap: () => _showComingSoonDialog('데이터 백업'),
                 ),
                 _buildSettingItem(
                   icon: Icons.restore,
                   title: '데이터 복원',
-                  subtitle: '백업에서 데이터 복원',
-                  onTap: () => context.push('/settings/restore'),
+                  subtitle: '백업에서 데이터 복원 (추후 개발 예정)',
+                  onTap: () => _showComingSoonDialog('데이터 복원'),
                 ),
 
                 _buildSettingItem(
                   icon: Icons.delete_forever,
                   title: '데이터 삭제',
-                  subtitle: '선택한 데이터 삭제',
-                  onTap: () => context.push('/settings/data-delete'),
+                  subtitle: '선택한 데이터 삭제 (추후 개발 예정)',
+                  onTap: () => _showComingSoonDialog('데이터 삭제'),
                 ),
               ],
             ),
@@ -176,20 +204,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 _buildSettingItem(
                   icon: Icons.help,
                   title: '도움말',
-                  subtitle: '앱 사용법 및 FAQ',
-                  onTap: () => context.push('/settings/help'),
+                  subtitle: '앱 사용법 및 FAQ (추후 개발 예정)',
+                  onTap: () => _showComingSoonDialog('도움말'),
                 ),
                 _buildSettingItem(
                   icon: Icons.feedback,
                   title: '피드백 보내기',
-                  subtitle: '의견 및 버그 신고',
-                  onTap: () => context.push('/settings/feedback'),
+                  subtitle: '의견 및 버그 신고 (추후 개발 예정)',
+                  onTap: () => _showComingSoonDialog('피드백 보내기'),
                 ),
                 _buildSettingItem(
                   icon: Icons.info,
                   title: '앱 정보',
-                  subtitle: '버전 및 라이선스 정보',
-                  onTap: () => context.push('/settings/about'),
+                  subtitle: '버전 및 라이선스 정보 (추후 개발 예정)',
+                  onTap: () => _showComingSoonDialog('앱 정보'),
                 ),
               ],
             ),
