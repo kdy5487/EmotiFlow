@@ -61,6 +61,11 @@ class HomePage extends ConsumerWidget {
             },
             tooltip: '프로필',
           ),
+          IconButton(
+            icon: const Icon(Icons.library_music_outlined),
+            tooltip: '감정 기반 음악',
+            onPressed: () => context.push('/music'),
+          ),
         ],
       ),
       body: SingleChildScrollView(

@@ -73,6 +73,8 @@ dependencies:
   cached_network_image: ^3.3.0
   image: ^4.1.7
   # shimmer: ^3.0.0
+  just_audio: ^0.9.36
+  audio_session: ^0.1.18
   
   # 차트 및 데이터 시각화 (나중에 추가)
   # fl_chart: ^0.66.0

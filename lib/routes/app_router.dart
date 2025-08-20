@@ -16,6 +16,7 @@ import 'package:emoti_flow/features/settings/views/theme_settings_page.dart';
 import 'package:emoti_flow/features/settings/views/language_settings_page.dart';
 import 'package:emoti_flow/features/settings/views/font_settings_page.dart';
 import 'package:emoti_flow/features/settings/views/account_settings_page.dart';
+import 'package:emoti_flow/features/music/views/music_page.dart' as feature_music;
 
 
 // 라우트 이름 상수
@@ -114,7 +115,7 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.music,
         name: 'music',
-        builder: (context, state) => const MusicPage(),
+        builder: (context, state) => const feature_music.MusicPage(),
       ),
       
       // 커뮤니티 라우트

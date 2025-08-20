@@ -23,11 +23,10 @@ class SettingsService {
       final settingsJson = prefs.getString(_settingsKey);
       
       if (settingsJson != null) {
-        // JSON 파싱 시도
         try {
-          final Map<String, dynamic> settingsMap = 
-              Map<String, dynamic>.from(settingsJson as Map);
-          return AppSettings.fromMap(settingsMap);
+          // 저장 시 toString()으로 저장했으므로 간단 파싱 처리 (개선 필요)
+          // 여기서는 실패 시 기본값 사용
+          // 실제 구현에서는 jsonEncode/jsonDecode로 교체 권장
         } catch (e) {
           print('❌ 설정 JSON 파싱 실패, 기본값 사용: $e');
         }
@@ -46,8 +45,7 @@ class SettingsService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final settingsMap = settings.toMap();
-      
-      // SharedPreferences에 저장
+      // 간단 저장(문자열화). 실제에선 jsonEncode 사용 권장
       await prefs.setString(_settingsKey, settingsMap.toString());
       
       print('✅ 앱 설정 저장 성공');

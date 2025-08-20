@@ -213,6 +213,27 @@ class SettingsProvider extends StateNotifier<SettingsState> {
     }
   }
 
+  /// 음악 설정 업데이트
+  Future<bool> updateMusicSettings(MusicSettings musicSettings) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final current = state.settings;
+      final newSettings = current.copyWith(musicSettings: musicSettings);
+      final success = await _settingsService.saveAppSettings(newSettings);
+      if (success) {
+        state = state.copyWith(settings: newSettings);
+        return true;
+      }
+      state = state.copyWith(error: '음악 설정 저장 실패');
+      return false;
+    } catch (e) {
+      state = state.copyWith(error: '음악 설정 저장 실패: $e');
+      return false;
+    } finally {
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
   /// 테마 모드 변경
   Future<bool> changeThemeMode(ThemeMode themeMode) async {
     final currentThemeSettings = state.settings.themeSettings;

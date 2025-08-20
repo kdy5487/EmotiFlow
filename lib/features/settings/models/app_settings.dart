@@ -7,6 +7,7 @@ class AppSettings {
   final DataSettings dataSettings;
   final SecuritySettings securitySettings;
   final AccessibilitySettings accessibilitySettings;
+  final MusicSettings musicSettings;
   final DateTime lastUpdated;
 
   const AppSettings({
@@ -15,6 +16,7 @@ class AppSettings {
     required this.dataSettings,
     required this.securitySettings,
     required this.accessibilitySettings,
+    required this.musicSettings,
     required this.lastUpdated,
   });
 
@@ -26,6 +28,7 @@ class AppSettings {
       dataSettings: DataSettings.defaultSettings(),
       securitySettings: SecuritySettings.defaultSettings(),
       accessibilitySettings: AccessibilitySettings.defaultSettings(),
+      musicSettings: MusicSettings.defaultSettings(),
       lastUpdated: DateTime.now(),
     );
   }
@@ -38,6 +41,7 @@ class AppSettings {
       dataSettings: DataSettings.fromMap(map['dataSettings'] ?? {}),
       securitySettings: SecuritySettings.fromMap(map['securitySettings'] ?? {}),
       accessibilitySettings: AccessibilitySettings.fromMap(map['accessibilitySettings'] ?? {}),
+      musicSettings: MusicSettings.fromMap(map['musicSettings'] ?? {}),
       lastUpdated: map['lastUpdated'] != null 
           ? DateTime.parse(map['lastUpdated']) 
           : DateTime.now(),
@@ -52,6 +56,7 @@ class AppSettings {
       'dataSettings': dataSettings.toMap(),
       'securitySettings': securitySettings.toMap(),
       'accessibilitySettings': accessibilitySettings.toMap(),
+      'musicSettings': musicSettings.toMap(),
       'lastUpdated': lastUpdated.toIso8601String(),
     };
   }
@@ -63,6 +68,7 @@ class AppSettings {
     DataSettings? dataSettings,
     SecuritySettings? securitySettings,
     AccessibilitySettings? accessibilitySettings,
+    MusicSettings? musicSettings,
     DateTime? lastUpdated,
   }) {
     return AppSettings(
@@ -71,7 +77,71 @@ class AppSettings {
       dataSettings: dataSettings ?? this.dataSettings,
       securitySettings: securitySettings ?? this.securitySettings,
       accessibilitySettings: accessibilitySettings ?? this.accessibilitySettings,
+      musicSettings: musicSettings ?? this.musicSettings,
       lastUpdated: lastUpdated ?? this.lastUpdated,
+    );
+  }
+}
+
+/// 음악 설정
+class MusicSettings {
+  final bool enabled; // 음악 기능 전체 on/off
+  final bool autoPlay; // 자동 재생 여부
+  final bool promptOnEmotionChange; // 감정 변경 시 안내 다이얼로그
+  final String defaultSource; // 'todayDiary' | 'aiAnalysis'
+  final double volume; // 0.0 ~ 1.0
+
+  const MusicSettings({
+    required this.enabled,
+    required this.autoPlay,
+    required this.promptOnEmotionChange,
+    required this.defaultSource,
+    required this.volume,
+  });
+
+  factory MusicSettings.defaultSettings() {
+    return const MusicSettings(
+      enabled: true,
+      autoPlay: true,
+      promptOnEmotionChange: true,
+      defaultSource: 'aiAnalysis',
+      volume: 0.7,
+    );
+  }
+
+  factory MusicSettings.fromMap(Map<String, dynamic> map) {
+    return MusicSettings(
+      enabled: map['enabled'] ?? true,
+      autoPlay: map['autoPlay'] ?? true,
+      promptOnEmotionChange: map['promptOnEmotionChange'] ?? true,
+      defaultSource: map['defaultSource'] ?? 'aiAnalysis',
+      volume: (map['volume'] ?? 0.7).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'enabled': enabled,
+      'autoPlay': autoPlay,
+      'promptOnEmotionChange': promptOnEmotionChange,
+      'defaultSource': defaultSource,
+      'volume': volume,
+    };
+  }
+
+  MusicSettings copyWith({
+    bool? enabled,
+    bool? autoPlay,
+    bool? promptOnEmotionChange,
+    String? defaultSource,
+    double? volume,
+  }) {
+    return MusicSettings(
+      enabled: enabled ?? this.enabled,
+      autoPlay: autoPlay ?? this.autoPlay,
+      promptOnEmotionChange: promptOnEmotionChange ?? this.promptOnEmotionChange,
+      defaultSource: defaultSource ?? this.defaultSource,
+      volume: volume ?? this.volume,
     );
   }
 }
