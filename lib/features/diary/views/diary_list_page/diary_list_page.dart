@@ -4,16 +4,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../providers/diary_provider.dart';
-import '../providers/firestore_provider.dart';
-import '../models/diary_entry.dart';
-import '../models/emotion.dart';
-import '../../../shared/widgets/cards/emoti_card.dart';
-import '../../../shared/widgets/inputs/emoti_text_field.dart';
-import '../../../theme/app_colors.dart';
-import '../../../theme/app_typography.dart';
-import '../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/auth_provider.dart';
+import '../../../../shared/widgets/inputs/emoti_text_field.dart';
+import '../../../../theme/app_colors.dart';
+import '../../../../theme/app_typography.dart';
+import '../../providers/diary_provider.dart';
+import '../../providers/firestore_provider.dart';
+import '../../models/diary_entry.dart';
+import '../../models/emotion.dart';
+
+import 'widgets/diary_search_section.dart';
+import 'widgets/diary_filter_tags_bar.dart';
+import 'widgets/filter_dialog.dart';
+
 import 'widgets/delete_selection_sheet.dart';
+import 'widgets/diary_grid_card.dart';
+import 'widgets/diary_empty_state.dart';
+import 'widgets/diary_error_state.dart';
+import 'widgets/diary_fab.dart';
+import 'widgets/diary_list_card.dart';
+import '../states/diary_list_ui_state.dart';
 
 
 /// 일기 목록 페이지
@@ -29,12 +39,8 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   final _searchFocusNode = FocusNode();
   
   // String _currentSearchQuery = ''; // 검색 기능에서 _searchController.text를 직접 사용
-  Map<String, dynamic> _currentFilters = {};
-  String _currentSortBy = 'date'; // date, emotion, moodType
-  bool _isGridView = false; // 그리드뷰 전환 상태
-  bool _isSearchActive = false; // 검색 활성화 상태
-  bool _isDeleteMode = false; // 삭제 선택 모드
-  final Set<String> _selectedEntryIds = <String>{};
+  // 필터/정렬은 UI Provider에서 관리
+  // 이하 UI 상태는 provider로 이전 작업 진행
 
   @override
   void initState() {
@@ -53,20 +59,22 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   Widget build(BuildContext context) {
     final diaryState = ref.watch(diaryProvider);
     final diaryNotifier = ref.read(diaryProvider.notifier);
+    final ui = ref.watch(diaryListUiProvider);
+    final uiNotifier = ref.read(diaryListUiProvider.notifier);
     
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        leading: _isDeleteMode
+        leading: ui.isDeleteMode
             ? IconButton(
-                onPressed: _exitDeleteMode,
+                onPressed: uiNotifier.exitDeleteMode,
                 icon: const Icon(Icons.close),
                 tooltip: '삭제 모드 종료',
               )
             : null,
-        title: _isDeleteMode
+        title: ui.isDeleteMode
             ? Text(
-                '${_selectedEntryIds.length}개 선택',
+                '${ui.selectedEntryIds.length}개 선택',
                 style: const TextStyle(fontWeight: FontWeight.w600),
               )
             : const Text(
@@ -76,10 +84,10 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: _isDeleteMode
+        actions: ui.isDeleteMode
             ? [
                 IconButton(
-                  onPressed: _selectedEntryIds.isEmpty ? null : _confirmAndDeleteSelected,
+                  onPressed: ui.selectedEntryIds.isEmpty ? null : _confirmAndDeleteSelected,
                   icon: const Icon(Icons.delete_outline),
                   tooltip: '선택 삭제',
                 ),
@@ -87,29 +95,51 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
             : [
           // 검색 버튼
           IconButton(
-            onPressed: _toggleSearch,
+            onPressed: () {
+              uiNotifier.toggleSearch();
+              if (!ui.isSearchActive) {
+                _searchController.clear();
+                _applySearchAndFilter(ref.read(diaryProvider.notifier));
+              } else {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _searchFocusNode.requestFocus();
+                });
+              }
+            },
             icon: Icon(
-              _isSearchActive ? Icons.close : Icons.search,
+              ui.isSearchActive ? Icons.close : Icons.search,
             ),
-            tooltip: _isSearchActive ? '검색 닫기' : '검색',
+            tooltip: ui.isSearchActive ? '검색 닫기' : '검색',
           ),
           // 그리드뷰/리스트뷰 전환 버튼
           IconButton(
-            onPressed: _toggleViewMode,
+            onPressed: uiNotifier.toggleViewMode,
             icon: Icon(
-              _isGridView ? Icons.view_list : Icons.grid_view,
+              ui.isGridView ? Icons.view_list : Icons.grid_view,
             ),
-            tooltip: _isGridView ? '리스트뷰로 전환' : '그리드뷰로 전환',
+            tooltip: ui.isGridView ? '리스트뷰로 전환' : '그리드뷰로 전환',
           ),
           // 설정 메뉴 버튼 (필터/정렬/삭제 모드 진입 분리)
           Container(
             margin: const EdgeInsets.only(right: 8),
             child: PopupMenuButton<String>(
-              onSelected: _handleMenuSelection,
+              onSelected: (value) {
+                switch (value) {
+                  case 'filter':
+                    _showFilterDialog();
+                    break;
+                  case 'sort':
+                    _showSortDialog();
+                    break;
+                  case 'delete_mode':
+                    uiNotifier.enterDeleteMode();
+                    break;
+                }
+              },
               icon: Stack(
                 children: [
                   const Icon(Icons.more_vert),
-                  if (_currentFilters.isNotEmpty || _currentSortBy != 'date')
+                  if (ref.watch(diaryListUiProvider).currentFilters.isNotEmpty || ref.watch(diaryListUiProvider).currentSortBy != 'date')
                     Positioned(
                       right: 0,
                       top: 0,
@@ -176,29 +206,50 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
       body: Column(
         children: [
           // 검색 섹션 (검색이 활성화되었을 때만 표시)
-          if (_isSearchActive)
-            _buildSearchSection(),
+          if (ui.isSearchActive)
+            DiarySearchSection(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              onChanged: (_) => _applySearchAndFilter(ref.read(diaryProvider.notifier)),
+              onClear: () {
+                _searchController.clear();
+                _applySearchAndFilter(ref.read(diaryProvider.notifier));
+              },
+            ),
           
           // 필터 태그 표시
-          if (_currentFilters.isNotEmpty) _buildFilterTags(diaryNotifier),
+          if (ref.watch(diaryListUiProvider).currentFilters.isNotEmpty)
+            DiaryFilterTagsBar(
+              currentFilters: ref.watch(diaryListUiProvider).currentFilters,
+              onRemoveFilter: (key) {
+                ref.read(diaryListUiProvider.notifier).removeFilter(key);
+                _applySearchAndFilter(diaryNotifier);
+              },
+              onClearAll: () {
+                ref.read(diaryListUiProvider.notifier).clearAllFilters();
+                _applySearchAndFilter(diaryNotifier);
+              },
+              getFilterLabel: _getFilterLabel,
+            ),
           
           // 일기 목록
           Expanded(
-            child: _isGridView 
+            child: ui.isGridView 
                 ? _buildDiaryGridFromStream()
                 : _buildDiaryList(diaryState, diaryNotifier),
           ),
         ],
       ),
-      floatingActionButton: _buildFloatingActionButton(),
+      floatingActionButton: DiaryFAB(onPressed: () => _showWriteOptionsDialog(context)),
     );
   }
 
   /// 활성 설정 개수 계산
   int _getActiveSettingsCount() {
+    final ui = ref.read(diaryListUiProvider);
     int count = 0;
-    if (_currentFilters.isNotEmpty) count++;
-    if (_currentSortBy != 'date') count++;
+    if (ui.currentFilters.isNotEmpty) count++;
+    if (ui.currentSortBy != 'date') count++;
     return count;
   }
 
@@ -212,6 +263,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 
   /// 그리드뷰 빌더
   Widget _buildDiaryGrid(DiaryState diaryState, DiaryProvider diaryNotifier) {
+    final ui = ref.watch(diaryListUiProvider);
     if (diaryState.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -287,7 +339,23 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
       ),
       itemCount: entries.length,
       itemBuilder: (context, index) {
-        return _buildDiaryGridCard(entries[index], index);
+        final entry = entries[index];
+        final isSelected = ref.read(diaryListUiProvider).selectedEntryIds.contains(entry.id);
+        return DiaryGridCard(
+          entry: entry,
+          isSelected: isSelected,
+          isDeleteMode: ui.isDeleteMode,
+          onTap: () {
+            if (ui.isDeleteMode) {
+              _toggleSelect(entry.id);
+            } else {
+              _navigateToDetail(entry);
+            }
+          },
+          onToggleSelect: () => _toggleSelect(entry.id),
+          formatDate: _formatDate,
+          formatTime: _formatTime,
+        );
       },
     );
   }
@@ -303,32 +371,14 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 
         return diariesAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
-                const SizedBox(height: 12),
-                Text('그리드 데이터를 불러오는 중 오류가 발생했습니다',
-                    textAlign: TextAlign.center),
-              ],
-            ),
+          error: (error, stack) => const DiaryErrorState(
+            message: '그리드 데이터를 불러오는 중 오류가 발생했습니다',
           ),
           data: (snapshot) {
+            final ui = ref.watch(diaryListUiProvider);
             if (snapshot.docs.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]),
-                    const SizedBox(height: 16),
-                    Text('아직 작성된 일기가 없습니다',
-                        style: AppTypography.titleLarge.copyWith(
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w600,
-                        )),
-                  ],
-                ),
+              return DiaryEmptyState(
+                onPrimaryAction: () => _showWriteOptionsDialog(context),
               );
             }
 
@@ -349,7 +399,25 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                 childAspectRatio: 0.8,
               ),
               itemCount: entries.length,
-              itemBuilder: (context, index) => _buildDiaryGridCard(entries[index], index),
+              itemBuilder: (context, index) {
+                final entry = entries[index];
+                final isSelected = ui.selectedEntryIds.contains(entry.id);
+                return DiaryGridCard(
+                  entry: entry,
+                  isSelected: isSelected,
+                  isDeleteMode: ui.isDeleteMode,
+                  onTap: () {
+                    if (ui.isDeleteMode) {
+                      _toggleSelect(entry.id);
+                    } else {
+                      _navigateToDetail(entry);
+                    }
+                  },
+                  onToggleSelect: () => _toggleSelect(entry.id),
+                  formatDate: _formatDate,
+                  formatTime: _formatTime,
+                );
+              },
             );
           },
         );
@@ -359,10 +427,11 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 
   /// 그리드뷰용 일기 카드 (사진 없는 버전, 가독성 중심)
   Widget _buildDiaryGridCard(DiaryEntry entry, int index) {
-    final bool isSelected = _selectedEntryIds.contains(entry.id);
+    final ui = ref.watch(diaryListUiProvider);
+    final bool isSelected = ui.selectedEntryIds.contains(entry.id);
     return InkWell(
       onTap: () {
-        if (_isDeleteMode) {
+        if (ref.read(diaryListUiProvider).isDeleteMode) {
           _toggleSelect(entry.id);
         } else {
           _navigateToDetail(entry);
@@ -533,7 +602,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
             ],
           ),
             ),
-            if (_isDeleteMode)
+            if (ui.isDeleteMode)
               Positioned(
                 top: 8,
                 right: 8,
@@ -866,7 +935,8 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     required String filterValue,
     required Widget icon,
   }) {
-    final isSelected = _currentFilters[value] == filterValue;
+    final ui = ref.watch(diaryListUiProvider);
+    final isSelected = ui.currentFilters[value] == filterValue;
     
     return FilterChip(
       label: Row(
@@ -879,13 +949,12 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
       ),
       selected: isSelected,
       onSelected: (selected) {
-        setState(() {
-          if (selected) {
-            _currentFilters[value] = filterValue;
-          } else {
-            _currentFilters.remove(value);
-          }
-        });
+        final uiNotifier = ref.read(diaryListUiProvider.notifier);
+        if (selected) {
+          uiNotifier.setFilter(value, filterValue);
+        } else {
+          uiNotifier.removeFilter(value);
+        }
       },
       backgroundColor: Colors.grey[100],
       selectedColor: AppColors.primary.withOpacity(0.2),
@@ -904,7 +973,8 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     required String value,
     required IconData icon,
   }) {
-    final isSelected = _currentSortBy == value;
+    final ui = ref.watch(diaryListUiProvider);
+    final isSelected = ui.currentSortBy == value;
     
     return ListTile(
       leading: Icon(
@@ -928,19 +998,16 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
           ? Icon(Icons.check_circle, color: AppColors.primary)
           : null,
       onTap: () {
-        setState(() {
-          _currentSortBy = value;
-        });
+        ref.read(diaryListUiProvider.notifier).setSortBy(value);
+        _applySearchAndFilter(ref.read(diaryProvider.notifier));
       },
     );
   }
 
   /// 모든 설정 초기화
   void _resetAllSettings() {
-    setState(() {
-      _currentFilters.clear();
-      _currentSortBy = 'date';
-    });
+    ref.read(diaryListUiProvider.notifier).clearAllFilters();
+    ref.read(diaryListUiProvider.notifier).setSortBy('date');
   }
 
   /// 모든 설정 적용
@@ -950,25 +1017,30 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 
   /// 검색 토글
   void _toggleSearch() {
-    setState(() {
-      _isSearchActive = !_isSearchActive;
-      if (!_isSearchActive) {
-        _searchController.clear();
-        _applySearchAndFilter(ref.read(diaryProvider.notifier));
-      } else {
-        // 검색이 활성화되면 포커스 요청
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _searchFocusNode.requestFocus();
-        });
-      }
-    });
+    final uiNotifier = ref.read(diaryListUiProvider.notifier);
+    uiNotifier.toggleSearch();
+    final ui = ref.read(diaryListUiProvider);
+    if (!ui.isSearchActive) {
+      _searchController.clear();
+      _applySearchAndFilter(ref.read(diaryProvider.notifier));
+    } else {
+      // 검색이 활성화되면 포커스 요청
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _searchFocusNode.requestFocus();
+      });
+    }
   }
 
   /// 뷰 모드 토글 (리스트뷰 ↔ 그리드뷰)
   void _toggleViewMode() {
-    setState(() {
-      _isGridView = !_isGridView;
-    });
+    final uiNotifier = ref.read(diaryListUiProvider.notifier);
+    uiNotifier.toggleViewMode();
+  }
+
+  /// 삭제 모드 진입
+  void _enterDeleteMode() {
+    final uiNotifier = ref.read(diaryListUiProvider.notifier);
+    uiNotifier.enterDeleteMode();
   }
 
   /// 메뉴 선택 핸들러
@@ -1098,7 +1170,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
           ],
           
           // 빠른 필터 버튼들
-          if (_searchController.text.isNotEmpty || _currentFilters.isNotEmpty) ...[
+          if (_searchController.text.isNotEmpty || ref.read(diaryListUiProvider).currentFilters.isNotEmpty) ...[
             const SizedBox(height: 12),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -1121,7 +1193,8 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   /// 빠른 필터 칩
   Widget _buildQuickFilterChip(String label, dynamic value, DiaryProvider diaryNotifier, {String? filterKey}) {
     final key = filterKey ?? 'moodType';
-    final isSelected = _currentFilters[key] == value;
+    final ui = ref.watch(diaryListUiProvider);
+    final isSelected = ui.currentFilters[key] == value;
     
     return Container(
       margin: const EdgeInsets.only(right: 8),
@@ -1135,10 +1208,11 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
         ),
         selected: isSelected,
         onSelected: (selected) {
+          final uiNotifier = ref.read(diaryListUiProvider.notifier);
           if (selected) {
-            _currentFilters[key] = value;
+            uiNotifier.setFilter(key, value);
           } else {
-            _currentFilters.remove(key);
+            uiNotifier.removeFilter(key);
           }
           _applySearchAndFilter(diaryNotifier);
         },
@@ -1173,14 +1247,14 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
             child: Wrap(
               spacing: 8,
               runSpacing: 4,
-              children: _currentFilters.entries.map((entry) {
+              children: ref.read(diaryListUiProvider).currentFilters.entries.map((entry) {
                 return Chip(
                   label: Text(
                     _getFilterLabel(entry.key, entry.value),
                     style: const TextStyle(fontSize: 11),
                   ),
                   onDeleted: () {
-                    _currentFilters.remove(entry.key);
+                    ref.read(diaryListUiProvider).currentFilters.remove(entry.key);
                     _applySearchAndFilter(diaryNotifier);
                   },
                   backgroundColor: AppColors.primary.withOpacity(0.1),
@@ -1198,7 +1272,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
           TextButton(
             onPressed: () {
               setState(() {
-                _currentFilters.clear();
+                ref.read(diaryListUiProvider).currentFilters.clear();
               });
               _applySearchAndFilter(diaryNotifier);
             },
@@ -1300,6 +1374,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
           
           // 데이터 표시
           data: (snapshot) {
+            final ui = ref.watch(diaryListUiProvider);
             if (snapshot.docs.isEmpty) {
               return Center(
                 child: Column(
@@ -1348,13 +1423,28 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                 // Firestore 데이터를 DiaryEntry로 변환
                 try {
                   final entry = DiaryEntry.fromFirestore(doc);
-                  return _buildDiaryCard(entry, index);
+                  final isSelected = ref.read(diaryListUiProvider).selectedEntryIds.contains(entry.id);
+                  return DiaryListCard(
+                    entry: entry,
+                    isSelected: isSelected,
+                    isDeleteMode: ui.isDeleteMode,
+                    onTap: () {
+                      if (ui.isDeleteMode) {
+                        _toggleSelect(entry.id);
+                      } else {
+                        _navigateToDetail(entry);
+                      }
+                    },
+                    headerEmotionIndicator: _buildEmotionIndicator(entry),
+                    formatDate: _formatDate,
+                    formatTime: _formatTime,
+                  );
                 } catch (e) {
                   print('문서 변환 실패: $e, 문서 ID: ${doc.id}');
                   // 변환 실패 시 간단한 에러 카드 표시
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
-                    child: EmotiCard(
+                    child: Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -1411,13 +1501,14 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 
   /// 일기 카드 (가로형 레이아웃)
   Widget _buildDiaryCard(DiaryEntry entry, int index) {
-    final bool isSelected = _selectedEntryIds.contains(entry.id);
+    final ui = ref.watch(diaryListUiProvider);
+    final bool isSelected = ui.selectedEntryIds.contains(entry.id);
     return Container(
       margin: const EdgeInsets.only(bottom: 1), // 카드 간격 더 줄임 (2 → 1)
-      child: EmotiCard(
+      child: Card(
         child: InkWell(
           onTap: () {
-            if (_isDeleteMode) {
+            if (ui.isDeleteMode) {
               _toggleSelect(entry.id);
             } else {
               _navigateToDetail(entry);
@@ -1608,7 +1699,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
               ],
             ),
           ),
-              if (_isDeleteMode)
+              if (ui.isDeleteMode)
                 Positioned(
                   top: 6,
                   right: 6,
@@ -1769,9 +1860,10 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 
   /// 검색 및 필터 적용
   void _applySearchAndFilter(DiaryProvider diaryNotifier) {
+    final ui = ref.read(diaryListUiProvider);
     // 검색어와 필터를 적용하여 일기 목록 업데이트
     final searchQuery = _searchController.text.trim();
-    final filters = Map<String, dynamic>.from(_currentFilters);
+    final filters = Map<String, dynamic>.from(ui.currentFilters);
     
     // 검색어가 있으면 필터에 추가
     if (searchQuery.isNotEmpty) {
@@ -1779,13 +1871,13 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     }
     
     // 정렬 기준 추가
-    filters['sortBy'] = _currentSortBy;
+    filters['sortBy'] = ui.currentSortBy;
     
     // DiaryProvider에 필터 적용 요청
     diaryNotifier.searchAndFilter(
       searchQuery: searchQuery,
       filters: filters,
-      sortBy: _currentSortBy,
+      sortBy: ui.currentSortBy,
     );
     
     // 검색 결과가 있으면 스크롤을 맨 위로
@@ -1803,12 +1895,10 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   void _showFilterDialog() {
     showDialog(
       context: context,
-      builder: (context) => _FilterDialog(
-        currentFilters: _currentFilters,
+      builder: (context) => FilterDialog(
+        currentFilters: ref.read(diaryListUiProvider).currentFilters,
         onFiltersChanged: (filters) {
-          setState(() {
-            _currentFilters = filters;
-          });
+          ref.read(diaryListUiProvider.notifier).setFilters(filters);
           _applySearchAndFilter(ref.read(diaryProvider.notifier));
         },
       ),
@@ -1874,32 +1964,13 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   }
 
   // ===== 삭제 모드 관련 =====
-  void _enterDeleteMode() {
-    setState(() {
-      _isDeleteMode = true;
-      _selectedEntryIds.clear();
-    });
-  }
-
-  void _exitDeleteMode() {
-    setState(() {
-      _isDeleteMode = false;
-      _selectedEntryIds.clear();
-    });
-  }
-
   void _toggleSelect(String entryId) {
-    setState(() {
-      if (_selectedEntryIds.contains(entryId)) {
-        _selectedEntryIds.remove(entryId);
-      } else {
-        _selectedEntryIds.add(entryId);
-      }
-    });
+    ref.read(diaryListUiProvider.notifier).toggleSelect(entryId);
   }
 
   Future<void> _confirmAndDeleteSelected() async {
-    final toDelete = _selectedEntryIds.toList();
+    final ui = ref.read(diaryListUiProvider);
+    final toDelete = ui.selectedEntryIds.toList();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1921,15 +1992,13 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 
     if (confirmed == true) {
       final diaryNotifier = ref.read(diaryProvider.notifier);
-      for (final id in toDelete) {
-        await diaryNotifier.deleteDiaryEntry(id);
-      }
+      await diaryNotifier.deleteDiaryEntries(toDelete);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${toDelete.length}개의 일기가 삭제되었습니다.'), backgroundColor: Colors.green),
         );
       }
-      _exitDeleteMode();
+      ref.read(diaryListUiProvider.notifier).exitDeleteMode();
     }
   }
 
@@ -2129,6 +2198,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 }
 
 /// 필터 다이얼로그
+/* moved to widgets/filter_dialog.dart
 class _FilterDialog extends StatefulWidget {
   final Map<String, dynamic> currentFilters;
   final Function(Map<String, dynamic>) onFiltersChanged;
@@ -2525,3 +2595,4 @@ class _FilterDialogState extends State<_FilterDialog> {
 
 
 }
+*/

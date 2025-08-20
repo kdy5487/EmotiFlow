@@ -363,4 +363,16 @@ class DiaryEntry {
 
   /// 공개 가능한 일기인지 확인
   bool get canBePublic => !isPublic && content.isNotEmpty && emotions.isNotEmpty;
+
+  /// 커버 이미지 URL (첫 번째 이미지 파일)
+  String? get coverImageUrl {
+    final firstImage = mediaFiles.where((file) => file.type == MediaType.image).firstOrNull;
+    return firstImage?.url;
+  }
+
+  /// 첫 번째 로컬 이미지 경로
+  String? get firstLocalImagePath {
+    final firstImage = mediaFiles.where((file) => file.type == MediaType.image).firstOrNull;
+    return firstImage?.url;
+  }
 }

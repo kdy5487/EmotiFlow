@@ -269,6 +269,28 @@ class DiaryProvider extends StateNotifier<DiaryState> {
     }
   }
 
+  /// 일괄 삭제
+  Future<void> deleteDiaryEntries(List<String> entryIds) async {
+    try {
+      final batch = _firestore.batch();
+      for (final id in entryIds) {
+        final docRef = _firestore.collection('diaries').doc(id);
+        batch.delete(docRef);
+      }
+      await batch.commit();
+
+      final updatedEntries = state.diaryEntries.where((e) => !entryIds.contains(e.id)).toList();
+      state = state.copyWith(
+        diaryEntries: updatedEntries,
+        filteredEntries: updatedEntries,
+      );
+      print('일괄 삭제 완료: ${entryIds.length}개');
+    } catch (e) {
+      print('일괄 삭제 실패: $e');
+      throw e;
+    }
+  }
+
   /// 일기 조회
   DiaryEntry? getDiaryEntry(String entryId) {
     return state.diaryEntries.firstWhere(

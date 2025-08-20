@@ -1,12 +1,12 @@
+import '../../../../core/ai/gemini/gemini_service.dart';
+import '../../../../core/providers/auth_provider.dart';
+import '../../../../theme/app_colors.dart';
+import '../../../../theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../theme/app_colors.dart';
-import '../../../theme/app_typography.dart';
-import '../../../core/ai/gemini/gemini_service.dart';
-import '../../../core/providers/auth_provider.dart';
-import '../models/diary_entry.dart';
-import '../viewmodels/diary_write_view_model.dart';
-import '../providers/diary_provider.dart';
+import '../../models/diary_entry.dart';
+import '../diary_write_page/diary_write_view_model.dart';
+import '../../providers/diary_provider.dart';
 
 /// AI 대화형 일기 작성 페이지
 class DiaryChatWritePage extends ConsumerStatefulWidget {

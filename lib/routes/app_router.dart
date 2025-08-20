@@ -3,10 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:emoti_flow/features/home/views/home_page.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
-import 'package:emoti_flow/features/diary/views/diary_write_page.dart';
-import 'package:emoti_flow/features/diary/views/diary_chat_write_page.dart';
-import 'package:emoti_flow/features/diary/views/diary_list_page.dart';
-import 'package:emoti_flow/features/diary/views/diary_detail_page.dart';
+import 'package:emoti_flow/features/diary/views/diary_write_page/diary_write_page.dart';
+import 'package:emoti_flow/features/diary/views/diary_chat_write_page/diary_chat_write_page.dart';
+import 'package:emoti_flow/features/diary/views/diary_list_page/diary_list_page.dart';
+import 'package:emoti_flow/features/diary/views/diary_detail_page/diary_detail_page.dart';
 import 'package:emoti_flow/features/ai/views/ai_page.dart';
 // TODO: 각 뷰 생성 전까지는 라우트를 최소화 유지
 import 'package:emoti_flow/features/auth/pages/login_page.dart' as login;

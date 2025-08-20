@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/diary_entry.dart';
-import '../../providers/diary_provider.dart';
+import '../../../models/diary_entry.dart';
+import '../../../providers/diary_provider.dart';
 
 /// 삭제할 일기 선택 시트
 class DeleteSelectionSheet extends ConsumerStatefulWidget {
@@ -178,3 +178,5 @@ class _DeleteSelectionSheetState extends ConsumerState<DeleteSelectionSheet> {
     );
   }
 }
+
+
