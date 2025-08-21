@@ -14,8 +14,7 @@ void main() async {
   try {
     // .env 파일 로드
     await dotenv.load(fileName: ".env");
-    print('✅ .env 파일 로드 성공!');
-    print('🔑 Gemini API Key: ${dotenv.env['GEMINI_API_KEY']?.substring(0, 10)}...');
+    print('✅ .env 파일 로드 성공! (API 키 사용 여부만 확인)');
     
     // Firebase 초기화
     await Firebase.initializeApp(

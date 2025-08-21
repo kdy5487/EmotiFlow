@@ -86,18 +86,6 @@ class HomePage extends ConsumerWidget {
             },
             tooltip: '알림',
           ),
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {
-              context.push('/profile');
-            },
-            tooltip: '프로필',
-          ),
-          IconButton(
-            icon: const Icon(Icons.library_music_outlined),
-            tooltip: '감정 기반 음악',
-            onPressed: () => context.push('/music'),
-          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -118,9 +106,6 @@ class HomePage extends ConsumerWidget {
             // AI 일일 조언
             _buildAIDailyTipSection(context),
             const SizedBox(height: 24),
-            
-            // 간단한 감정 트렌드
-            _buildSimpleEmotionTrendSection(context),
           ],
         ),
       ),
