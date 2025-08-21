@@ -6,7 +6,7 @@ import 'package:emoti_flow/theme/app_typography.dart';
 import 'package:emoti_flow/shared/widgets/cards/emoti_card.dart';
 import 'package:emoti_flow/features/diary/providers/diary_provider.dart';
 import 'package:emoti_flow/features/diary/models/diary_entry.dart';
-import 'package:emoti_flow/shared/widgets/charts/line_chart_painter.dart';
+import 'package:emoti_flow/shared/widgets/charts/bar_chart_painter.dart';
 import 'package:emoti_flow/core/ai/gemini/gemini_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -104,7 +104,7 @@ class _AIPageState extends ConsumerState<AIPage> {
         ],
       ),
       body: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16), // 가로 여백 더 줄임
         itemCount: 4,
         itemBuilder: (context, index) {
           switch (index) {
@@ -183,7 +183,7 @@ class _AIPageState extends ConsumerState<AIPage> {
 
         return EmotiCard(
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24), // 패딩 증가로 더 넓게
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -252,7 +252,7 @@ class _AIPageState extends ConsumerState<AIPage> {
 
         return EmotiCard(
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24), // 패딩 증가로 더 넓게
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -319,18 +319,26 @@ class _AIPageState extends ConsumerState<AIPage> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                // 라인 차트
+                // 막대 차트 - 가로 공간 최대 활용
                 Container(
-                  height: 180,
-                  padding: const EdgeInsets.all(16),
+                  height: 450,
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: AppTheme.background,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.border),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.border, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: _selectedPeriod == 'weekly'
-                      ? _buildWeeklyLineChart(entries)
-                      : _buildMonthlyLineChart(entries),
+                      ? _buildWeeklyBarChart(entries)
+                      : _buildMonthlyBarChart(entries),
                 ),
                 const SizedBox(height: 16),
                 // AI 분석 결과 텍스트
@@ -378,57 +386,108 @@ class _AIPageState extends ConsumerState<AIPage> {
     );
   }
 
-  // 주간 라인 차트
-  Widget _buildWeeklyLineChart(List<DiaryEntry> entries) {
-    if (entries.isEmpty) {
-      return const Center(
-        child: Text(
-          'No records',
-          style: TextStyle(color: Colors.grey, fontSize: 16),
+  // 주간 막대 차트
+  Widget _buildWeeklyBarChart(List<DiaryEntry> entries) {
+    final chartData = _getWeeklyChartData(entries);
+    
+    if (chartData.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.bar_chart_rounded,
+              size: 64,
+              color: AppTheme.textSecondary,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              '주간 감정 기록이 없습니다',
+              style: AppTypography.titleMedium.copyWith(
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '일기를 작성하면 감정 변화를 확인할 수 있어요',
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
         ),
       );
     }
 
-    final chartData = _getWeeklyChartData(entries);
-    final labels = ['월', '화', '수', '목', '금', '토', '일'];
+    final data = chartData.map((e) => e['intensity'] as double).toList();
+    final labels = chartData.map((e) => e['label'] as String).toList();
 
     return CustomPaint(
-      painter: LineChartPainter(
-        data: chartData,
+      size: const Size(double.infinity, 320),
+      painter: BarChartPainter(
+        data: data,
         labels: labels,
-        color: AppTheme.primary,
+        primaryColor: AppTheme.primary,
+        maxValue: 10.0,
       ),
     );
   }
 
-  // 월간 라인 차트
-  Widget _buildMonthlyLineChart(List<DiaryEntry> entries) {
-    if (entries.isEmpty) {
-      return const Center(
-        child: Text(
-          'No records',
-          style: TextStyle(color: Colors.grey, fontSize: 16),
+  // 월간 막대 차트
+  Widget _buildMonthlyBarChart(List<DiaryEntry> entries) {
+    final chartData = _getMonthlyChartData(entries);
+    
+    if (chartData.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.bar_chart_rounded,
+              size: 64,
+              color: AppTheme.textSecondary,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              '월간 감정 기록이 없습니다',
+              style: AppTypography.titleMedium.copyWith(
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '일기를 작성하면 감정 변화를 확인할 수 있어요',
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
         ),
       );
     }
 
-    final chartData = _getMonthlyChartData(entries);
-    final labels = ['1주', '2주', '3주', '4주'];
+    final data = chartData.map((e) => e['intensity'] as double).toList();
+    final labels = chartData.map((e) => e['label'] as String).toList();
 
     return CustomPaint(
-      painter: LineChartPainter(
-        data: chartData,
+      size: const Size(double.infinity, 320),
+      painter: BarChartPainter(
+        data: data,
         labels: labels,
-        color: AppTheme.info,
+        primaryColor: AppTheme.secondary,
+        maxValue: 10.0,
       ),
     );
   }
 
   // 주간 차트 데이터
-  List<double> _getWeeklyChartData(List<DiaryEntry> entries) {
+  List<Map<String, dynamic>> _getWeeklyChartData(List<DiaryEntry> entries) {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     final weekData = List.filled(7, 0.0);
+    final labels = ['월', '화', '수', '목', '금', '토', '일'];
 
     for (final entry in entries) {
       final entryDate = entry.createdAt is DateTime ? entry.createdAt : (entry.createdAt as dynamic).toDate();
@@ -441,15 +500,19 @@ class _AIPageState extends ConsumerState<AIPage> {
       }
     }
 
-    return weekData;
+    return List.generate(7, (index) => {
+      'intensity': weekData[index],
+      'label': labels[index],
+    });
   }
 
   // 월간 차트 데이터
-  List<double> _getMonthlyChartData(List<DiaryEntry> entries) {
+  List<Map<String, dynamic>> _getMonthlyChartData(List<DiaryEntry> entries) {
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month, 1);
     final weekData = List.filled(4, 0.0);
     final weekCounts = List.filled(4, 0);
+    final labels = ['1주', '2주', '3주', '4주'];
 
     for (final entry in entries) {
       final entryDate = entry.createdAt is DateTime ? entry.createdAt : (entry.createdAt as dynamic).toDate();
@@ -472,7 +535,10 @@ class _AIPageState extends ConsumerState<AIPage> {
       }
     }
 
-    return weekData;
+    return List.generate(4, (index) => {
+      'intensity': weekData[index],
+      'label': labels[index],
+    });
   }
 
   // 주간 분석 텍스트 생성
@@ -542,7 +608,7 @@ class _AIPageState extends ConsumerState<AIPage> {
 
         return EmotiCard(
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24), // 패딩 증가로 더 넓게
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -728,7 +794,7 @@ class _AIPageState extends ConsumerState<AIPage> {
             
             return EmotiCard(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24), // 패딩 증가로 더 넓게
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -832,78 +898,28 @@ class _AIPageState extends ConsumerState<AIPage> {
                     ),
                     const SizedBox(height: 20),
                     
-                    // 기존 카드 터치 방식 (일기 상세에서 사용)
-                    Text(
-                      '💡 아래 카드를 터치하면 즉시 조언을 받을 수 있어요',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppTheme.textSecondary,
-                        fontStyle: FontStyle.italic,
+                    // 카드 선택 안내
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.info.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.info.withOpacity(0.2)),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // 카드를 가로 스크롤로 배치하여 오버플로우 방지
-                    SizedBox(
-                      height: 160,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: adviceCards.length,
-                        itemBuilder: (context, index) {
-                          final card = adviceCards[index];
-                          return Container(
-                            width: 140,
-                            margin: EdgeInsets.only(
-                              right: index < adviceCards.length - 1 ? 12 : 0,
-                            ),
-                            child: GestureDetector(
-                              onTap: () => _selectAdviceCard(card, entries),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                decoration: BoxDecoration(
-                                  color: card['color'].withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: card['color'].withOpacity(0.3),
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        card['icon'],
-                                        size: 28,
-                                        color: card['color'],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        card['title'],
-                                        style: AppTypography.bodySmall.copyWith(
-                                          color: card['color'],
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '터치하기',
-                                        style: AppTypography.bodySmall.copyWith(
-                                          color: AppTheme.textSecondary,
-                                          fontSize: 9,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: AppTheme.info, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              '위의 "카드 선택하기" 버튼을 눌러 오늘의 조언 카드를 선택해보세요!',
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppTheme.info,
+                                height: 1.5,
                               ),
                             ),
-                          );
-                        },
+                          ),
+                        ],
                       ),
                     ),
                   ],

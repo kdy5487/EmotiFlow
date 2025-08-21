@@ -407,7 +407,9 @@ class HomePage extends ConsumerWidget {
         Consumer(
           builder: (context, ref, child) {
             final diaryState = ref.watch(diaryProvider);
-            final recentDiaries = diaryState.diaryEntries.take(2).toList();
+            final allEntries = diaryState.diaryEntries.toList();
+            allEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+            final recentDiaries = allEntries.take(2).toList();
             
             if (recentDiaries.isEmpty) {
               return Container(
@@ -544,8 +546,15 @@ class HomePage extends ConsumerWidget {
   }
 
   /// 날짜 포맷팅
-  String _formatDate(DateTime date) {
-    return '${date.year}년 ${date.month}월 ${date.day}일';
+  String _formatDate(dynamic date) {
+    DateTime dateTime;
+    if (date is DateTime) {
+      dateTime = date;
+    } else {
+      // Timestamp인 경우 DateTime으로 변환
+      dateTime = (date as dynamic).toDate();
+    }
+    return '${dateTime.year}년 ${dateTime.month}월 ${dateTime.day}일';
   }
 
   Widget _buildSimpleEmotionTrendSection(BuildContext context) {

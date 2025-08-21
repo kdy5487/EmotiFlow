@@ -405,104 +405,109 @@ class _AdviceCardSelectionPageState extends ConsumerState<AdviceCardSelectionPag
             ),
             const SizedBox(height: 20),
 
-            // 카드 그리드
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.1,
-              ),
-              itemCount: _adviceCards.length,
-              itemBuilder: (context, index) {
-                final card = _adviceCards[index];
-                final isSelected = _selectedCard?['id'] == card['id'];
-                
-                return GestureDetector(
-                  onTap: _isLoading ? null : () => _selectCard(card),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    decoration: BoxDecoration(
-                      color: isSelected 
-                        ? card['color'].withOpacity(0.2)
-                        : card['color'].withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected 
-                          ? card['color']
-                          : card['color'].withOpacity(0.3),
-                        width: isSelected ? 3 : 2,
-                      ),
-                      boxShadow: isSelected ? [
-                        BoxShadow(
-                          color: card['color'].withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ] : null,
-                    ),
-                    child: Stack(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                card['icon'],
-                                size: 32,
-                                color: card['color'],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                card['title'],
-                                style: AppTypography.bodySmall.copyWith(
-                                  color: card['color'],
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                card['description'],
-                                style: AppTypography.bodySmall.copyWith(
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 9,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+            // 카드 그리드 - 완벽한 중앙 정렬
+            Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 350),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 20,
+                    mainAxisSpacing: 20,
+                    childAspectRatio: 0.9,
+                  ),
+                  itemCount: _adviceCards.length,
+                  itemBuilder: (context, index) {
+                    final card = _adviceCards[index];
+                    final isSelected = _selectedCard?['id'] == card['id'];
+                    
+                    return GestureDetector(
+                      onTap: _isLoading ? null : () => _selectCard(card),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          color: isSelected 
+                            ? card['color'].withOpacity(0.2)
+                            : card['color'].withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected 
+                              ? card['color']
+                              : card['color'].withOpacity(0.3),
+                            width: isSelected ? 3 : 2,
                           ),
+                          boxShadow: isSelected ? [
+                            BoxShadow(
+                              color: card['color'].withOpacity(0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ] : null,
                         ),
-                        if (isSelected)
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: card['color'],
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 12,
+                        child: Stack(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    card['icon'],
+                                    size: 36,
+                                    color: card['color'],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    card['title'],
+                                    style: AppTypography.bodyMedium.copyWith(
+                                      color: card['color'],
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    card['description'],
+                                    style: AppTypography.bodySmall.copyWith(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 10,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                            if (isSelected)
+                              Positioned(
+                                top: 12,
+                                right: 12,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: card['color'],
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -518,6 +523,26 @@ class _AdviceCardSelectionPageState extends ConsumerState<AdviceCardSelectionPag
                   ],
                 ),
               ),
+
+            // 카드 선택 완료 후 확인 버튼
+            if (_selectedCard != null && _selectedAdvice != null) ...[
+              const SizedBox(height: 20),
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: () => context.pop(),
+                  icon: const Icon(Icons.check_circle),
+                  label: const Text('선택 완료'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _selectedCard!['color'],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    textStyle: AppTypography.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
