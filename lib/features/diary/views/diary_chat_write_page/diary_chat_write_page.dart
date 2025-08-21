@@ -297,11 +297,25 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Row(
+          scrollable: true,
+          titlePadding: const EdgeInsets.fromLTRB(24, 20, 8, 0),
+          title: Row(
             children: [
-              Icon(Icons.edit_note, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('오늘의 일기'),
+              const Icon(Icons.edit_note, color: AppColors.primary),
+              const SizedBox(width: 8),
+              const Text('오늘의 일기'),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                tooltip: '뒤로가기',
+                onPressed: () {
+                  // 결과창 닫을 때 채팅 상단의 "작성 완료" 아이콘이 다시 보이도록 상태 복구
+                  setState(() {
+                    _showResult = false;
+                  });
+                  Navigator.of(context).pop();
+                },
+              ),
             ],
           ),
           content: Column(
@@ -324,62 +338,82 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
                 ),
                 const SizedBox(height: 16),
               ],
-              SizedBox(
-                height: 280,
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        diarySummary,
-                        style: AppTypography.bodyMedium,
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.primary.withOpacity(0.2),
+              Text(
+                diarySummary,
+                style: AppTypography.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              // AI 조언 섹션
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.success.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.success.withOpacity(0.2),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.lightbulb, color: AppTheme.success),
+                        const SizedBox(width: 8),
+                        Text(
+                          '오늘의 AI 조언',
+                          style: AppTypography.bodyLarge.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.success,
                           ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.auto_awesome, color: AppColors.primary),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'AI 그림 생성',
-                                  style: AppTypography.bodyLarge.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '일기 내용을 바탕으로 감정을 담은 이미지를 생성해보세요.',
-                              style: AppTypography.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _generateAIAdvice(_selectedEmotion ?? '평온'),
+                      style: AppTypography.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primary.withOpacity(0.2),
                   ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.auto_awesome, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          'AI 그림 생성',
+                          style: AppTypography.bodyLarge.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '일기 내용을 바탕으로 감정을 담은 이미지를 생성해보세요.',
+                      style: AppTypography.bodyMedium,
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
           actions: [
-            // 뒤로 가기 (저장하지 않고 채팅 페이지로 돌아가기)
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('뒤로 가기'),
-            ),
             // 새 일기 작성
             TextButton(
               onPressed: () => _showNewDiaryConfirmation(),
@@ -431,6 +465,30 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
         );
       },
     );
+  }
+
+  /// AI 조언 생성
+  String _generateAIAdvice(String emotion) {
+    switch (emotion) {
+      case '기쁨':
+        return '정말 기쁜 하루였네요! 이런 긍정적인 감정을 오래 유지하기 위해 감사한 일들을 더 기록해보세요.';
+      case '사랑':
+        return '사랑이 가득한 하루였군요. 주변 사람들에게 더 많은 관심과 사랑을 나누어보세요.';
+      case '평온':
+        return '차분하고 평온한 마음으로 하루를 마무리했네요. 이 평온함을 기록하고 감사해보세요.';
+      case '슬픔':
+        return '힘든 시간을 보내고 계시는군요. 자신에게 친절하게 대하고 충분한 휴식을 취하세요.';
+      case '분노':
+        return '화가 나는 일이 있었나요? 깊은 호흡을 통해 감정을 진정시키고, 산책이나 운동으로 스트레스를 해소해보세요.';
+      case '두려움':
+        return '불안하고 걱정되는 마음이 드시나요? 현재에 집중하는 명상이나 요가를 시도해보세요.';
+      case '놀람':
+        return '예상치 못한 일이 있었나요? 새로운 경험을 긍정적으로 받아들이고 성장의 기회로 삼아보세요.';
+      case '중립':
+        return '차분하게 하루를 마무리했네요. 내일은 더 특별한 순간들을 만들어보세요.';
+      default:
+        return '오늘 하루도 수고하셨습니다. 내일은 더 좋은 하루가 될 거예요!';
+    }
   }
 
   /// 새 일기 작성 확인창
@@ -495,10 +553,11 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
             tooltip: '새 대화 시작',
           ),
           if (!_showResult)
-            TextButton(
+            IconButton(
               onPressed: _completeDiary,
-              child: const Text('일기 완성'),
-          ),
+              icon: const Icon(Icons.check_circle_outline),
+              tooltip: '작성 완료',
+            ),
         ],
       ),
       body: Column(

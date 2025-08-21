@@ -8,6 +8,8 @@ import 'package:emoti_flow/features/music/providers/music_prompt_provider.dart';
 import 'package:emoti_flow/features/music/providers/music_provider.dart';
 import 'package:emoti_flow/features/settings/providers/settings_provider.dart';
 import 'package:emoti_flow/shared/widgets/buttons/emoti_button.dart';
+import 'package:emoti_flow/features/diary/providers/diary_provider.dart';
+import 'package:emoti_flow/features/diary/models/diary_entry.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -111,7 +113,7 @@ class HomePage extends ConsumerWidget {
             _buildQuickActionsSection(context),
             const SizedBox(height: 24),
             
-            // 최근 일기 미리보기
+            // 최근 일기 미리보기 (최신 2개)
             _buildRecentEntriesSection(context),
             const SizedBox(height: 24),
             
@@ -119,8 +121,8 @@ class HomePage extends ConsumerWidget {
             _buildAIDailyTipSection(context),
             const SizedBox(height: 24),
             
-            // 감정 트렌드 미니 차트
-            _buildEmotionTrendSection(context),
+            // 간단한 감정 트렌드
+            _buildSimpleEmotionTrendSection(context),
           ],
         ),
       ),
@@ -379,6 +381,8 @@ class HomePage extends ConsumerWidget {
     );
   }
 
+
+
   Widget _buildRecentEntriesSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -399,22 +403,57 @@ class HomePage extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 16),
-        _buildRecentEntryCard(
-          context,
-          emotion: '기쁨',
-          emotionColor: AppTheme.joy,
-          title: '오늘은 정말 좋은 날이었어요',
-          date: '2024년 12월 19일',
-          onTap: () => context.push('/diary/detail'),
-        ),
-        const SizedBox(height: 12),
-        _buildRecentEntryCard(
-          context,
-          emotion: '평온',
-          emotionColor: AppTheme.calm,
-          title: '차분한 마음으로 하루를 마무리',
-          date: '2024년 12월 18일',
-          onTap: () => context.push('/diary/detail'),
+        // 실제 최근 일기 데이터 표시
+        Consumer(
+          builder: (context, ref, child) {
+            final diaryState = ref.watch(diaryProvider);
+            final recentDiaries = diaryState.diaryEntries.take(2).toList();
+            
+            if (recentDiaries.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppTheme.divider,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.edit_note,
+                        size: 32,
+                        color: AppTheme.textSecondary,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        '아직 작성된 일기가 없습니다',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            
+            return Column(
+              children: recentDiaries.map((diary) {
+                final isLast = recentDiaries.indexOf(diary) == recentDiaries.length - 1;
+                return Column(
+                  children: [
+                    _buildRecentEntryCard(
+                      context,
+                      diary: diary,
+                      onTap: () => context.push('/diary/detail/${diary.id}'),
+                    ),
+                    if (!isLast) const SizedBox(height: 12),
+                  ],
+                );
+              }).toList(),
+            );
+          },
         ),
       ],
     );
@@ -422,12 +461,33 @@ class HomePage extends ConsumerWidget {
 
   Widget _buildRecentEntryCard(
     BuildContext context, {
-    required String emotion,
-    required Color emotionColor,
-    required String title,
-    required String date,
+    required DiaryEntry diary,
     required VoidCallback onTap,
   }) {
+    // 감정에 따른 색상 결정
+    Color getEmotionColor(String emotion) {
+      switch (emotion) {
+        case '기쁨':
+          return AppTheme.joy;
+        case '사랑':
+          return AppTheme.error;
+        case '평온':
+          return AppTheme.calm;
+        case '슬픔':
+          return AppTheme.secondary;
+        case '분노':
+          return AppTheme.warning;
+        case '두려움':
+          return AppTheme.info;
+        default:
+          return AppTheme.primary;
+      }
+    }
+    
+    final emotion = diary.emotions.isNotEmpty ? diary.emotions.first : '평온';
+    final emotionColor = getEmotionColor(emotion);
+    final title = diary.title.isNotEmpty ? diary.title : '제목 없음';
+    final date = _formatDate(diary.createdAt);
     return EmotiCard(
       onTap: onTap,
       isClickable: true,
@@ -483,6 +543,67 @@ class HomePage extends ConsumerWidget {
     );
   }
 
+  /// 날짜 포맷팅
+  String _formatDate(DateTime date) {
+    return '${date.year}년 ${date.month}월 ${date.day}일';
+  }
+
+  Widget _buildSimpleEmotionTrendSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '감정 트렌드',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            TextButton(
+              onPressed: () => context.push('/ai'),
+              child: const Text('자세히 보기'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        EmotiCard(
+          onTap: () => context.push('/ai'),
+          isClickable: true,
+          child: Container(
+            height: 100,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: AppTheme.primary.withOpacity(0.05),
+            ),
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.show_chart,
+                    size: 28,
+                    color: AppTheme.primary,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'AI 분석으로 감정 변화를\n자세히 살펴보세요',
+                    style: TextStyle(
+                      color: AppTheme.primary,
+                      fontSize: 12,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildAIDailyTipSection(BuildContext context) {
     return EmotiCard(
       backgroundColor: AppTheme.secondary.withOpacity(0.1),
@@ -531,11 +652,11 @@ class HomePage extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           EmotiButton(
-            text: 'AI와 대화하기',
+            text: 'AI 분석하기',
             onPressed: () => context.push('/ai'),
             type: EmotiButtonType.outline,
             size: EmotiButtonSize.medium,
-            icon: Icons.chat,
+            icon: Icons.psychology,
             isFullWidth: true,
             textColor: AppTheme.primary,
           ),
@@ -544,57 +665,7 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmotionTrendSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '감정 트렌드',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            TextButton(
-              onPressed: () => context.push('/analytics'),
-              child: const Text('자세히 보기'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        EmotiCard(
-          child: Container(
-            height: 120,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: AppTheme.divider,
-            ),
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.show_chart,
-                    size: 32,
-                    color: AppTheme.textSecondary,
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    '감정 차트가 여기에 표시됩니다',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+
 
   Widget _buildBottomNavigationBar(BuildContext context) {
     return BottomNavigationBar(
