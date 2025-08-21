@@ -61,6 +61,7 @@ class DiaryListCard extends StatelessWidget {
                                       ),
                                       const SizedBox(width: 8),
                                       headerEmotionIndicator,
+                                      const SizedBox(width: 8),
                                     ],
                                   ),
                                   const SizedBox(height: 2),
@@ -79,15 +80,47 @@ class DiaryListCard extends StatelessWidget {
                           if (entry.title.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 4, right: 8),
-                              child: Text(
-                                entry.title,
-                                style: AppTypography.titleLarge.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                  fontSize: 14,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      entry.title,
+                                      style: AppTypography.titleLarge.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textPrimary,
+                                        fontSize: 14,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: entry.diaryType == DiaryType.aiChat 
+                                          ? AppColors.info.withOpacity(0.2)
+                                          : AppColors.success.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: entry.diaryType == DiaryType.aiChat 
+                                            ? AppColors.info
+                                            : AppColors.success,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      entry.diaryType == DiaryType.aiChat ? 'AI' : '자유',
+                                      style: AppTypography.caption.copyWith(
+                                        color: entry.diaryType == DiaryType.aiChat 
+                                            ? AppColors.info
+                                            : AppColors.success,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           Padding(
@@ -120,7 +153,7 @@ class DiaryListCard extends StatelessWidget {
                                   ),
                                 ),
                               ],
-                              const Spacer(),
+                              const SizedBox(width: 6),
                               if (entry.mediaCount > 0)
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -136,7 +169,7 @@ class DiaryListCard extends StatelessWidget {
                                     ),
                                   ],
                                 ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 6),
                               if (entry.aiAnalysis != null)
                                 const Row(
                                   mainAxisSize: MainAxisSize.min,

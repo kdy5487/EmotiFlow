@@ -1177,6 +1177,86 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     );
   }
 
+  /// 삭제 확인 다이얼로그 표시
+  void _showDeleteConfirmDialog(DiaryEntry entry) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.delete_forever, color: Colors.red),
+            const SizedBox(width: 8),
+            const Text('일기 삭제'),
+          ],
+        ),
+        content: Text(
+          '정말로 이 일기를 삭제하시겠습니까?\n\n"${entry.title.isNotEmpty ? entry.title : '제목 없음'}"\n\n삭제된 일기는 복구할 수 없습니다.',
+          style: TextStyle(height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteDiary(entry);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 일기 삭제 실행
+  Future<void> _deleteDiary(DiaryEntry entry) async {
+    try {
+      // 로딩 표시
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Firestore에서 일기 삭제
+      await ref.read(firestoreProvider).deleteDiary(entry.id);
+      
+      // 로딩 다이얼로그 닫기
+      Navigator.pop(context);
+      
+      // 성공 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('일기가 삭제되었습니다'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      // 일기 목록으로 돌아가기
+      context.pop();
+      
+    } catch (e) {
+      // 로딩 다이얼로그 닫기
+      Navigator.pop(context);
+      
+      // 오류 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('삭제 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   /// 더 많은 옵션 표시
   void _showMoreOptions(DiaryEntry entry) {
     showModalBottomSheet(
@@ -1211,12 +1291,11 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.delete),
-            title: const Text('삭제'),
-            subtitle: const Text('추후 개발 예정'),
+            leading: const Icon(Icons.delete, color: Colors.red),
+            title: const Text('삭제', style: TextStyle(color: Colors.red)),
             onTap: () {
               Navigator.pop(context);
-              _showComingSoonDialog('삭제 기능');
+              _showDeleteConfirmDialog(entry);
             },
           ),
         ],

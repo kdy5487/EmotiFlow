@@ -113,9 +113,7 @@ class HomePage extends ConsumerWidget {
             _buildQuickActionsSection(context),
             const SizedBox(height: 24),
             
-            // 최근 일기 미리보기 (최신 2개)
-            _buildRecentEntriesSection(context),
-            const SizedBox(height: 24),
+
             
             // AI 일일 조언
             _buildAIDailyTipSection(context),
@@ -295,17 +293,6 @@ class HomePage extends ConsumerWidget {
             Expanded(
               child: _buildQuickActionCard(
                 context,
-                icon: Icons.analytics,
-                title: '트렌드 보기',
-                subtitle: '감정 변화 분석',
-                color: AppTheme.info,
-                onTap: () => context.push('/analytics'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildQuickActionCard(
-                context,
                 icon: Icons.psychology,
                 title: 'AI 분석',
                 subtitle: '감정 분석 및 조언',
@@ -313,11 +300,7 @@ class HomePage extends ConsumerWidget {
                 onTap: () => context.push('/ai'),
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
+            const SizedBox(width: 12),
             Expanded(
               child: _buildQuickActionCard(
                 context,
@@ -383,179 +366,9 @@ class HomePage extends ConsumerWidget {
 
 
 
-  Widget _buildRecentEntriesSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '최근 일기',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            TextButton(
-              onPressed: () => context.push('/diary'),
-              child: const Text('더보기'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        // 실제 최근 일기 데이터 표시
-        Consumer(
-          builder: (context, ref, child) {
-            final diaryState = ref.watch(diaryProvider);
-            final allEntries = diaryState.diaryEntries.toList();
-            allEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-            final recentDiaries = allEntries.take(2).toList();
-            
-            if (recentDiaries.isEmpty) {
-              return Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppTheme.divider,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.edit_note,
-                        size: 32,
-                        color: AppTheme.textSecondary,
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        '아직 작성된 일기가 없습니다',
-                        style: TextStyle(
-                          color: AppTheme.textSecondary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-            
-            return Column(
-              children: recentDiaries.map((diary) {
-                final isLast = recentDiaries.indexOf(diary) == recentDiaries.length - 1;
-                return Column(
-                  children: [
-                    _buildRecentEntryCard(
-                      context,
-                      diary: diary,
-                      onTap: () => context.push('/diary/detail/${diary.id}'),
-                    ),
-                    if (!isLast) const SizedBox(height: 12),
-                  ],
-                );
-              }).toList(),
-            );
-          },
-        ),
-      ],
-    );
-  }
 
-  Widget _buildRecentEntryCard(
-    BuildContext context, {
-    required DiaryEntry diary,
-    required VoidCallback onTap,
-  }) {
-    // 감정에 따른 색상 결정
-    Color getEmotionColor(String emotion) {
-      switch (emotion) {
-        case '기쁨':
-          return AppTheme.joy;
-        case '사랑':
-          return AppTheme.error;
-        case '평온':
-          return AppTheme.calm;
-        case '슬픔':
-          return AppTheme.secondary;
-        case '분노':
-          return AppTheme.warning;
-        case '두려움':
-          return AppTheme.info;
-        default:
-          return AppTheme.primary;
-      }
-    }
-    
-    final emotion = diary.emotions.isNotEmpty ? diary.emotions.first : '평온';
-    final emotionColor = getEmotionColor(emotion);
-    final title = diary.title.isNotEmpty ? diary.title : '제목 없음';
-    final date = _formatDate(diary.createdAt);
-    return EmotiCard(
-      onTap: onTap,
-      isClickable: true,
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: emotionColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Text(
-                emotion,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  date,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Icon(
-            Icons.chevron_right,
-            color: AppTheme.textSecondary,
-          ),
-        ],
-      ),
-    );
-  }
 
-  /// 날짜 포맷팅
-  String _formatDate(dynamic date) {
-    DateTime dateTime;
-    if (date is DateTime) {
-      dateTime = date;
-    } else {
-      // Timestamp인 경우 DateTime으로 변환
-      dateTime = (date as dynamic).toDate();
-    }
-    return '${dateTime.year}년 ${dateTime.month}월 ${dateTime.day}일';
-  }
+
 
   Widget _buildSimpleEmotionTrendSection(BuildContext context) {
     return Column(

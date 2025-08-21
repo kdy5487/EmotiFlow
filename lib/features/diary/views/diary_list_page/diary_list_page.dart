@@ -45,7 +45,14 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   @override
   void initState() {
     super.initState();
-    _loadDiaryEntries();
+    // 실제 DB 데이터 로딩
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authState = ref.read(authProvider);
+      if (authState.user != null) {
+        ref.read(diaryProvider.notifier).refreshDiaryEntries(authState.user!.uid);
+      }
+      _applySearchAndFilter(ref.read(diaryProvider.notifier));
+    });
   }
 
   @override
@@ -119,7 +126,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
             ),
             tooltip: ui.isGridView ? '리스트뷰로 전환' : '그리드뷰로 전환',
           ),
-          // 설정 메뉴 버튼 (필터/정렬/삭제 모드 진입 분리)
+          // 설정 메뉴 버튼
           Container(
             margin: const EdgeInsets.only(right: 8),
             child: PopupMenuButton<String>(
@@ -136,42 +143,13 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                     break;
                 }
               },
-              icon: Stack(
-                children: [
-                  const Icon(Icons.more_vert),
-                  if (ref.watch(diaryListUiProvider).currentFilters.isNotEmpty || ref.watch(diaryListUiProvider).currentSortBy != 'date')
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondary,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 12,
-                          minHeight: 12,
-                        ),
-                        child: Text(
-                          '${_getActiveSettingsCount()}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+              icon: const Icon(Icons.more_vert),
               itemBuilder: (context) => [
                 const PopupMenuItem(
                   value: 'filter',
                   child: Row(
                     children: [
-                      Icon(Icons.filter_list, size: 20),
+                      Icon(Icons.filter_list, size: 20, color: Colors.blue),
                       SizedBox(width: 8),
                       Text('필터'),
                     ],
@@ -181,7 +159,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                   value: 'sort',
                   child: Row(
                     children: [
-                      Icon(Icons.sort, size: 20),
+                      Icon(Icons.sort, size: 20, color: Colors.orange),
                       SizedBox(width: 8),
                       Text('정렬'),
                     ],
@@ -235,7 +213,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
           // 일기 목록
           Expanded(
             child: ui.isGridView 
-                ? _buildDiaryGridFromStream()
+                ? _buildDiaryGrid(diaryState, diaryNotifier)
                 : _buildDiaryList(diaryState, diaryNotifier),
           ),
         ],
@@ -297,32 +275,70 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
       );
     }
 
-    final entries = diaryState.filteredEntries.isNotEmpty 
-        ? diaryState.filteredEntries 
-        : diaryState.diaryEntries;
+    final entries = diaryState.filteredEntries;
         
     if (entries.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              '아직 작성된 일기가 없습니다',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(60),
+              ),
+              child: Icon(
+                Icons.edit_note,
+                size: 60,
+                color: Colors.grey[400],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 24),
             Text(
-              '첫 번째 일기를 작성해보세요!',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
+              '아직 작성된 일기가 없습니다',
+              style: AppTypography.titleLarge.copyWith(
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w600,
               ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '첫 번째 일기를 작성해보세요!\n감정을 기록하고 AI와 함께 성장해보세요.',
+              style: AppTypography.bodyMedium.copyWith(
+                color: Colors.grey[500],
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => _showWriteOptionsDialog(context),
+                  icon: const Icon(Icons.chat_bubble_outline),
+                  label: const Text('AI와 대화하며'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: () => _showWriteOptionsDialog(context),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('직접 작성'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.secondary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1305,195 +1321,162 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     }
   }
 
-  /// 일기 목록 (Riverpod StreamProvider 사용)
+  /// 일기 목록 (DiaryProvider 상태 사용)
   Widget _buildDiaryList(DiaryState diaryState, DiaryProvider diaryNotifier) {
     print('=== 일기 목록 빌드 ===');
+    print('✅ 정렬된 일기 ${diaryState.filteredEntries.length}개 표시');
     
-    final authState = ref.read(authProvider);
-    final userId = authState.user?.uid ?? 'demo_user';
+    final ui = ref.watch(diaryListUiProvider);
     
-    // Riverpod StreamProvider 사용
-    return Consumer(
-      builder: (context, ref, child) {
-        final diariesAsync = ref.watch(diariesStreamProvider(userId));
-        
-        return diariesAsync.when(
-          // 로딩 중
-          loading: () => const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('일기 목록을 불러오는 중...'),
-              ],
-            ),
-          ),
-          
-          // 오류 발생 시
-          error: (error, stackTrace) {
-            print('❌ StreamProvider 오류: $error');
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    "데이터를 불러오는 중 오류가 발생했습니다",
-                    style: AppTypography.bodyLarge.copyWith(
-                      color: Colors.red[600],
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "잠시 후 다시 시도해주세요",
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      // 페이지 새로고침
-                      setState(() {});
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('다시 시도'),
-                  ),
-                ],
+    // 로딩 중
+    if (diaryState.isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('일기 목록을 불러오는 중...'),
+          ],
+        ),
+      );
+    }
+    
+    // 오류 발생 시
+    if (diaryState.errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+            const SizedBox(height: 16),
+            Text(
+              "데이터를 불러오는 중 오류가 발생했습니다",
+              style: AppTypography.bodyLarge.copyWith(
+                color: Colors.red[600],
+                fontWeight: FontWeight.w600,
               ),
-            );
-          },
-          
-          // 데이터 표시
-          data: (snapshot) {
-            final ui = ref.watch(diaryListUiProvider);
-            if (snapshot.docs.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]),
-                    const SizedBox(height: 16),
-                    Text(
-                      '아직 작성된 일기가 없습니다',
-                      style: AppTypography.titleLarge.copyWith(
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '첫 번째 일기를 작성해보세요',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () => _showWriteOptionsDialog(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('일기 작성하기'),
-                    ),
-                  ],
-                ),
-              );
-            }
-            
-            // 실제 Firestore 데이터 표시
-            final docs = snapshot.docs;
-            print('✅ StreamProvider에서 ${docs.length}개 문서 가져옴');
-            
-            return ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: docs.length,
-              itemBuilder: (context, index) {
-                final doc = docs[index];
-                
-                // Firestore 데이터를 DiaryEntry로 변환
-                try {
-                  final entry = DiaryEntry.fromFirestore(doc);
-                  final isSelected = ref.read(diaryListUiProvider).selectedEntryIds.contains(entry.id);
-                  return DiaryListCard(
-                    entry: entry,
-                    isSelected: isSelected,
-                    isDeleteMode: ui.isDeleteMode,
-                    onTap: () {
-                      if (ui.isDeleteMode) {
-                        _toggleSelect(entry.id);
-                      } else {
-                        _navigateToDetail(entry);
-                      }
-                    },
-                    headerEmotionIndicator: _buildEmotionIndicator(entry),
-                    formatDate: _formatDate,
-                    formatTime: _formatTime,
-                  );
-                } catch (e) {
-                  print('문서 변환 실패: $e, 문서 ID: ${doc.id}');
-                  // 변환 실패 시 간단한 에러 카드 표시
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    '데이터 변환 실패',
-                                    style: AppTypography.titleLarge.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.red[600],
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    '오류',
-                                    style: AppTypography.caption.copyWith(
-                                      color: Colors.red[600],
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '문서 ID: ${doc.id}',
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: Colors.grey[600],
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              diaryState.errorMessage!,
+              style: AppTypography.bodyMedium.copyWith(
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                final authState = ref.read(authProvider);
+                if (authState.user != null) {
+                  diaryNotifier.refreshDiaryEntries(authState.user!.uid);
                 }
               },
-            );
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('다시 시도'),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    final entries = diaryState.filteredEntries;
+    
+    // 빈 상태
+    if (entries.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(60),
+              ),
+              child: Icon(
+                Icons.edit_note,
+                size: 60,
+                color: Colors.grey[400],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              '아직 작성된 일기가 없습니다',
+              style: AppTypography.titleLarge.copyWith(
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '첫 번째 일기를 작성해보세요!\n감정을 기록하고 AI와 함께 성장해보세요.',
+              style: AppTypography.bodyMedium.copyWith(
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => context.push('/diary/chat'),
+                  icon: const Icon(Icons.chat_bubble_outline),
+                  label: const Text('AI와 대화하며'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[600],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: () => context.push('/diary/write'),
+                  icon: const Icon(Icons.edit),
+                  label: const Text('직접 작성'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // 데이터 표시
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: entries.length,
+      itemBuilder: (context, index) {
+        final entry = entries[index];
+        final isSelected = ui.selectedEntryIds.contains(entry.id);
+        
+        return DiaryListCard(
+          entry: entry,
+          isSelected: isSelected,
+          isDeleteMode: ui.isDeleteMode,
+          onTap: () {
+            if (ui.isDeleteMode) {
+              _toggleSelect(entry.id);
+            } else {
+              _navigateToDetail(entry);
+            }
           },
+          headerEmotionIndicator: _buildEmotionIndicator(entry),
+          formatDate: _formatDate,
+          formatTime: _formatTime,
         );
       },
     );
@@ -1921,19 +1904,25 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildSortOption(
-              title: '날짜순 (최신)',
+            _buildSortOptionDialog(
+              title: '최신순',
               subtitle: '최근 작성된 순서대로',
               value: 'date',
               icon: Icons.schedule,
             ),
-            _buildSortOption(
+            _buildSortOptionDialog(
+              title: '오래된순',
+              subtitle: '오래된 순서대로',
+              value: 'dateOldest',
+              icon: Icons.history,
+            ),
+            _buildSortOptionDialog(
               title: '감정순',
               subtitle: '감정 강도 순서대로',
               value: 'emotion',
               icon: Icons.emoji_emotions,
             ),
-            _buildSortOption(
+            _buildSortOptionDialog(
               title: '감정 타입순',
               subtitle: '긍정/부정 순서대로',
               value: 'moodType',
@@ -1954,7 +1943,47 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     );
   }
 
-
+  /// 정렬 다이얼로그용 옵션 빌더 (선택 시 즉시 적용 및 다이얼로그 닫기)
+  Widget _buildSortOptionDialog({
+    required String title,
+    required String subtitle,
+    required String value,
+    required IconData icon,
+  }) {
+    final ui = ref.watch(diaryListUiProvider);
+    final isSelected = ui.currentSortBy == value;
+    
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isSelected ? AppColors.primary : Colors.grey[600],
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          color: isSelected ? AppColors.primary : AppColors.textPrimary,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: AppTypography.bodySmall.copyWith(
+          color: AppColors.textSecondary,
+        ),
+      ),
+      trailing: isSelected
+          ? const Icon(Icons.check_circle, color: AppColors.primary)
+          : null,
+      onTap: () {
+        // 정렬 설정 변경
+        ref.read(diaryListUiProvider.notifier).setSortBy(value);
+        // 즉시 정렬 적용
+        _applySearchAndFilter(ref.read(diaryProvider.notifier));
+        // 다이얼로그 닫기
+        Navigator.of(context).pop();
+      },
+    );
+  }
 
   /// 정렬 적용
   void _applySorting() {
@@ -2151,27 +2180,6 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   /// 일기 상세 페이지로 이동
   void _navigateToDetail(DiaryEntry entry) {
     context.push('/diary/detail/${entry.id}');
-  }
-
-  /// 일기 목록 로드 (StreamBuilder 테스트용)
-  Future<void> _loadDiaryEntries() async {
-    print('=== 일기 목록 로드 시작 ===');
-    
-    try {
-      // 직접 Firestore 테스트
-      final snapshot = await FirebaseFirestore.instance
-          .collection("diaries")
-          .get();
-
-      print("✅ 가져온 문서 개수: ${snapshot.docs.length}");
-      
-      if (snapshot.docs.isNotEmpty) {
-        print("✅ 첫 번째 문서 데이터: ${snapshot.docs.first.data()}");
-      }
-      
-    } catch (e) {
-      print("❌ Firestore 에러: $e");
-    }
   }
 
   /// 날짜 포맷팅
