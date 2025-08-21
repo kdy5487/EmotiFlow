@@ -109,6 +109,7 @@ class HomePage extends ConsumerWidget {
           ],
         ),
       ),
+      bottomSheet: _buildMiniPlayer(context, ref),
       bottomNavigationBar: _buildBottomNavigationBar(context),
     );
   }
@@ -152,6 +153,48 @@ class HomePage extends ConsumerWidget {
             )
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMiniPlayer(BuildContext context, WidgetRef ref) {
+    final music = ref.watch(musicProvider);
+    if (music.nowPlaying == null) return const SizedBox.shrink();
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey[300]!, width: 1)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          const Icon(Icons.music_note, color: AppTheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '${music.nowPlaying!.title} · ${music.nowPlaying!.artist}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          IconButton(
+            onPressed: () => ref.read(musicProvider.notifier).previous(),
+            icon: const Icon(Icons.skip_previous),
+          ),
+          IconButton(
+            onPressed: () {
+              final t = music.nowPlaying;
+              if (t == null) return;
+              ref.read(musicProvider.notifier).play(t);
+            },
+            icon: const Icon(Icons.play_arrow),
+          ),
+          IconButton(
+            onPressed: () => ref.read(musicProvider.notifier).next(),
+            icon: const Icon(Icons.skip_next),
+          ),
+        ],
       ),
     );
   }

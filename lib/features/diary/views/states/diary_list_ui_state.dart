@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DiaryListUiState {
   final bool isGridView;
@@ -39,7 +40,23 @@ class DiaryListUiState {
 class DiaryListUiNotifier extends StateNotifier<DiaryListUiState> {
   DiaryListUiNotifier() : super(const DiaryListUiState());
 
-  void toggleViewMode() => state = state.copyWith(isGridView: !state.isGridView);
+  Future<void> loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isGrid = prefs.getBool('diary_isGrid') ?? false;
+    final sort = prefs.getString('diary_sort') ?? 'date';
+    state = state.copyWith(isGridView: isGrid, currentSortBy: sort);
+  }
+
+  Future<void> _savePrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('diary_isGrid', state.isGridView);
+    await prefs.setString('diary_sort', state.currentSortBy);
+  }
+
+  void toggleViewMode() {
+    state = state.copyWith(isGridView: !state.isGridView);
+    _savePrefs();
+  }
   void toggleSearch() => state = state.copyWith(isSearchActive: !state.isSearchActive);
   void enterDeleteMode() => state = state.copyWith(isDeleteMode: true, selectedEntryIds: {});
   void exitDeleteMode() => state = state.copyWith(isDeleteMode: false, selectedEntryIds: {});
@@ -68,7 +85,10 @@ class DiaryListUiNotifier extends StateNotifier<DiaryListUiState> {
   }
 
   void clearAllFilters() => state = state.copyWith(currentFilters: {});
-  void setSortBy(String sort) => state = state.copyWith(currentSortBy: sort);
+  void setSortBy(String sort) {
+    state = state.copyWith(currentSortBy: sort);
+    _savePrefs();
+  }
 
   void setFilters(Map<String, dynamic> filters) {
     state = state.copyWith(currentFilters: Map<String, dynamic>.from(filters));

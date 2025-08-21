@@ -42,6 +42,9 @@ class DiaryState {
 /// 일기 데이터 관리 Provider
 class DiaryProvider extends StateNotifier<DiaryState> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  DocumentSnapshot? _lastDoc;
+  static const int _pageSize = 20;
+  String? _lastUserId;
 
   DiaryProvider() : super(const DiaryState()) {
     print('=== DiaryProvider 초기화 ===');
@@ -52,17 +55,22 @@ class DiaryProvider extends StateNotifier<DiaryState> {
   Future<void> refreshDiaryEntries(String userId) async {
     print('=== refreshDiaryEntries 시작 ===');
     state = state.copyWith(isLoading: true);
+    _lastUserId = userId;
+    _lastDoc = null;
     
     try {
       print('Firebase에서 데이터 가져오기 시도...');
-      final snapshot = await _firestore
+      final baseQuery = _firestore
           .collection('diaries')
           .where('userId', isEqualTo: userId)
           .orderBy('createdAt', descending: true)
-          .get();
+          .limit(_pageSize);
+
+      final snapshot = await baseQuery.get();
       
       final dbEntries = snapshot.docs.map((doc) => DiaryEntry.fromFirestore(doc)).toList();
       print('Firebase에서 ${dbEntries.length}개 일기 가져옴');
+      _lastDoc = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
       
       // 날짜순 정렬 (최신순)
       dbEntries.sort((a, b) {
@@ -91,6 +99,33 @@ class DiaryProvider extends StateNotifier<DiaryState> {
         errorMessage: '데이터를 불러오는 중 오류가 발생했습니다: $e',
         isOffline: true,
       );
+    }
+  }
+
+  Future<void> loadMore() async {
+    final userId = _lastUserId;
+    if (userId == null || _lastDoc == null) return;
+    try {
+      final query = _firestore
+          .collection('diaries')
+          .where('userId', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
+          .startAfterDocument(_lastDoc!)
+          .limit(_pageSize);
+
+      final snapshot = await query.get();
+      if (snapshot.docs.isEmpty) return;
+
+      final nextEntries = snapshot.docs.map((doc) => DiaryEntry.fromFirestore(doc)).toList();
+      _lastDoc = snapshot.docs.last;
+
+      final combined = [...state.diaryEntries, ...nextEntries];
+      state = state.copyWith(
+        diaryEntries: combined,
+        filteredEntries: combined,
+      );
+    } catch (e) {
+      // ignore
     }
   }
 

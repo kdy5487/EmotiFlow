@@ -37,6 +37,7 @@ class DiaryListPage extends ConsumerStatefulWidget {
 class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
+  final _listScrollController = ScrollController();
   
   // String _currentSearchQuery = ''; // 검색 기능에서 _searchController.text를 직접 사용
   // 필터/정렬은 UI Provider에서 관리
@@ -47,11 +48,20 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     super.initState();
     // 실제 DB 데이터 로딩
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 저장된 UI 상태 복원 (정렬/뷰모드)
+      ref.read(diaryListUiProvider.notifier).loadPrefs();
       final authState = ref.read(authProvider);
       if (authState.user != null) {
         ref.read(diaryProvider.notifier).refreshDiaryEntries(authState.user!.uid);
       }
       _applySearchAndFilter(ref.read(diaryProvider.notifier));
+    });
+
+    _listScrollController.addListener(() {
+      final position = _listScrollController.position;
+      if (position.pixels > position.maxScrollExtent - 300) {
+        ref.read(diaryProvider.notifier).loadMore();
+      }
     });
   }
 
@@ -59,6 +69,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _listScrollController.dispose();
     super.dispose();
   }
 
@@ -346,6 +357,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     }
 
     return GridView.builder(
+      controller: _listScrollController,
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -1457,6 +1469,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     
     // 데이터 표시
     return ListView.builder(
+      controller: _listScrollController,
       padding: const EdgeInsets.all(12),
       itemCount: entries.length,
       itemBuilder: (context, index) {
@@ -1600,7 +1613,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
                               ),
                             ],
                           
-                          const Spacer(),
+                          const SizedBox(width: 6),
                           
                           // 미디어 개수
                           if (entry.mediaCount > 0)
