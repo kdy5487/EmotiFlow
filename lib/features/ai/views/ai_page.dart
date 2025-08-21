@@ -4,7 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
 import 'package:emoti_flow/theme/app_typography.dart';
 import 'package:emoti_flow/shared/widgets/cards/emoti_card.dart';
-
+import 'package:emoti_flow/features/diary/providers/diary_provider.dart';
+import 'package:emoti_flow/features/diary/models/diary_entry.dart';
+import 'package:emoti_flow/shared/widgets/charts/bar_chart_painter.dart';
+import 'package:emoti_flow/core/ai/gemini/gemini_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AIPage extends ConsumerStatefulWidget {
   const AIPage({super.key});
@@ -14,79 +18,62 @@ class AIPage extends ConsumerStatefulWidget {
 }
 
 class _AIPageState extends ConsumerState<AIPage> {
-  final TextEditingController _messageController = TextEditingController();
-  final List<ChatMessage> _messages = [];
-  bool _isLoading = false;
+  String _selectedPeriod = 'weekly'; // 'weekly' or 'monthly'
+
+  final List<Map<String, dynamic>> _adviceCards = [
+    {
+      'id': 'nature',
+      'title': '자연과 힐링',
+      'icon': Icons.nature,
+      'color': Colors.green,
+      'category': 'nature',
+    },
+    {
+      'id': 'gratitude',
+      'title': '감사와 성찰',
+      'icon': Icons.favorite,
+      'color': Colors.red,
+      'category': 'gratitude',
+    },
+    {
+      'id': 'growth',
+      'title': '새로운 시작',
+      'icon': Icons.trending_up,
+      'color': Colors.blue,
+      'category': 'growth',
+    },
+    {
+      'id': 'relationship',
+      'title': '관계와 소통',
+      'icon': Icons.people,
+      'color': Colors.purple,
+      'category': 'relationship',
+    },
+    {
+      'id': 'selfcare',
+      'title': '자기 돌봄',
+      'icon': Icons.spa,
+      'color': Colors.orange,
+      'category': 'selfcare',
+    },
+    {
+      'id': 'creativity',
+      'title': '창의적 활동',
+      'icon': Icons.brush,
+      'color': Colors.teal,
+      'category': 'creativity',
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
-    _addWelcomeMessage();
   }
 
-  @override
-  void dispose() {
-    _messageController.dispose();
-    super.dispose();
-  }
-
-  void _addWelcomeMessage() {
-    _messages.add(ChatMessage(
-      text: '안녕하세요! 저는 당신의 감정 파트너 AI입니다. 오늘 하루는 어땠나요?',
-      isAI: true,
-      timestamp: DateTime.now(),
-    ));
-  }
-
-  void _sendMessage() {
-    final text = _messageController.text.trim();
-    if (text.isEmpty) return;
-
-    // 사용자 메시지 추가
-    _messages.add(ChatMessage(
-      text: text,
-      isAI: false,
-      timestamp: DateTime.now(),
-    ));
-
-    _messageController.clear();
-    setState(() {});
-
-    // AI 응답 시뮬레이션
-    _simulateAIResponse(text);
-  }
-
-  void _simulateAIResponse(String userMessage) {
-    setState(() {
-      _isLoading = true;
-    });
-
-    // 실제 AI 서비스 연동 시에는 여기서 API 호출
-    Future.delayed(const Duration(seconds: 2), () {
-      String aiResponse = _generateAIResponse(userMessage);
-      
-      setState(() {
-        _messages.add(ChatMessage(
-          text: aiResponse,
-          isAI: true,
-          timestamp: DateTime.now(),
-        ));
-        _isLoading = false;
-      });
-    });
-  }
-
-  String _generateAIResponse(String userMessage) {
-    // 간단한 응답 생성 로직 (실제로는 AI 모델 사용)
-    if (userMessage.contains('기쁘') || userMessage.contains('좋') || userMessage.contains('행복')) {
-      return '정말 기쁜 일이 있었나요? 그런 긍정적인 감정을 느끼는 것은 정말 좋은 일이에요. 더 자세히 이야기해주세요!';
-    } else if (userMessage.contains('슬프') || userMessage.contains('우울') || userMessage.contains('힘들')) {
-      return '힘든 시간을 보내고 계시는군요. 그런 감정을 느끼는 것은 자연스러운 일이에요. 함께 이야기해보아요.';
-    } else if (userMessage.contains('화나') || userMessage.contains('짜증') || userMessage.contains('분노')) {
-      return '화가 나는 일이 있었나요? 그런 감정을 표현하는 것도 중요해요. 어떤 일이 있었는지 들려주세요.';
-    } else {
-      return '흥미로운 이야기네요! 더 자세히 들려주세요. 당신의 감정과 생각을 이해하고 싶어요.';
-    }
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -95,7 +82,7 @@ class _AIPageState extends ConsumerState<AIPage> {
       backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: const Text(
-          'AI 감정 파트너',
+          'AI 감정 분석',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: AppTheme.primary,
@@ -109,260 +96,680 @@ class _AIPageState extends ConsumerState<AIPage> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.psychology),
+            icon: const Icon(Icons.share),
             onPressed: () {
-              // AI 설정 또는 도움말
+              _showSnackBar('공유 기능은 추후 업데이트 예정입니다.');
             },
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // AI 기능 소개 카드
-          _buildAIFeaturesCard(),
-          
-          // 채팅 영역
-          Expanded(
-            child: _buildChatArea(),
-          ),
-          
-          // 메시지 입력 영역
-          _buildMessageInput(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAIFeaturesCard() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      child: EmotiCard(
-        backgroundColor: AppTheme.primary.withOpacity(0.05),
-        borderColor: AppTheme.primary.withOpacity(0.2),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.psychology, color: AppTheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'AI 감정 분석',
-                  style: AppTypography.titleMedium.copyWith(
-                    color: AppTheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.check_circle, color: AppTheme.success, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '감정 상태 분석 및 개선 방안 제시',
-                    style: AppTypography.bodyMedium.copyWith(color: AppTheme.textSecondary),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.assignment, color: AppTheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  '일기 작성 도움',
-                  style: AppTypography.titleMedium.copyWith(
-                    color: AppTheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.play_arrow, color: AppTheme.primary, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'AI와의 대화를 통한 일기 작성 지원',
-                    style: AppTypography.bodyMedium.copyWith(color: AppTheme.textSecondary),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChatArea() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppTheme.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
-      ),
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _messages.length + (_isLoading ? 1 : 0),
+      body: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16), // 가로 여백 더 줄임
+        itemCount: 4,
         itemBuilder: (context, index) {
-          if (index == _messages.length && _isLoading) {
-            return _buildLoadingMessage();
+          switch (index) {
+            case 0:
+              return Column(
+                children: [
+                  _buildEmotionSummaryCard(),
+                  const SizedBox(height: 16),
+                ],
+              );
+            case 1:
+              return Column(
+                children: [
+                  _buildEmotionTrendsChart(),
+                  const SizedBox(height: 16),
+                ],
+              );
+            case 2:
+              return Column(
+                children: [
+                  _buildPersonalizedAdviceSection(),
+                  const SizedBox(height: 16),
+                ],
+              );
+            case 3:
+              return _buildAdviceCardSection();
+            default:
+              return const SizedBox.shrink();
           }
-          return _buildMessage(_messages[index]);
         },
       ),
     );
   }
 
-  Widget _buildMessage(ChatMessage message) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (message.isAI) ...[
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: AppTheme.primary,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
-                Icons.psychology,
-                color: Colors.white,
-                size: 18,
+  // 감정 요약 카드
+  Widget _buildEmotionSummaryCard() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final diaryState = ref.watch(diaryProvider);
+        final entries = diaryState.diaryEntries;
+
+        if (entries.isEmpty) {
+          return EmotiCard(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  const Icon(Icons.sentiment_neutral, size: 48, color: AppTheme.textSecondary),
+                  const SizedBox(height: 16),
+                  Text(
+                    '아직 일기 기록이 없습니다',
+                    style: AppTypography.titleMedium.copyWith(color: AppTheme.textSecondary),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '일기를 작성하면 AI가 감정을 분석해드려요!',
+                    style: AppTypography.bodyMedium.copyWith(color: AppTheme.textSecondary),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 8),
-          ],
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: message.isAI 
-                  ? AppTheme.primary.withOpacity(0.1)
-                  : AppTheme.primary,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                message.text,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: message.isAI ? AppTheme.textPrimary : Colors.white,
+          );
+        }
+
+        final recentEntries = entries.take(7).toList();
+        final emotionCounts = <String, int>{};
+        for (final entry in recentEntries) {
+          for (final emotion in entry.emotions) {
+            emotionCounts[emotion] = (emotionCounts[emotion] ?? 0) + 1;
+          }
+        }
+
+        final dominantEmotion = emotionCounts.isEmpty 
+            ? '평온' 
+            : emotionCounts.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+
+        return EmotiCard(
+          child: Padding(
+            padding: const EdgeInsets.all(24), // 패딩 증가로 더 넓게
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.psychology, color: AppTheme.primary),
+                    const SizedBox(width: 12),
+                    Text(
+                      'AI 감정 분석 요약',
+                      style: AppTypography.titleMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '최근 7일간의 감정 분석',
+                        style: AppTypography.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '주요 감정: $dominantEmotion',
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '분석된 일기: ${recentEntries.length}개',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          if (!message.isAI) ...[
-            const SizedBox(width: 8),
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: AppTheme.secondary,
-                borderRadius: BorderRadius.circular(16),
+        );
+      },
+    );
+  }
+
+  // 감정 트렌드 차트
+  Widget _buildEmotionTrendsChart() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final diaryState = ref.watch(diaryProvider);
+        final entries = diaryState.diaryEntries;
+
+        return EmotiCard(
+          child: Padding(
+            padding: const EdgeInsets.all(24), // 패딩 증가로 더 넓게
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.trending_up, color: AppTheme.info),
+                    const SizedBox(width: 12),
+                    Text(
+                      '감정 변화 트렌드',
+                      style: AppTypography.titleMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Text('분석 기간: ', style: AppTypography.bodyMedium),
+                    GestureDetector(
+                      onTap: () => setState(() => _selectedPeriod = 'weekly'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _selectedPeriod == 'weekly' 
+                              ? AppTheme.primary 
+                              : AppTheme.background,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppTheme.primary),
+                        ),
+                        child: Text(
+                          '주간',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: _selectedPeriod == 'weekly' 
+                                ? Colors.white 
+                                : AppTheme.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => setState(() => _selectedPeriod = 'monthly'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _selectedPeriod == 'monthly' 
+                              ? AppTheme.primary 
+                              : AppTheme.background,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppTheme.primary),
+                        ),
+                        child: Text(
+                          '월간',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: _selectedPeriod == 'monthly' 
+                                ? Colors.white 
+                                : AppTheme.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                // 막대 차트 - 가로 공간 최대 활용
+                Container(
+                  height: 450,
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppTheme.background,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.border, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: _selectedPeriod == 'weekly'
+                      ? _buildWeeklyBarChart(entries)
+                      : _buildMonthlyBarChart(entries),
+                ),
+                const SizedBox(height: 16),
+                // AI 분석 결과 텍스트
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.info.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.info.withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.psychology, color: AppTheme.info, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'AI 분석 결과',
+                            style: AppTypography.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.info,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _selectedPeriod == 'weekly'
+                            ? _generateWeeklyAnalysisText(entries)
+                            : _generateMonthlyAnalysisText(entries),
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppTheme.textPrimary,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // 주간 막대 차트
+  Widget _buildWeeklyBarChart(List<DiaryEntry> entries) {
+    final chartData = _getWeeklyChartData(entries);
+    
+    if (chartData.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.bar_chart_rounded,
+              size: 64,
+              color: AppTheme.textSecondary,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              '주간 감정 기록이 없습니다',
+              style: AppTypography.titleMedium.copyWith(
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w600,
               ),
-              child: const Icon(
-                Icons.person,
-                color: Colors.white,
-                size: 18,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '일기를 작성하면 감정 변화를 확인할 수 있어요',
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppTheme.textSecondary,
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingMessage() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: AppTheme.primary,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.psychology,
-              color: Colors.white,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessageInput() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        border: Border(
-          top: BorderSide(color: AppTheme.border),
         ),
+      );
+    }
+
+    final data = chartData.map((e) => e['intensity'] as double).toList();
+    final labels = chartData.map((e) => e['label'] as String).toList();
+
+    return CustomPaint(
+      size: const Size(double.infinity, 320),
+      painter: BarChartPainter(
+        data: data,
+        labels: labels,
+        primaryColor: AppTheme.primary,
+        maxValue: 10.0,
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _messageController,
-              decoration: InputDecoration(
-                hintText: '메시지를 입력하세요...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: AppTheme.background,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+    );
+  }
+
+  // 월간 막대 차트
+  Widget _buildMonthlyBarChart(List<DiaryEntry> entries) {
+    final chartData = _getMonthlyChartData(entries);
+    
+    if (chartData.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.bar_chart_rounded,
+              size: 64,
+              color: AppTheme.textSecondary,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              '월간 감정 기록이 없습니다',
+              style: AppTypography.titleMedium.copyWith(
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w600,
               ),
-              onSubmitted: (_) => _sendMessage(),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '일기를 작성하면 감정 변화를 확인할 수 있어요',
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final data = chartData.map((e) => e['intensity'] as double).toList();
+    final labels = chartData.map((e) => e['label'] as String).toList();
+
+    return CustomPaint(
+      size: const Size(double.infinity, 320),
+      painter: BarChartPainter(
+        data: data,
+        labels: labels,
+        primaryColor: AppTheme.secondary,
+        maxValue: 10.0,
+      ),
+    );
+  }
+
+  // 주간 차트 데이터
+  List<Map<String, dynamic>> _getWeeklyChartData(List<DiaryEntry> entries) {
+    final now = DateTime.now();
+    final weekStart = now.subtract(Duration(days: now.weekday - 1));
+    final weekData = List.filled(7, 0.0);
+    final labels = ['월', '화', '수', '목', '금', '토', '일'];
+
+    for (final entry in entries) {
+      final entryDate = entry.createdAt is DateTime ? entry.createdAt : (entry.createdAt as dynamic).toDate();
+      final daysDiff = entryDate.difference(weekStart).inDays;
+      if (daysDiff >= 0 && daysDiff < 7) {
+        final intensity = entry.emotionIntensities.values.isNotEmpty 
+            ? entry.emotionIntensities.values.first.toDouble() 
+            : 5.0;
+        weekData[daysDiff] = intensity;
+      }
+    }
+
+    return List.generate(7, (index) => {
+      'intensity': weekData[index],
+      'label': labels[index],
+    });
+  }
+
+  // 월간 차트 데이터
+  List<Map<String, dynamic>> _getMonthlyChartData(List<DiaryEntry> entries) {
+    final now = DateTime.now();
+    final monthStart = DateTime(now.year, now.month, 1);
+    final weekData = List.filled(4, 0.0);
+    final weekCounts = List.filled(4, 0);
+    final labels = ['1주', '2주', '3주', '4주'];
+
+    for (final entry in entries) {
+      final entryDate = entry.createdAt is DateTime ? entry.createdAt : (entry.createdAt as dynamic).toDate();
+      if (entryDate.isAfter(monthStart)) {
+        final weekIndex = ((entryDate.day - 1) / 7).floor();
+        if (weekIndex >= 0 && weekIndex < 4) {
+          final intensity = entry.emotionIntensities.values.isNotEmpty 
+              ? entry.emotionIntensities.values.first.toDouble() 
+              : 5.0;
+          weekData[weekIndex] += intensity;
+          weekCounts[weekIndex]++;
+        }
+      }
+    }
+
+    // 평균 계산
+    for (int i = 0; i < 4; i++) {
+      if (weekCounts[i] > 0) {
+        weekData[i] /= weekCounts[i];
+      }
+    }
+
+    return List.generate(4, (index) => {
+      'intensity': weekData[index],
+      'label': labels[index],
+    });
+  }
+
+  // 주간 분석 텍스트 생성
+  String _generateWeeklyAnalysisText(List<DiaryEntry> entries) {
+    if (entries.isEmpty) return '주간 데이터가 부족합니다.';
+    
+    final dominantEmotion = _getDominantEmotion(entries);
+    final avgIntensity = _calculateAverageIntensity(entries);
+    
+    return '이번 주는 주로 $dominantEmotion 감정을 경험하셨네요. 평균 강도는 ${avgIntensity.toStringAsFixed(1)}/10입니다. '
+           '전반적으로 ${avgIntensity > 7 ? '강한' : avgIntensity > 4 ? '보통' : '약한'} 감정 상태를 보이고 있어요.';
+  }
+
+  // 월간 분석 텍스트 생성
+  String _generateMonthlyAnalysisText(List<DiaryEntry> entries) {
+    if (entries.isEmpty) return '월간 데이터가 부족합니다.';
+    
+    final dominantEmotion = _getDominantEmotion(entries);
+    final avgIntensity = _calculateAverageIntensity(entries);
+    
+    return '이번 달은 주로 $dominantEmotion 감정을 경험하셨네요. 평균 강도는 ${avgIntensity.toStringAsFixed(1)}/10입니다. '
+           '월간 감정 패턴을 보면 ${avgIntensity > 7 ? '강한' : avgIntensity > 4 ? '보통' : '약한'} 감정 상태를 유지하고 있어요.';
+  }
+
+  // 지배적인 감정 찾기
+  String _getDominantEmotion(List<DiaryEntry> entries) {
+    if (entries.isEmpty) return '평온';
+    
+    final emotionCounts = <String, int>{};
+    for (final entry in entries) {
+      for (final emotion in entry.emotions) {
+        emotionCounts[emotion] = (emotionCounts[emotion] ?? 0) + 1;
+      }
+    }
+    
+    if (emotionCounts.isEmpty) return '평온';
+    
+    final dominant = emotionCounts.entries
+        .reduce((a, b) => a.value > b.value ? a : b);
+    
+    return dominant.key;
+  }
+
+  // 평균 강도 계산
+  double _calculateAverageIntensity(List<DiaryEntry> entries) {
+    if (entries.isEmpty) return 5.0;
+    
+    double totalIntensity = 0.0;
+    int count = 0;
+    
+    for (final entry in entries) {
+      if (entry.emotionIntensities.isNotEmpty) {
+        totalIntensity += entry.emotionIntensities.values.first.toDouble();
+        count++;
+      }
+    }
+    
+    return count > 0 ? totalIntensity / count : 5.0;
+  }
+
+  // 주간 조언 및 피드백 섹션
+  Widget _buildPersonalizedAdviceSection() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final diaryState = ref.watch(diaryProvider);
+        final entries = diaryState.diaryEntries;
+
+        return EmotiCard(
+          child: Padding(
+            padding: const EdgeInsets.all(24), // 패딩 증가로 더 넓게
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.psychology, color: AppTheme.warning),
+                    const SizedBox(width: 12),
+                    Text(
+                      '주간 조언 및 피드백',
+                      style: AppTypography.titleMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.warning.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.warning.withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_today, color: AppTheme.warning),
+                          const SizedBox(width: 8),
+                          Text(
+                            '이번 주 (${_getCurrentWeekRange()})',
+                            style: AppTypography.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.warning,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _generateWeeklyAdviceText(entries),
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppTheme.textPrimary,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Divider(color: AppTheme.border),
+                      const SizedBox(height: 12),
+                      Text(
+                        '💡 주간 개선 방안',
+                        style: AppTypography.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ..._generateWeeklyAdviceItems(entries),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 8),
+        );
+      },
+    );
+  }
+
+  // 현재 주 범위 가져오기
+  String _getCurrentWeekRange() {
+    final now = DateTime.now();
+    final weekStart = now.subtract(Duration(days: now.weekday - 1));
+    final weekEnd = weekStart.add(const Duration(days: 6));
+    
+    return '${weekStart.month}/${weekStart.day} - ${weekEnd.month}/${weekEnd.day}';
+  }
+
+  // 주간 조언 텍스트 생성
+  String _generateWeeklyAdviceText(List<DiaryEntry> entries) {
+    if (entries.isEmpty) return '이번 주 일기 기록이 없습니다.';
+    
+    final dominantEmotion = _getDominantEmotion(entries);
+    final avgIntensity = _calculateAverageIntensity(entries);
+    
+    return '이번 주는 주로 $dominantEmotion 감정을 경험하셨네요. '
+           '감정 강도는 평균 ${avgIntensity.toStringAsFixed(1)}/10으로 '
+           '${avgIntensity > 7 ? '매우 강한' : avgIntensity > 4 ? '보통' : '약한'} 상태입니다. '
+           '이런 감정 패턴을 바탕으로 개선 방안을 제시해드릴게요.';
+  }
+
+  // 주간 조언 아이템 생성
+  List<Widget> _generateWeeklyAdviceItems(List<DiaryEntry> entries) {
+    if (entries.isEmpty) {
+      return [
+        _buildAdviceItem('일기를 꾸준히 작성해보세요.'),
+        _buildAdviceItem('감정을 기록하는 습관을 만들어보세요.'),
+      ];
+    }
+
+    final dominantEmotion = _getDominantEmotion(entries);
+    final adviceItems = <Widget>[];
+
+    switch (dominantEmotion) {
+      case '슬픔':
+        adviceItems.addAll([
+          _buildAdviceItem('자신에게 친절하게 대해주세요.'),
+          _buildAdviceItem('가까운 사람들과 대화해보세요.'),
+          _buildAdviceItem('자연 속에서 시간을 보내보세요.'),
+        ]);
+        break;
+      case '분노':
+        adviceItems.addAll([
+          _buildAdviceItem('깊은 숨을 들이마시며 마음을 진정시켜보세요.'),
+          _buildAdviceItem('운동이나 산책으로 스트레스를 해소해보세요.'),
+          _buildAdviceItem('감정의 원인을 분석해보세요.'),
+        ]);
+        break;
+      case '기쁨':
+        adviceItems.addAll([
+          _buildAdviceItem('기쁜 순간을 더 오래 기억해보세요.'),
+          _buildAdviceItem('주변 사람들과 기쁨을 나누어보세요.'),
+          _buildAdviceItem('감사한 마음을 표현해보세요.'),
+        ]);
+        break;
+      default:
+        adviceItems.addAll([
+          _buildAdviceItem('현재 감정 상태를 잘 관찰해보세요.'),
+          _buildAdviceItem('감정 변화에 대해 기록해보세요.'),
+          _buildAdviceItem('자신만의 감정 관리 방법을 찾아보세요.'),
+        ]);
+    }
+
+    return adviceItems;
+  }
+
+  // 조언 아이템 위젯
+  Widget _buildAdviceItem(String advice) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Container(
-            decoration: BoxDecoration(
-              color: AppTheme.primary,
-              borderRadius: BorderRadius.circular(24),
+            width: 4,
+            height: 4,
+            margin: const EdgeInsets.only(top: 8),
+            decoration: const BoxDecoration(
+              color: AppTheme.warning,
+              shape: BoxShape.circle,
             ),
-            child: IconButton(
-              onPressed: _sendMessage,
-              icon: const Icon(Icons.send, color: Colors.white),
-              style: IconButton.styleFrom(
-                backgroundColor: AppTheme.primary.withOpacity(0.1),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              advice,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppTheme.textPrimary,
+                height: 1.4,
               ),
             ),
           ),
@@ -370,16 +777,451 @@ class _AIPageState extends ConsumerState<AIPage> {
       ),
     );
   }
-}
 
-class ChatMessage {
-  final String text;
-  final bool isAI;
-  final DateTime timestamp;
+  // 조언 카드 섹션
+  Widget _buildAdviceCardSection() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final diaryState = ref.watch(diaryProvider);
+        final entries = diaryState.diaryEntries;
+        final adviceCards = _generateDynamicAdviceCards(entries);
+        
+        // 오늘 선택된 카드 불러오기
+        return FutureBuilder<Map<String, dynamic>?>(
+          future: _loadTodaySelectedCard(),
+          builder: (context, snapshot) {
+            final selectedCard = snapshot.data;
+            
+            return EmotiCard(
+              child: Padding(
+                padding: const EdgeInsets.all(24), // 패딩 증가로 더 넓게
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.card_giftcard, color: AppTheme.warning),
+                        const SizedBox(width: 12),
+                        Text(
+                          '오늘의 조언 카드',
+                          style: AppTypography.titleMedium.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // 선택된 카드가 있으면 표시
+                    if (selectedCard != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: selectedCard['color'].withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: selectedCard['color'].withOpacity(0.3),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  selectedCard['icon'],
+                                  color: selectedCard['color'],
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    selectedCard['title'],
+                                    style: AppTypography.titleSmall.copyWith(
+                                      color: selectedCard['color'],
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            FutureBuilder<String?>(
+                              future: _loadTodayAdviceText(),
+                              builder: (context, adviceSnapshot) {
+                                if (adviceSnapshot.connectionState == ConnectionState.waiting) {
+                                  return const Center(child: CircularProgressIndicator());
+                                }
+                                
+                                final advice = adviceSnapshot.data ?? '조언을 불러올 수 없습니다.';
+                                return Text(
+                                  advice,
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppTheme.textPrimary,
+                                    height: 1.5,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            selectedCard != null
+                              ? '다른 카드로 변경하고 싶다면 카드 선택하기를 눌러주세요! ✨'
+                              : '${adviceCards.length}개의 카드 중 하나를 선택해서 오늘의 맞춤형 조언을 받아보세요! ✨',
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton.icon(
+                          onPressed: () => context.push('/ai/advice-cards'),
+                          icon: const Icon(Icons.card_giftcard, size: 16),
+                          label: Text(selectedCard != null ? '카드 변경' : '카드 선택하기'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            textStyle: AppTypography.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // 카드 선택 안내
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.info.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.info.withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: AppTheme.info, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              '위의 "카드 선택하기" 버튼을 눌러 오늘의 조언 카드를 선택해보세요!',
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppTheme.info,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
-  ChatMessage({
-    required this.text,
-    required this.isAI,
-    required this.timestamp,
-  });
+  /// 오늘 선택된 카드 불러오기
+  Future<Map<String, dynamic>?> _loadTodaySelectedCard() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final today = DateTime.now().toIso8601String().split('T')[0];
+      final lastSelectedDate = prefs.getString('last_advice_card_date');
+      
+      if (lastSelectedDate == today) {
+        final selectedCardId = prefs.getString('selected_advice_card_id');
+        if (selectedCardId != null) {
+          return _adviceCards.firstWhere(
+            (card) => card['id'] == selectedCardId,
+            orElse: () => _adviceCards.first,
+          );
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 오늘 선택된 카드의 조언 텍스트 불러오기
+  Future<String?> _loadTodayAdviceText() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final today = DateTime.now().toIso8601String().split('T')[0];
+      final lastSelectedDate = prefs.getString('last_advice_card_date');
+      
+      if (lastSelectedDate == today) {
+        return prefs.getString('selected_advice_text');
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 동적 조언 카드 생성
+  List<Map<String, dynamic>> _generateDynamicAdviceCards(List<DiaryEntry> entries) {
+    final List<Map<String, dynamic>> allCards = [
+      {
+        'title': '자연과 힐링',
+        'category': 'nature',
+        'icon': Icons.park,
+        'color': AppTheme.success,
+      },
+      {
+        'title': '감사와 성찰',
+        'category': 'gratitude',
+        'icon': Icons.favorite,
+        'color': AppTheme.error,
+      },
+      {
+        'title': '새로운 시작',
+        'category': 'growth',
+        'icon': Icons.auto_awesome,
+        'color': AppTheme.warning,
+      },
+      {
+        'title': '관계와 소통',
+        'category': 'relationship',
+        'icon': Icons.people,
+        'color': AppTheme.primary,
+      },
+      {
+        'title': '자기 돌봄',
+        'category': 'selfcare',
+        'icon': Icons.spa,
+        'color': AppTheme.secondary,
+      },
+      {
+        'title': '창의적 활동',
+        'category': 'creativity',
+        'icon': Icons.brush,
+        'color': AppTheme.info,
+      },
+    ];
+
+    // 최근 감정에 따라 카드 선택
+    if (entries.isNotEmpty) {
+      final recentEntries = entries.take(3).toList();
+      final dominantEmotion = _getDominantEmotion(recentEntries);
+      
+      // 감정에 따라 관련 카드 우선 선택
+      List<Map<String, dynamic>> selectedCards = [];
+      
+      switch (dominantEmotion) {
+        case '슬픔':
+        case '두려움':
+          selectedCards.addAll([
+            allCards.firstWhere((card) => card['category'] == 'nature'),
+            allCards.firstWhere((card) => card['category'] == 'selfcare'),
+            allCards.firstWhere((card) => card['category'] == 'gratitude'),
+            allCards.firstWhere((card) => card['category'] == 'creativity'),
+          ]);
+          break;
+        case '분노':
+          selectedCards.addAll([
+            allCards.firstWhere((card) => card['category'] == 'nature'),
+            allCards.firstWhere((card) => card['category'] == 'selfcare'),
+            allCards.firstWhere((card) => card['category'] == 'creativity'),
+            allCards.firstWhere((card) => card['category'] == 'growth'),
+          ]);
+          break;
+        case '기쁨':
+        case '사랑':
+          selectedCards.addAll([
+            allCards.firstWhere((card) => card['category'] == 'relationship'),
+            allCards.firstWhere((card) => card['category'] == 'gratitude'),
+            allCards.firstWhere((card) => card['category'] == 'creativity'),
+            allCards.firstWhere((card) => card['category'] == 'growth'),
+          ]);
+          break;
+        default:
+          selectedCards = allCards.take(4).toList();
+      }
+      
+      return selectedCards;
+    }
+    
+    return allCards.take(4).toList();
+  }
+
+  /// 조언 카드 선택
+  void _selectAdviceCard(Map<String, dynamic> card, List<DiaryEntry> entries) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(card['icon'], color: card['color']),
+            const SizedBox(width: 8),
+            Text(card['title']),
+          ],
+        ),
+        content: const Text('AI가 맞춤형 조언을 생성하고 있어요...'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+        ],
+      ),
+    );
+
+    _generateAIAdvice(card, entries).then((advice) {
+      Navigator.pop(context);
+      _showAdviceResult(card, advice);
+    }).catchError((error) {
+      Navigator.pop(context);
+      final dominantEmotion = _getDominantEmotion(entries.take(5).toList());
+      _showAdviceResult(card, _getFallbackAdvice(card['category'], dominantEmotion));
+    });
+  }
+
+  /// AI 기반 조언 생성
+  Future<String> _generateAIAdvice(Map<String, dynamic> card, List<DiaryEntry> entries) async {
+    try {
+      // 최근 일기 분석
+      final recentEntries = entries.take(5).toList();
+      final dominantEmotion = _getDominantEmotion(recentEntries);
+      final cardCategory = card['category'] as String;
+      
+      // 카드 카테고리와 감정에 따른 맞춤형 조언 생성
+      final prompt = '''
+사용자의 현재 감정 상태를 분석하여 간단하고 실용적인 오늘의 조언을 제공해주세요.
+
+현재 주요 감정: $dominantEmotion
+조언 카테고리: ${_getCategoryDescription(cardCategory)}
+
+다음 형식으로 간단하게 응답해주세요:
+"오늘은 [감정 상태]군요. [구체적인 행동 제안] 어떨까요?"
+
+예시:
+- "오늘은 힘든 감정이군요. 빨리 자는 것 어떨까요?"
+- "오늘은 기쁜 마음이군요. 좋아하는 음악을 들어보는 것 어떨까요?"
+- "오늘은 평온한 마음이군요. 산책을 가보는 것 어떨까요?"
+
+조언만 작성해주세요.
+''';
+
+      final geminiService = GeminiService.instance;
+      final aiResponse = await geminiService.analyzeEmotionAndComfort(prompt, dominantEmotion);
+      
+      return aiResponse.isNotEmpty ? aiResponse : _getFallbackAdvice(cardCategory, dominantEmotion);
+    } catch (e) {
+      final dominantEmotion = _getDominantEmotion(entries.take(5).toList());
+      return _getFallbackAdvice(card['category'] as String, dominantEmotion);
+    }
+  }
+
+  /// 카드 카테고리 설명 가져오기
+  String _getCategoryDescription(String category) {
+    switch (category) {
+      case 'nature':
+        return '자연과 힐링 - 자연을 통한 마음의 평화와 휴식';
+      case 'gratitude':
+        return '감사와 성찰 - 감사한 일들을 생각하고 마음을 정리';
+      case 'growth':
+        return '새로운 시작 - 새로운 경험과 도전을 통한 성장';
+      case 'relationship':
+        return '관계와 소통 - 주변 사람들과의 연결과 대화';
+      case 'selfcare':
+        return '자기 돌봄 - 자신을 위한 특별한 시간과 활동';
+      case 'creativity':
+        return '창의적 활동 - 예술적 표현과 창의적 사고';
+      default:
+        return '일반적인 조언';
+    }
+  }
+
+  /// 대체 조언 제공
+  String _getFallbackAdvice(String category, String emotion) {
+    // 감정에 따른 기본 조언
+    String baseAdvice = '';
+    switch (emotion) {
+      case '슬픔':
+        baseAdvice = '오늘은 슬픈 감정이군요.';
+        break;
+      case '분노':
+        baseAdvice = '오늘은 화가 나는 감정이군요.';
+        break;
+      case '기쁨':
+        baseAdvice = '오늘은 기쁜 마음이군요.';
+        break;
+      case '사랑':
+        baseAdvice = '오늘은 사랑스러운 마음이군요.';
+        break;
+      case '평온':
+        baseAdvice = '오늘은 평온한 마음이군요.';
+        break;
+      case '두려움':
+        baseAdvice = '오늘은 불안한 감정이군요.';
+        break;
+      case '놀람':
+        baseAdvice = '오늘은 놀라운 일이 있었군요.';
+        break;
+      default:
+        baseAdvice = '오늘은 다양한 감정을 경험하고 계시군요.';
+    }
+
+    // 카테고리에 따른 구체적 제안
+    String suggestion = '';
+    switch (category) {
+      case 'nature':
+        suggestion = '자연 속에서 시간을 보내는 것 어떨까요?';
+        break;
+      case 'gratitude':
+        suggestion = '감사한 일들을 생각해보는 것 어떨까요?';
+        break;
+      case 'growth':
+        suggestion = '새로운 것에 도전해보는 것 어떨까요?';
+        break;
+      case 'relationship':
+        suggestion = '주변 사람들과 대화해보는 것 어떨까요?';
+        break;
+      case 'selfcare':
+        suggestion = '자신을 위한 특별한 시간을 가져보는 것 어떨까요?';
+        break;
+      case 'creativity':
+        suggestion = '창의적인 활동을 해보는 것 어떨까요?';
+        break;
+      default:
+        suggestion = '마음에 드는 활동을 해보는 것 어떨까요?';
+    }
+
+    return '$baseAdvice $suggestion';
+  }
+
+  /// 조언 결과 표시
+  void _showAdviceResult(Map<String, dynamic> card, String advice) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(card['icon'], color: card['color']),
+            const SizedBox(width: 8),
+            Text(card['title']),
+          ],
+        ),
+        content: Text(advice),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
 }

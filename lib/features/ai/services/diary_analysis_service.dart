@@ -92,6 +92,137 @@ class DiaryAnalysisService {
     );
   }
 
+  /// 주간 감정 분석 및 조언 생성
+  Future<Map<String, dynamic>> generateWeeklyAnalysis(List<DiaryEntry> entries) async {
+    if (entries.isEmpty) {
+      return {
+        'weeklyAdvice': '이번 주 작성된 일기가 없습니다. 꾸준한 일기 작성으로 감정을 기록해보세요.',
+        'emotionTrends': <String, List<double>>{},
+        'weeklyImprovements': ['일기 작성하기'],
+        'dominantEmotion': '평온',
+        'moodScore': 5.0,
+      };
+    }
+
+    try {
+      // 최근 7일간의 일기만 필터링
+      final now = DateTime.now();
+      final weekAgo = now.subtract(const Duration(days: 7));
+      final weeklyEntries = entries.where((entry) => 
+        entry.createdAt.isAfter(weekAgo)
+      ).toList();
+
+      if (weeklyEntries.isEmpty) {
+        return {
+          'weeklyAdvice': '이번 주 작성된 일기가 없습니다.',
+          'emotionTrends': <String, List<double>>{},
+          'weeklyImprovements': ['일기 작성하기'],
+          'dominantEmotion': '평온',
+          'moodScore': 5.0,
+        };
+      }
+
+      // Gemini AI를 사용하여 주간 분석 생성
+      final weeklyContent = weeklyEntries.map((entry) => 
+        '${entry.createdAt.toString().substring(0, 10)}: ${entry.content}'
+      ).join('\n');
+
+      final prompt = '''
+다음은 이번 주 작성된 일기들입니다. 감정 상태를 분석하고 주간 조언을 제공해주세요.
+
+일기 내용:
+$weeklyContent
+
+다음 형식으로 응답해주세요:
+1. 주간 감정 요약 (2-3문장)
+2. 주요 감정 변화
+3. 주간 개선 방안 (3가지)
+4. 전반적인 감정 점수 (1-10)
+5. 지배적인 감정
+
+JSON 형식으로 응답:
+{
+  "weeklySummary": "주간 감정 요약",
+  "emotionChanges": "주요 감정 변화",
+  "improvements": ["개선방안1", "개선방안2", "개선방안3"],
+  "moodScore": 7,
+  "dominantEmotion": "기쁨"
+}
+''';
+
+      final aiResponse = await GeminiService.instance.analyzeEmotionAndComfort(weeklyContent, '주간분석');
+      return _parseWeeklyAIResponse(aiResponse, weeklyEntries);
+    } catch (e) {
+      print('주간 분석 실패: $e');
+      return _generateDefaultWeeklyAnalysis(entries);
+    }
+  }
+
+  /// 월간 감정 분석 및 조언 생성
+  Future<Map<String, dynamic>> generateMonthlyAnalysis(List<DiaryEntry> entries) async {
+    if (entries.isEmpty) {
+      return {
+        'monthlyAdvice': '이번 달 작성된 일기가 없습니다.',
+        'emotionTrends': <String, List<double>>{},
+        'monthlyImprovements': ['일기 작성하기'],
+        'dominantEmotion': '평온',
+        'moodScore': 5.0,
+      };
+    }
+
+    try {
+      // 최근 30일간의 일기만 필터링
+      final now = DateTime.now();
+      final monthAgo = now.subtract(const Duration(days: 30));
+      final monthlyEntries = entries.where((entry) => 
+        entry.createdAt.isAfter(monthAgo)
+      ).toList();
+
+      if (monthlyEntries.isEmpty) {
+        return {
+          'monthlyAdvice': '이번 달 작성된 일기가 없습니다.',
+          'emotionTrends': <String, List<double>>{},
+          'monthlyImprovements': ['일기 작성하기'],
+          'dominantEmotion': '평온',
+          'moodScore': 5.0,
+        };
+      }
+
+      final monthlyContent = monthlyEntries.map((entry) => 
+        '${entry.createdAt.toString().substring(0, 10)}: ${entry.content}'
+      ).join('\n');
+
+      final prompt = '''
+다음은 이번 달 작성된 일기들입니다. 월간 감정 패턴을 분석하고 조언을 제공해주세요.
+
+일기 내용:
+$monthlyContent
+
+다음 형식으로 응답해주세요:
+1. 월간 감정 패턴 요약 (2-3문장)
+2. 주요 감정 변화 트렌드
+3. 월간 개선 방안 (3가지)
+4. 전반적인 감정 점수 (1-10)
+5. 지배적인 감정
+
+JSON 형식으로 응답:
+{
+  "monthlySummary": "월간 감정 패턴 요약",
+  "emotionTrends": "주요 감정 변화 트렌드",
+  "improvements": ["개선방안1", "개선방안2", "개선방안3"],
+  "moodScore": 7,
+  "dominantEmotion": "기쁨"
+}
+''';
+
+      final aiResponse = await GeminiService.instance.analyzeEmotionAndComfort(monthlyContent, '월간분석');
+      return _parseMonthlyAIResponse(aiResponse, monthlyEntries);
+    } catch (e) {
+      print('월간 분석 실패: $e');
+      return _generateDefaultMonthlyAnalysis(entries);
+    }
+  }
+
   /// 감정 패턴 분석
   Map<String, dynamic> analyzeEmotionPatterns(List<DiaryEntry> entries) {
     if (entries.isEmpty) {
@@ -366,6 +497,208 @@ class DiaryAnalysisService {
     } else {
       return ['현재 상태 유지하기', '감정 기록 계속하기'];
     }
+  }
+
+  /// 주간 AI 응답 파싱
+  Map<String, dynamic> _parseWeeklyAIResponse(String aiResponse, List<DiaryEntry> entries) {
+    try {
+      // AI 응답에서 JSON 부분 추출 시도
+      final jsonStart = aiResponse.indexOf('{');
+      final jsonEnd = aiResponse.lastIndexOf('}');
+      
+      if (jsonStart != -1 && jsonEnd != -1) {
+        final jsonString = aiResponse.substring(jsonStart, jsonEnd + 1);
+        // JSON 파싱 로직 (실제로는 더 정교한 파싱 필요)
+        return {
+          'weeklyAdvice': aiResponse,
+          'emotionTrends': _calculateWeeklyEmotionTrends(entries),
+          'weeklyImprovements': ['AI 분석 기반 개선 방안'],
+          'dominantEmotion': _getDominantEmotion(entries),
+          'moodScore': _calculateAverageMoodScore(entries),
+        };
+      }
+    } catch (e) {
+      print('AI 응답 파싱 실패: $e');
+    }
+    
+    // 기본 응답 반환
+    return {
+      'weeklyAdvice': aiResponse,
+      'emotionTrends': _calculateWeeklyEmotionTrends(entries),
+      'weeklyImprovements': ['AI 분석 기반 개선 방안'],
+      'dominantEmotion': _getDominantEmotion(entries),
+      'moodScore': _calculateAverageMoodScore(entries),
+    };
+  }
+
+  /// 월간 AI 응답 파싱
+  Map<String, dynamic> _parseMonthlyAIResponse(String aiResponse, List<DiaryEntry> entries) {
+    try {
+      // AI 응답에서 JSON 부분 추출 시도
+      final jsonStart = aiResponse.indexOf('{');
+      final jsonEnd = aiResponse.lastIndexOf('}');
+      
+      if (jsonStart != -1 && jsonEnd != -1) {
+        final jsonString = aiResponse.substring(jsonStart, jsonEnd + 1);
+        // JSON 파싱 로직 (실제로는 더 정교한 파싱 필요)
+        return {
+          'monthlyAdvice': aiResponse,
+          'emotionTrends': _calculateMonthlyEmotionTrends(entries),
+          'monthlyImprovements': ['AI 분석 기반 개선 방안'],
+          'dominantEmotion': _getDominantEmotion(entries),
+          'moodScore': _calculateAverageMoodScore(entries),
+        };
+      }
+    } catch (e) {
+      print('AI 응답 파싱 실패: $e');
+    }
+    
+    // 기본 응답 반환
+    return {
+      'monthlyAdvice': aiResponse,
+      'monthlyImprovements': ['AI 분석 기반 개선 방안'],
+      'emotionTrends': _calculateMonthlyEmotionTrends(entries),
+      'dominantEmotion': _getDominantEmotion(entries),
+      'moodScore': _calculateAverageMoodScore(entries),
+    };
+  }
+
+  /// 기본 주간 분석 생성
+  Map<String, dynamic> _generateDefaultWeeklyAnalysis(List<DiaryEntry> entries) {
+    final dominantEmotion = _getDominantEmotion(entries);
+    final moodScore = _calculateAverageMoodScore(entries);
+    
+    return {
+      'weeklyAdvice': '이번 주는 ${dominantEmotion}한 감정을 주로 경험했습니다. 전반적인 감정 점수는 ${moodScore.toStringAsFixed(1)}/10입니다.',
+      'emotionTrends': _calculateWeeklyEmotionTrends(entries),
+      'weeklyImprovements': [
+        '감정 기록을 꾸준히 하기',
+        '긍정적인 감정을 더 많이 경험하기',
+        '스트레스 관리하기'
+      ],
+      'dominantEmotion': dominantEmotion,
+      'moodScore': moodScore,
+    };
+  }
+
+  /// 기본 월간 분석 생성
+  Map<String, dynamic> _generateDefaultMonthlyAnalysis(List<DiaryEntry> entries) {
+    final dominantEmotion = _getDominantEmotion(entries);
+    final moodScore = _calculateAverageMoodScore(entries);
+    
+    return {
+      'monthlyAdvice': '이번 달은 ${dominantEmotion}한 감정을 주로 경험했습니다. 전반적인 감정 점수는 ${moodScore.toStringAsFixed(1)}/10입니다.',
+      'monthlyImprovements': [
+        '감정 기록을 꾸준히 하기',
+        '긍정적인 감정을 더 많이 경험하기',
+        '스트레스 관리하기'
+      ],
+      'emotionTrends': _calculateMonthlyEmotionTrends(entries),
+      'dominantEmotion': dominantEmotion,
+      'moodScore': moodScore,
+    };
+  }
+
+  /// 주간 감정 트렌드 계산
+  Map<String, List<double>> _calculateWeeklyEmotionTrends(List<DiaryEntry> entries) {
+    final trends = <String, List<double>>{};
+    final weekDays = ['월', '화', '수', '목', '금', '토', '일'];
+    
+    for (final day in weekDays) {
+      trends[day] = [5.0]; // 기본값
+    }
+    
+    // 실제 일기 데이터 기반으로 계산
+    for (final entry in entries) {
+      final weekday = entry.createdAt.weekday;
+      final dayName = weekDays[weekday - 1];
+      final emotionIntensity = entry.emotionIntensities.values.isNotEmpty 
+          ? entry.emotionIntensities.values.first.toDouble() 
+          : 5.0;
+      
+      if (trends.containsKey(dayName)) {
+        trends[dayName]!.add(emotionIntensity);
+      }
+    }
+    
+    // 평균값 계산
+    trends.forEach((day, values) {
+      if (values.length > 1) {
+        final average = values.reduce((a, b) => a + b) / values.length;
+        trends[day] = [average];
+      }
+    });
+    
+    return trends;
+  }
+
+  /// 월간 감정 트렌드 계산
+  Map<String, List<double>> _calculateMonthlyEmotionTrends(List<DiaryEntry> entries) {
+    final trends = <String, List<double>>{};
+    final weeks = ['1주차', '2주차', '3주차', '4주차'];
+    
+    for (final week in weeks) {
+      trends[week] = [5.0]; // 기본값
+    }
+    
+    // 실제 일기 데이터 기반으로 계산
+    for (final entry in entries) {
+      final weekOfMonth = ((entry.createdAt.day - 1) / 7).floor();
+      final weekName = weeks[weekOfMonth < weeks.length ? weekOfMonth : weeks.length - 1];
+      final emotionIntensity = entry.emotionIntensities.values.isNotEmpty 
+          ? entry.emotionIntensities.values.first.toDouble() 
+          : 5.0;
+      
+      if (trends.containsKey(weekName)) {
+        trends[weekName]!.add(emotionIntensity);
+      }
+    }
+    
+    // 평균값 계산
+    trends.forEach((week, values) {
+      if (values.length > 1) {
+        final average = values.reduce((a, b) => a + b) / values.length;
+        trends[week] = [average];
+      }
+    });
+    
+    return trends;
+  }
+
+  /// 지배적인 감정 찾기
+  String _getDominantEmotion(List<DiaryEntry> entries) {
+    if (entries.isEmpty) return '평온';
+    
+    final emotionCounts = <String, int>{};
+    for (final entry in entries) {
+      for (final emotion in entry.emotions) {
+        emotionCounts[emotion] = (emotionCounts[emotion] ?? 0) + 1;
+      }
+    }
+    
+    if (emotionCounts.isEmpty) return '평온';
+    
+    final dominant = emotionCounts.entries
+        .reduce((a, b) => a.value > b.value ? a : b);
+    
+    return dominant.key;
+  }
+
+  /// 평균 감정 점수 계산
+  double _calculateAverageMoodScore(List<DiaryEntry> entries) {
+    if (entries.isEmpty) return 5.0;
+    
+    double totalScore = 0;
+    int count = 0;
+    
+    for (final entry in entries) {
+      if (entry.emotionIntensities.isNotEmpty) {
+        totalScore += entry.emotionIntensities.values.first.toDouble();
+        count++;
+      }
+    }
+    
+    return count > 0 ? totalScore / count : 5.0;
   }
 
   String _determineOverallMoodTrend(List<DiaryEntry> entries) {

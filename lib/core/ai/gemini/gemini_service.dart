@@ -15,10 +15,7 @@ class GeminiService {
 
   /// 자연스러운 대화 시작을 위한 초기 질문 생성
   Future<String> generateEmotionSelectionPrompt() async {
-    print('🔑 Gemini API 키 확인: ${_apiKey.isNotEmpty ? "있음" : "없음"}');
-    print('🔑 API 키 길이: ${_apiKey.length}');
-    print('🔑 API 키 앞부분: ${_apiKey.isNotEmpty ? _apiKey.substring(0, 10) : "없음"}...');
-    print('🔑 전체 API 키: $_apiKey');
+    print('🔑 Gemini API 키 확인: ${_hasKey ? "있음" : "없음"}');
     
     if (!_hasKey) {
       print('❌ API 키가 없어서 fallback 응답 사용');
@@ -296,8 +293,7 @@ $emotionDescription
   /// Gemini API 실제 호출
   Future<String?> _callGeminiAPI(String prompt) async {
     try {
-      print('🌐 API URL: $_baseUrl?key=${_apiKey.substring(0, 10)}...');
-      print('🌐 전체 URL: $_baseUrl?key=$_apiKey');
+      print('🌐 Gemini API 호출 시작...');
       print('📝 프롬프트 길이: ${prompt.length}');
       
       final response = await http.post(

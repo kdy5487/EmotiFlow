@@ -7,6 +7,7 @@ import 'package:emoti_flow/features/diary/views/diary_list_page/diary_list_page.
 import 'package:emoti_flow/features/diary/views/diary_detail_page/diary_detail_page.dart';
 import 'package:emoti_flow/features/diary/views/drawing_canvas_page.dart';
 import 'package:emoti_flow/features/ai/views/ai_page.dart';
+import 'package:emoti_flow/features/ai/views/advice_card_selection_page.dart';
 import 'package:emoti_flow/features/auth/pages/login_page.dart';
 import 'package:emoti_flow/features/profile/views/profile_page.dart';
 import 'package:emoti_flow/features/profile/views/profile_edit_page.dart';
@@ -102,6 +103,13 @@ class AppRouter {
         path: AppRoutes.ai,
         name: 'ai',
         builder: (context, state) => const AIPage(),
+        routes: [
+          GoRoute(
+            path: 'advice-cards',
+            name: 'advice-cards',
+            builder: (context, state) => const AdviceCardSelectionPage(),
+          ),
+        ],
       ),
       
       // 분석 라우트
