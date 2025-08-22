@@ -159,7 +159,13 @@ class HomePage extends ConsumerWidget {
 
   Widget _buildMiniPlayer(BuildContext context, WidgetRef ref) {
     final music = ref.watch(musicProvider);
-    if (music.nowPlaying == null) return const SizedBox.shrink();
+    final settings = ref.watch(settingsProvider).settings.musicSettings;
+    
+    // 음악이 재생 중이 아니거나 홈 화면 미니 플레이어 표시가 비활성화된 경우 숨김
+    if (music.nowPlaying == null || !settings.showHomeMiniPlayer) {
+      return const SizedBox.shrink();
+    }
+    
     return Container(
       height: 56,
       decoration: BoxDecoration(

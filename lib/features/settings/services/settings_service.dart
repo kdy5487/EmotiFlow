@@ -49,7 +49,7 @@ class SettingsService {
       final settingsMap = settings.toMap();
       // 간단 저장(문자열화). 실제에선 jsonEncode 사용 권장
       await prefs.setString(_settingsKey, settingsMap.toString());
-      
+
       print('✅ 앱 설정 저장 성공');
       return true;
     } catch (e) {
@@ -65,11 +65,14 @@ class SettingsService {
       return MusicSettings(
         enabled: prefs.getBool('music_enabled') ?? true,
         autoPlay: prefs.getBool('music_auto_play') ?? true,
-        promptOnEmotionChange: prefs.getBool('music_prompt_on_emotion_change') ?? true,
+        promptOnEmotionChange:
+            prefs.getBool('music_prompt_on_emotion_change') ?? true,
         defaultSource: prefs.getString('music_default_source') ?? 'aiAnalysis',
         volume: prefs.getDouble('music_volume') ?? 0.7,
         showPostDiaryMusicTip: prefs.getBool('music_tip_post_diary') ?? true,
         showPostAiAnalysisMusicTip: prefs.getBool('music_tip_post_ai') ?? true,
+        showHomeMiniPlayer:
+            prefs.getBool('music_show_home_mini_player') ?? true,
       );
     } catch (e) {
       print('❌ 음악 설정 가져오기 실패: $e');
@@ -83,11 +86,16 @@ class SettingsService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('music_enabled', settings.enabled);
       await prefs.setBool('music_auto_play', settings.autoPlay);
-      await prefs.setBool('music_prompt_on_emotion_change', settings.promptOnEmotionChange);
+      await prefs.setBool(
+          'music_prompt_on_emotion_change', settings.promptOnEmotionChange);
       await prefs.setString('music_default_source', settings.defaultSource);
       await prefs.setDouble('music_volume', settings.volume);
-      await prefs.setBool('music_tip_post_diary', settings.showPostDiaryMusicTip);
-      await prefs.setBool('music_tip_post_ai', settings.showPostAiAnalysisMusicTip);
+      await prefs.setBool(
+          'music_tip_post_diary', settings.showPostDiaryMusicTip);
+      await prefs.setBool(
+          'music_tip_post_ai', settings.showPostAiAnalysisMusicTip);
+      await prefs.setBool(
+          'music_show_home_mini_player', settings.showHomeMiniPlayer);
       return true;
     } catch (e) {
       print('❌ 음악 설정 저장 실패: $e');
@@ -99,7 +107,7 @@ class SettingsService {
   Future<ThemeSettings> getThemeSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       return ThemeSettings(
         themeMode: ThemeMode.values[prefs.getInt(_themeModeKey) ?? 0],
         primaryColor: Color(prefs.getInt(_primaryColorKey) ?? 0xFF8B7FF6),
@@ -118,14 +126,14 @@ class SettingsService {
   Future<bool> saveThemeSettings(ThemeSettings settings) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       await prefs.setInt(_themeModeKey, settings.themeMode.index);
       await prefs.setInt(_primaryColorKey, settings.primaryColor.value);
       await prefs.setInt(_accentColorKey, settings.accentColor.value);
       await prefs.setBool(_useDynamicColorsKey, settings.useDynamicColors);
       await prefs.setDouble(_borderRadiusKey, settings.borderRadius);
       await prefs.setBool(_useMaterial3Key, settings.useMaterial3);
-      
+
       print('✅ 테마 설정 저장 성공');
       return true;
     } catch (e) {
@@ -138,18 +146,22 @@ class SettingsService {
   Future<NotificationSettings> getNotificationSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       return NotificationSettings(
-        pushNotificationsEnabled: prefs.getBool('push_notifications_enabled') ?? true,
-        emailNotificationsEnabled: prefs.getBool('email_notifications_enabled') ?? false,
+        pushNotificationsEnabled:
+            prefs.getBool('push_notifications_enabled') ?? true,
+        emailNotificationsEnabled:
+            prefs.getBool('email_notifications_enabled') ?? false,
         dailyReminderEnabled: prefs.getBool('daily_reminder_enabled') ?? true,
         dailyReminderTime: TimeOfDay(
           hour: prefs.getInt('daily_reminder_hour') ?? 20,
           minute: prefs.getInt('daily_reminder_minute') ?? 0,
         ),
         weeklyReportEnabled: prefs.getBool('weekly_report_enabled') ?? true,
-        emotionAnalysisEnabled: prefs.getBool('emotion_analysis_enabled') ?? true,
-        achievementNotificationsEnabled: prefs.getBool('achievement_notifications_enabled') ?? true,
+        emotionAnalysisEnabled:
+            prefs.getBool('emotion_analysis_enabled') ?? true,
+        achievementNotificationsEnabled:
+            prefs.getBool('achievement_notifications_enabled') ?? true,
         quietHours: prefs.getStringList('quiet_hours') ?? ['22:00', '08:00'],
         doNotDisturbEnabled: prefs.getBool('do_not_disturb_enabled') ?? false,
       );
@@ -163,18 +175,27 @@ class SettingsService {
   Future<bool> saveNotificationSettings(NotificationSettings settings) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
-      await prefs.setBool('push_notifications_enabled', settings.pushNotificationsEnabled);
-      await prefs.setBool('email_notifications_enabled', settings.emailNotificationsEnabled);
-      await prefs.setBool('daily_reminder_enabled', settings.dailyReminderEnabled);
-      await prefs.setInt('daily_reminder_hour', settings.dailyReminderTime.hour);
-      await prefs.setInt('daily_reminder_minute', settings.dailyReminderTime.minute);
-      await prefs.setBool('weekly_report_enabled', settings.weeklyReportEnabled);
-      await prefs.setBool('emotion_analysis_enabled', settings.emotionAnalysisEnabled);
-      await prefs.setBool('achievement_notifications_enabled', settings.achievementNotificationsEnabled);
+
+      await prefs.setBool(
+          'push_notifications_enabled', settings.pushNotificationsEnabled);
+      await prefs.setBool(
+          'email_notifications_enabled', settings.emailNotificationsEnabled);
+      await prefs.setBool(
+          'daily_reminder_enabled', settings.dailyReminderEnabled);
+      await prefs.setInt(
+          'daily_reminder_hour', settings.dailyReminderTime.hour);
+      await prefs.setInt(
+          'daily_reminder_minute', settings.dailyReminderTime.minute);
+      await prefs.setBool(
+          'weekly_report_enabled', settings.weeklyReportEnabled);
+      await prefs.setBool(
+          'emotion_analysis_enabled', settings.emotionAnalysisEnabled);
+      await prefs.setBool('achievement_notifications_enabled',
+          settings.achievementNotificationsEnabled);
       await prefs.setStringList('quiet_hours', settings.quietHours);
-      await prefs.setBool('do_not_disturb_enabled', settings.doNotDisturbEnabled);
-      
+      await prefs.setBool(
+          'do_not_disturb_enabled', settings.doNotDisturbEnabled);
+
       print('✅ 알림 설정 저장 성공');
       return true;
     } catch (e) {
@@ -187,7 +208,7 @@ class SettingsService {
   Future<DataSettings> getDataSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       return DataSettings(
         autoBackupEnabled: prefs.getBool('auto_backup_enabled') ?? true,
         backupFrequency: prefs.getInt('backup_frequency') ?? 7,
@@ -195,7 +216,8 @@ class SettingsService {
         dataRetentionPeriod: prefs.getInt('data_retention_period') ?? 12,
         analyticsEnabled: prefs.getBool('analytics_enabled') ?? true,
         crashReportingEnabled: prefs.getBool('crash_reporting_enabled') ?? true,
-        performanceMonitoringEnabled: prefs.getBool('performance_monitoring_enabled') ?? true,
+        performanceMonitoringEnabled:
+            prefs.getBool('performance_monitoring_enabled') ?? true,
         maxCacheSize: prefs.getInt('max_cache_size') ?? 100,
         autoCleanupEnabled: prefs.getBool('auto_cleanup_enabled') ?? true,
       );
@@ -209,17 +231,19 @@ class SettingsService {
   Future<bool> saveDataSettings(DataSettings settings) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       await prefs.setBool('auto_backup_enabled', settings.autoBackupEnabled);
       await prefs.setInt('backup_frequency', settings.backupFrequency);
       await prefs.setBool('cloud_sync_enabled', settings.cloudSyncEnabled);
       await prefs.setInt('data_retention_period', settings.dataRetentionPeriod);
       await prefs.setBool('analytics_enabled', settings.analyticsEnabled);
-      await prefs.setBool('crash_reporting_enabled', settings.crashReportingEnabled);
-      await prefs.setBool('performance_monitoring_enabled', settings.performanceMonitoringEnabled);
+      await prefs.setBool(
+          'crash_reporting_enabled', settings.crashReportingEnabled);
+      await prefs.setBool('performance_monitoring_enabled',
+          settings.performanceMonitoringEnabled);
       await prefs.setInt('max_cache_size', settings.maxCacheSize);
       await prefs.setBool('auto_cleanup_enabled', settings.autoCleanupEnabled);
-      
+
       print('✅ 데이터 설정 저장 성공');
       return true;
     } catch (e) {
@@ -232,7 +256,7 @@ class SettingsService {
   Future<SecuritySettings> getSecuritySettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       return SecuritySettings(
         biometricAuthEnabled: prefs.getBool('biometric_auth_enabled') ?? false,
         appLockEnabled: prefs.getBool('app_lock_enabled') ?? false,
@@ -241,7 +265,8 @@ class SettingsService {
         pinCode: prefs.getString('pin_code'),
         patternLockEnabled: prefs.getBool('pattern_lock_enabled') ?? false,
         patternLock: prefs.getString('pattern_lock'),
-        sensitiveDataEncryption: prefs.getBool('sensitive_data_encryption') ?? true,
+        sensitiveDataEncryption:
+            prefs.getBool('sensitive_data_encryption') ?? true,
         autoLogoutEnabled: prefs.getBool('auto_logout_enabled') ?? false,
         autoLogoutTimeout: prefs.getInt('auto_logout_timeout') ?? 30,
       );
@@ -255,8 +280,9 @@ class SettingsService {
   Future<bool> saveSecuritySettings(SecuritySettings settings) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
-      await prefs.setBool('biometric_auth_enabled', settings.biometricAuthEnabled);
+
+      await prefs.setBool(
+          'biometric_auth_enabled', settings.biometricAuthEnabled);
       await prefs.setBool('app_lock_enabled', settings.appLockEnabled);
       await prefs.setInt('app_lock_timeout', settings.appLockTimeout);
       await prefs.setBool('pin_code_enabled', settings.pinCodeEnabled);
@@ -267,10 +293,11 @@ class SettingsService {
       if (settings.patternLock != null) {
         await prefs.setString('pattern_lock', settings.patternLock!);
       }
-      await prefs.setBool('sensitive_data_encryption', settings.sensitiveDataEncryption);
+      await prefs.setBool(
+          'sensitive_data_encryption', settings.sensitiveDataEncryption);
       await prefs.setBool('auto_logout_enabled', settings.autoLogoutEnabled);
       await prefs.setInt('auto_logout_timeout', settings.autoLogoutTimeout);
-      
+
       print('✅ 보안 설정 저장 성공');
       return true;
     } catch (e) {
@@ -283,7 +310,7 @@ class SettingsService {
   Future<AccessibilitySettings> getAccessibilitySettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       return AccessibilitySettings(
         screenReaderEnabled: prefs.getBool('screen_reader_enabled') ?? false,
         textScaleFactor: prefs.getDouble('text_scale_factor') ?? 1.0,
@@ -291,9 +318,11 @@ class SettingsService {
         reduceMotionEnabled: prefs.getBool('reduce_motion_enabled') ?? false,
         boldTextEnabled: prefs.getBool('bold_text_enabled') ?? false,
         largeTextEnabled: prefs.getBool('large_text_enabled') ?? false,
-        colorBlindSupportEnabled: prefs.getBool('color_blind_support_enabled') ?? false,
+        colorBlindSupportEnabled:
+            prefs.getBool('color_blind_support_enabled') ?? false,
         colorBlindType: prefs.getString('color_blind_type'),
-        keyboardNavigationEnabled: prefs.getBool('keyboard_navigation_enabled') ?? false,
+        keyboardNavigationEnabled:
+            prefs.getBool('keyboard_navigation_enabled') ?? false,
         soundEffectsEnabled: prefs.getBool('sound_effects_enabled') ?? true,
       );
     } catch (e) {
@@ -306,20 +335,26 @@ class SettingsService {
   Future<bool> saveAccessibilitySettings(AccessibilitySettings settings) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
-      await prefs.setBool('screen_reader_enabled', settings.screenReaderEnabled);
+
+      await prefs.setBool(
+          'screen_reader_enabled', settings.screenReaderEnabled);
       await prefs.setDouble('text_scale_factor', settings.textScaleFactor);
-      await prefs.setBool('high_contrast_enabled', settings.highContrastEnabled);
-      await prefs.setBool('reduce_motion_enabled', settings.reduceMotionEnabled);
+      await prefs.setBool(
+          'high_contrast_enabled', settings.highContrastEnabled);
+      await prefs.setBool(
+          'reduce_motion_enabled', settings.reduceMotionEnabled);
       await prefs.setBool('bold_text_enabled', settings.boldTextEnabled);
       await prefs.setBool('large_text_enabled', settings.largeTextEnabled);
-      await prefs.setBool('color_blind_support_enabled', settings.colorBlindSupportEnabled);
+      await prefs.setBool(
+          'color_blind_support_enabled', settings.colorBlindSupportEnabled);
       if (settings.colorBlindType != null) {
         await prefs.setString('color_blind_type', settings.colorBlindType!);
       }
-      await prefs.setBool('keyboard_navigation_enabled', settings.keyboardNavigationEnabled);
-      await prefs.setBool('sound_effects_enabled', settings.soundEffectsEnabled);
-      
+      await prefs.setBool(
+          'keyboard_navigation_enabled', settings.keyboardNavigationEnabled);
+      await prefs.setBool(
+          'sound_effects_enabled', settings.soundEffectsEnabled);
+
       print('✅ 접근성 설정 저장 성공');
       return true;
     } catch (e) {
@@ -332,7 +367,7 @@ class SettingsService {
   Future<T?> getSettingValue<T>(String key, T defaultValue) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       if (T == bool) {
         return prefs.getBool(key) as T? ?? defaultValue;
       } else if (T == int) {
@@ -344,7 +379,7 @@ class SettingsService {
       } else if (T == List<String>) {
         return prefs.getStringList(key) as T? ?? defaultValue;
       }
-      
+
       return defaultValue;
     } catch (e) {
       print('❌ 설정 값 가져오기 실패: $e');
@@ -356,7 +391,7 @@ class SettingsService {
   Future<bool> setSettingValue<T>(String key, T value) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       if (value is bool) {
         await prefs.setBool(key, value);
       } else if (value is int) {
@@ -371,7 +406,7 @@ class SettingsService {
         print('❌ 지원하지 않는 설정 타입: ${value.runtimeType}');
         return false;
       }
-      
+
       return true;
     } catch (e) {
       print('❌ 설정 값 저장 실패: $e');
@@ -384,7 +419,7 @@ class SettingsService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      
+
       print('✅ 모든 설정 초기화 성공');
       return true;
     } catch (e) {
@@ -399,14 +434,14 @@ class SettingsService {
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys();
       final backup = <String, dynamic>{};
-      
+
       for (final key in keys) {
         final value = prefs.get(key);
         if (value != null) {
           backup[key] = value;
         }
       }
-      
+
       print('✅ 설정 백업 성공');
       return backup;
     } catch (e) {
@@ -419,11 +454,11 @@ class SettingsService {
   Future<bool> restoreSettings(Map<String, dynamic> backup) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       for (final entry in backup.entries) {
         final key = entry.key;
         final value = entry.value;
-        
+
         if (value is bool) {
           await prefs.setBool(key, value);
         } else if (value is int) {
@@ -436,7 +471,7 @@ class SettingsService {
           await prefs.setStringList(key, value);
         }
       }
-      
+
       print('✅ 설정 복원 성공');
       return true;
     } catch (e) {

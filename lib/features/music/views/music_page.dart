@@ -34,9 +34,11 @@ class MusicPage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('소스: ${state.emotionSource == EmotionSource.todayDiary ? '오늘의 감정' : 'AI 분석 결과'}'),
+                      Text(
+                          '소스: ${state.emotionSource == EmotionSource.todayDiary ? '오늘의 감정' : 'AI 분석 결과'}'),
                       const SizedBox(height: 4),
-                      Text('감정: ${state.currentEmotion ?? '-'}  강도: ${state.currentIntensity}'),
+                      Text(
+                          '감정: ${state.currentEmotion ?? '-'}  강도: ${state.currentIntensity}'),
                     ],
                   ),
                 ),
@@ -45,9 +47,10 @@ class MusicPage extends ConsumerWidget {
                       ? null
                       : () {
                           // 데모: 평온 감정 기준, 강도는 5로.
-                          final src = musicSettings.defaultSource == 'todayDiary'
-                              ? EmotionSource.todayDiary
-                              : EmotionSource.aiAnalysis;
+                          final src =
+                              musicSettings.defaultSource == 'todayDiary'
+                                  ? EmotionSource.todayDiary
+                                  : EmotionSource.aiAnalysis;
                           notifier.loadRecommendations(
                             emotion: state.currentEmotion ?? '평온',
                             intensity: state.currentIntensity,
@@ -58,7 +61,8 @@ class MusicPage extends ConsumerWidget {
                       ? const SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
                         )
                       : const Text('추천 불러오기'),
                 ),
@@ -78,12 +82,16 @@ class MusicPage extends ConsumerWidget {
                     isScrollControlled: true,
                     backgroundColor: Colors.white,
                     shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(16)),
                     ),
                     builder: (_) {
                       return Consumer(
                         builder: (context, ref, __) {
-                          final musicSettings = ref.watch(settingsProvider).settings.musicSettings;
+                          final musicSettings = ref
+                              .watch(settingsProvider)
+                              .settings
+                              .musicSettings;
                           return DraggableScrollableSheet(
                             expand: false,
                             initialChildSize: 0.5,
@@ -91,129 +99,281 @@ class MusicPage extends ConsumerWidget {
                             maxChildSize: 0.9,
                             builder: (context, controller) {
                               return SafeArea(
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                                  child: ListView(
-                                    controller: controller,
-                                    children: [
-                                      Row(
-                                        children: const [
-                                          Icon(Icons.tune, color: AppTheme.primary),
-                                          SizedBox(width: 8),
-                                          Text('음악 설정', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-                                        ],
+                                child: Column(
+                                  children: [
+                                    // 스크롤 가능함을 표시하는 핸들 바
+                                    Container(
+                                      width: 40,
+                                      height: 4,
+                                      margin: const EdgeInsets.symmetric(
+                                          vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade300,
+                                        borderRadius: BorderRadius.circular(2),
                                       ),
-                                      const SizedBox(height: 12),
-                                      Row(
+                                    ),
+                                    // 제목과 스크롤 힌트
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                          16, 0, 16, 12),
+                                      child: Row(
                                         children: [
-                                          const Expanded(child: Text('음악 사용')),
-                                          Switch(
-                                            value: musicSettings.enabled,
-                                            onChanged: (v) {
-                                              final newSettings = musicSettings.copyWith(enabled: v);
-                                              ref.read(settingsProvider.notifier).updateMusicSettings(newSettings);
-                                              if (!v) {
-                                                ref.read(musicProvider.notifier).stop();
-                                              } else {
-                                                final now = ref.read(musicProvider).nowPlaying;
-                                                if (now != null) {
-                                                  ref.read(musicProvider.notifier).play(now);
-                                                }
-                                              }
-                                            },
+                                          const Icon(Icons.tune,
+                                              color: AppTheme.primary),
+                                          const SizedBox(width: 8),
+                                          const Text('음악 설정',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 16)),
+                                          const Spacer(),
+                                          Icon(
+                                            Icons.keyboard_arrow_up,
+                                            color: Colors.grey.shade400,
+                                            size: 20,
                                           ),
-                                        ],
-                                      ),
-                                      Row(
-                                        children: [
-                                          const Expanded(child: Text('자동재생')),
-                                          Switch(
-                                            value: musicSettings.autoPlay,
-                                            onChanged: (v) {
-                                              final newSettings = musicSettings.copyWith(autoPlay: v);
-                                              ref.read(settingsProvider.notifier).updateMusicSettings(newSettings);
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                      Row(
-                                        children: [
-                                          const Text('기본 소스'),
-                                          const SizedBox(width: 12),
-                                          DropdownButton<String>(
-                                            value: musicSettings.defaultSource,
-                                            items: const [
-                                              DropdownMenuItem(value: 'todayDiary', child: Text('오늘의 감정')),
-                                              DropdownMenuItem(value: 'aiAnalysis', child: Text('AI 분석 결과')),
-                                            ],
-                                            onChanged: (v) {
-                                              if (v == null) return;
-                                              final newSettings = musicSettings.copyWith(defaultSource: v);
-                                              ref.read(settingsProvider.notifier).updateMusicSettings(newSettings);
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                      Row(
-                                        children: [
-                                          const Expanded(child: Text('감정 변경 시 안내')),
-                                          Switch(
-                                            value: musicSettings.promptOnEmotionChange,
-                                            onChanged: (v) {
-                                              final newSettings = musicSettings.copyWith(promptOnEmotionChange: v);
-                                              ref.read(settingsProvider.notifier).updateMusicSettings(newSettings);
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          const Text('볼륨'),
-                                          Expanded(
-                                            child: Slider(
-                                              value: musicSettings.volume,
-                                              min: 0.0,
-                                              max: 1.0,
-                                              onChanged: (v) {
-                                                final newSettings = musicSettings.copyWith(volume: v);
-                                                ref.read(settingsProvider.notifier).updateMusicSettings(newSettings);
-                                                ref.read(musicProvider.notifier).setVolume(v);
-                                              },
+                                          Text(
+                                            '스크롤',
+                                            style: TextStyle(
+                                              color: Colors.grey.shade400,
+                                              fontSize: 12,
                                             ),
                                           ),
-                                          Text('${(musicSettings.volume * 100).round()}%'),
                                         ],
                                       ),
-                                      const SizedBox(height: 8),
-                                      Row(
+                                    ),
+                                    // 구분선
+                                    Divider(
+                                        color: Colors.grey.shade200, height: 1),
+                                    // 스크롤 가능한 설정 목록
+                                    Expanded(
+                                      child: ListView(
+                                        controller: controller,
+                                        padding: const EdgeInsets.fromLTRB(
+                                            16, 16, 16, 16),
                                         children: [
-                                          const Expanded(child: Text('툴팁 다시 보지 않기(일기 저장 후)')),
-                                          Switch(
-                                            value: musicSettings.showPostDiaryMusicTip,
-                                            onChanged: (v) {
-                                              ref.read(settingsProvider.notifier).updateMusicSettings(
-                                                    musicSettings.copyWith(showPostDiaryMusicTip: v),
-                                                  );
-                                            },
+                                          Row(
+                                            children: [
+                                              const Expanded(
+                                                  child: Text('음악 사용')),
+                                              Switch(
+                                                value: musicSettings.enabled,
+                                                onChanged: (v) {
+                                                  final newSettings =
+                                                      musicSettings.copyWith(
+                                                          enabled: v);
+                                                  ref
+                                                      .read(settingsProvider
+                                                          .notifier)
+                                                      .updateMusicSettings(
+                                                          newSettings);
+                                                  if (!v) {
+                                                    ref
+                                                        .read(musicProvider
+                                                            .notifier)
+                                                        .stop();
+                                                  } else {
+                                                    final now = ref
+                                                        .read(musicProvider)
+                                                        .nowPlaying;
+                                                    if (now != null) {
+                                                      ref
+                                                          .read(musicProvider
+                                                              .notifier)
+                                                          .play(now);
+                                                    }
+                                                  }
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              const Expanded(
+                                                  child: Text('자동재생')),
+                                              Switch(
+                                                value: musicSettings.autoPlay,
+                                                onChanged: (v) {
+                                                  final newSettings =
+                                                      musicSettings.copyWith(
+                                                          autoPlay: v);
+                                                  ref
+                                                      .read(settingsProvider
+                                                          .notifier)
+                                                      .updateMusicSettings(
+                                                          newSettings);
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              const Text('기본 소스'),
+                                              const SizedBox(width: 12),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  border: Border.all(
+                                                      color:
+                                                          Colors.grey.shade300),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                                child: DropdownButton<String>(
+                                                  value: musicSettings
+                                                      .defaultSource,
+                                                  underline:
+                                                      const SizedBox.shrink(),
+                                                  items: const [
+                                                    DropdownMenuItem(
+                                                        value: 'todayDiary',
+                                                        child: Text('오늘의 감정')),
+                                                    DropdownMenuItem(
+                                                        value: 'aiAnalysis',
+                                                        child:
+                                                            Text('AI 분석 결과')),
+                                                  ],
+                                                  onChanged: (v) {
+                                                    if (v == null) return;
+                                                    final newSettings =
+                                                        musicSettings.copyWith(
+                                                            defaultSource: v);
+                                                    ref
+                                                        .read(settingsProvider
+                                                            .notifier)
+                                                        .updateMusicSettings(
+                                                            newSettings);
+                                                  },
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              const Expanded(
+                                                  child: Text('감정 변경 시 안내')),
+                                              Switch(
+                                                value: musicSettings
+                                                    .promptOnEmotionChange,
+                                                onChanged: (v) {
+                                                  final newSettings =
+                                                      musicSettings.copyWith(
+                                                          promptOnEmotionChange:
+                                                              v);
+                                                  ref
+                                                      .read(settingsProvider
+                                                          .notifier)
+                                                      .updateMusicSettings(
+                                                          newSettings);
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              const Text('볼륨'),
+                                              Expanded(
+                                                child: Slider(
+                                                  value: musicSettings.volume,
+                                                  min: 0.0,
+                                                  max: 1.0,
+                                                  onChanged: (v) {
+                                                    final newSettings =
+                                                        musicSettings.copyWith(
+                                                            volume: v);
+                                                    ref
+                                                        .read(settingsProvider
+                                                            .notifier)
+                                                        .updateMusicSettings(
+                                                            newSettings);
+                                                    ref
+                                                        .read(musicProvider
+                                                            .notifier)
+                                                        .setVolume(v);
+                                                  },
+                                                ),
+                                              ),
+                                              Text(
+                                                  '${(musicSettings.volume * 100).round()}%'),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              const Expanded(
+                                                  child: Text(
+                                                      '툴팁 다시 보지 않기(일기 저장 후)')),
+                                              Switch(
+                                                value: musicSettings
+                                                    .showPostDiaryMusicTip,
+                                                onChanged: (v) {
+                                                  ref
+                                                      .read(settingsProvider
+                                                          .notifier)
+                                                      .updateMusicSettings(
+                                                        musicSettings.copyWith(
+                                                            showPostDiaryMusicTip:
+                                                                v),
+                                                      );
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              const Expanded(
+                                                  child: Text(
+                                                      '툴팁 다시 보지 않기(AI 분석 후)')),
+                                              Switch(
+                                                value: musicSettings
+                                                    .showPostAiAnalysisMusicTip,
+                                                onChanged: (v) {
+                                                  ref
+                                                      .read(settingsProvider
+                                                          .notifier)
+                                                      .updateMusicSettings(
+                                                        musicSettings.copyWith(
+                                                            showPostAiAnalysisMusicTip:
+                                                                v),
+                                                      );
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              const Expanded(
+                                                child: Text(
+                                                  '홈 화면에서 음악 재생 표시',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w500),
+                                                ),
+                                              ),
+                                              Switch(
+                                                value: musicSettings
+                                                    .showHomeMiniPlayer,
+                                                onChanged: (v) {
+                                                  ref
+                                                      .read(settingsProvider
+                                                          .notifier)
+                                                      .updateMusicSettings(
+                                                        musicSettings.copyWith(
+                                                            showHomeMiniPlayer:
+                                                                v),
+                                                      );
+                                                },
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
-                                      Row(
-                                        children: [
-                                          const Expanded(child: Text('툴팁 다시 보지 않기(AI 분석 후)')),
-                                          Switch(
-                                            value: musicSettings.showPostAiAnalysisMusicTip,
-                                            onChanged: (v) {
-                                              ref.read(settingsProvider.notifier).updateMusicSettings(
-                                                    musicSettings.copyWith(showPostAiAnalysisMusicTip: v),
-                                                  );
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               );
                             },
@@ -232,7 +392,9 @@ class MusicPage extends ConsumerWidget {
               child: state.recommendations.isEmpty
                   ? Center(
                       child: Text(
-                        state.isLoading ? '로딩 중...' : '추천 곡이 없습니다. 상단에서 불러오기를 눌러보세요.',
+                        state.isLoading
+                            ? '로딩 중...'
+                            : '추천 곡이 없습니다. 상단에서 불러오기를 눌러보세요.',
                         style: const TextStyle(color: Colors.grey),
                       ),
                     )
@@ -251,17 +413,19 @@ class MusicPage extends ConsumerWidget {
             ),
 
             // 미니 플레이어
-            if (state.nowPlaying != null) _MiniPlayer(
-              track: state.nowPlaying!,
-              onNext: notifier.next,
-              onPrev: notifier.previous,
-              onPlay: () => notifier.play(state.nowPlaying!),
-              onPause: notifier.pause,
-            ),
+            if (state.nowPlaying != null)
+              _MiniPlayer(
+                track: state.nowPlaying!,
+                onNext: notifier.next,
+                onPrev: notifier.previous,
+                onPlay: () => notifier.play(state.nowPlaying!),
+                onPause: notifier.pause,
+              ),
             if (state.errorMessage != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text('오류: ${state.errorMessage}', style: const TextStyle(color: Colors.red, fontSize: 12)),
+                child: Text('오류: ${state.errorMessage}',
+                    style: const TextStyle(color: Colors.red, fontSize: 12)),
               ),
           ],
         ),
@@ -274,7 +438,8 @@ class _TrackTile extends StatelessWidget {
   final MusicTrack track;
   final bool isNowPlaying;
   final VoidCallback onTap;
-  const _TrackTile({required this.track, required this.isNowPlaying, required this.onTap});
+  const _TrackTile(
+      {required this.track, required this.isNowPlaying, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -286,7 +451,9 @@ class _TrackTile extends StatelessWidget {
       ),
       title: Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text('${track.artist} • ${track.bpm} BPM'),
-      trailing: isNowPlaying ? const Icon(Icons.equalizer, color: AppTheme.primary) : const Icon(Icons.play_arrow),
+      trailing: isNowPlaying
+          ? const Icon(Icons.equalizer, color: AppTheme.primary)
+          : const Icon(Icons.play_arrow),
     );
   }
 }
@@ -297,7 +464,12 @@ class _MiniPlayer extends StatelessWidget {
   final VoidCallback onPrev;
   final VoidCallback onPlay;
   final VoidCallback onPause;
-  const _MiniPlayer({required this.track, required this.onNext, required this.onPrev, required this.onPlay, required this.onPause});
+  const _MiniPlayer(
+      {required this.track,
+      required this.onNext,
+      required this.onPrev,
+      required this.onPlay,
+      required this.onPause});
 
   @override
   Widget build(BuildContext context) {
@@ -316,10 +488,16 @@ class _MiniPlayer extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(track.title, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(track.title,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
-                Text('${track.artist} • ${track.duration.inMinutes}:${(track.duration.inSeconds % 60).toString().padLeft(2, '0')}',
-                    style: const TextStyle(color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                    '${track.artist} • ${track.duration.inMinutes}:${(track.duration.inSeconds % 60).toString().padLeft(2, '0')}',
+                    style: const TextStyle(color: Colors.grey),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
@@ -332,5 +510,3 @@ class _MiniPlayer extends StatelessWidget {
     );
   }
 }
-
-
