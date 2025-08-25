@@ -125,8 +125,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 _buildSettingItem(
                   icon: Icons.dark_mode,
                   title: '테마 설정',
-                  subtitle: '라이트/다크 모드 및 컬러 (추후 개발 예정)',
-                  onTap: () => _showComingSoonDialog('테마 설정'),
+                  subtitle: '라이트/다크 모드 및 컬러',
+                  onTap: () => context.push('/settings/theme'),
                 ),
                 _buildSettingItem(
                   icon: Icons.language,

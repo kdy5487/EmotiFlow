@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
+import 'package:emoti_flow/theme/theme_provider.dart';
 import 'package:emoti_flow/shared/widgets/cards/emoti_card.dart';
 import 'package:emoti_flow/features/music/providers/music_prompt_provider.dart';
 import 'package:emoti_flow/features/music/providers/music_provider.dart';
@@ -142,6 +143,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 테마 전환 테스트 카드
+            _buildThemeTestCard(context, ref),
+            const SizedBox(height: 24),
+            
             // 오늘의 감정 체크 카드
             _buildEmotionCheckCard(context, ref),
             const SizedBox(height: 24),
@@ -1561,6 +1566,125 @@ class _HomePageState extends ConsumerState<HomePage> {
           label: '설정',
         ),
       ],
+    );
+  }
+
+  /// 테마 테스트 카드
+  Widget _buildThemeTestCard(BuildContext context, WidgetRef ref) {
+    final isDarkMode = ref.watch(isDarkModeProvider);
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                color: Theme.of(context).colorScheme.primary,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '테마 테스트',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '현재 테마: ${isDarkMode ? "다크 모드" : "라이트 모드"}',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '테마를 변경하려면 설정 > 앱 테마 설정으로 이동하세요.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => context.push('/settings'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            ),
+            child: const Text('테마 설정으로 이동'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 테마 정보 카드
+  Widget _buildThemeInfoCard(BuildContext context, WidgetRef ref) {
+    final isDarkMode = ref.watch(isDarkModeProvider);
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '현재 테마 정보',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '테마 모드: ${isDarkMode ? "다크 모드" : "라이트 모드"}',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '배경색: ${Theme.of(context).colorScheme.background.value.toRadixString(16).toUpperCase()}',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+          Text(
+            '표면색: ${Theme.of(context).colorScheme.surface.value.toRadixString(16).toUpperCase()}',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+          Text(
+            '프라이머리: ${Theme.of(context).colorScheme.primary.value.toRadixString(16).toUpperCase()}',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

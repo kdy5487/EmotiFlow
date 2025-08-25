@@ -12,9 +12,19 @@ class ThemeSettingsPage extends ConsumerStatefulWidget {
 }
 
 class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
+  ThemeMode _selectedThemeMode = ThemeMode.light;
+  bool _hasChanges = false;
+
   @override
   void initState() {
     super.initState();
+    // 현재 테마 모드로 초기화
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final currentThemeMode = ref.read(themeProvider).themeMode;
+      setState(() {
+        _selectedThemeMode = currentThemeMode;
+      });
+    });
   }
 
   @override
@@ -40,15 +50,21 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              // 설정이 이미 실시간으로 적용되므로 저장 완료 메시지만 표시
+            onPressed: _hasChanges ? () {
+              // 선택된 테마 모드 적용
+              ref.read(themeProvider.notifier).setThemeMode(_selectedThemeMode);
+              
+              // 저장 완료 메시지 표시
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('테마 설정이 저장되었습니다.'),
                   duration: Duration(seconds: 2),
                 ),
               );
-            },
+              
+              // 홈페이지로 이동
+              context.go('/');
+            } : null,
             child: const Text('저장'),
           ),
         ],
@@ -64,24 +80,16 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
               icon: Icons.brightness_6,
               children: [
                 RadioListTile<ThemeMode>(
-                  title: const Text('시스템 설정'),
-                  subtitle: const Text('시스템 테마를 따릅니다'),
-                  value: ThemeMode.system,
-                  groupValue: themeState.themeMode,
-                  onChanged: (value) {
-                    if (value != null) {
-                      ref.read(themeProvider.notifier).setThemeMode(value);
-                    }
-                  },
-                ),
-                RadioListTile<ThemeMode>(
                   title: const Text('라이트 모드'),
                   subtitle: const Text('밝은 테마를 사용합니다'),
                   value: ThemeMode.light,
-                  groupValue: themeState.themeMode,
+                  groupValue: _selectedThemeMode,
                   onChanged: (value) {
                     if (value != null) {
-                      ref.read(themeProvider.notifier).setThemeMode(value);
+                      setState(() {
+                        _selectedThemeMode = value;
+                        _hasChanges = true;
+                      });
                     }
                   },
                 ),
@@ -89,73 +97,16 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                   title: const Text('다크 모드'),
                   subtitle: const Text('어두운 테마를 사용합니다'),
                   value: ThemeMode.dark,
-                  groupValue: themeState.themeMode,
+                  groupValue: _selectedThemeMode,
                   onChanged: (value) {
                     if (value != null) {
-                      ref.read(themeProvider.notifier).setThemeMode(value);
+                      setState(() {
+                        _selectedThemeMode = value;
+                        _hasChanges = true;
+                      });
                     }
                   },
                 ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            
-            // 프라이머리 컬러
-            _buildSection(
-              title: '프라이머리 컬러',
-              icon: Icons.palette,
-              children: [
-                SwitchListTile(
-                  title: const Text('동적 컬러'),
-                  subtitle: const Text('시스템 컬러를 따릅니다'),
-                  value: themeState.useDynamicColors,
-                  onChanged: (value) {
-                    ref.read(themeProvider.notifier).setUseDynamicColors(value);
-                  },
-                ),
-                if (!themeState.useDynamicColors) ...[
-                  const SizedBox(height: 16),
-                  const Text(
-                    '컬러 선택',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: _getPrimaryColorOptions().map((color) {
-                      return GestureDetector(
-                        onTap: () {
-                          ref.read(themeProvider.notifier).setPrimaryColor(color);
-                        },
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: themeState.primaryColor == color
-                                  ? Theme.of(context).colorScheme.onSurface
-                                  : Colors.transparent,
-                              width: 3,
-                            ),
-                          ),
-                          child: themeState.primaryColor == color
-                              ? const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 24,
-                                )
-                              : null,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
               ],
             ),
             const SizedBox(height: 24),
@@ -165,70 +116,109 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
               title: '미리보기',
               icon: Icons.visibility,
               children: [
+                // 라이트 모드 미리보기
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: themeState.primaryColor,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.favorite,
-                        color: Colors.white,
-                        size: 24,
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.light_mode,
+                            color: Colors.orange,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '라이트 모드',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        '샘플 버튼',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '이것은 라이트 모드의 샘플 텍스트입니다.',
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  '현재 선택된 컬러: ${themeState.primaryColor.value.toRadixString(16).toUpperCase()}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
-                const SizedBox(height: 16),
+                
+                // 다크 모드 미리보기
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
+                    color: Colors.grey.shade900,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
+                    border: Border.all(color: Colors.grey.shade700),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '현재 테마: ${isDarkMode ? "다크 모드" : "라이트 모드"}',
-                        style: Theme.of(context).textTheme.titleMedium,
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.dark_mode,
+                            color: Colors.blue,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '다크 모드',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '배경색: ${Theme.of(context).colorScheme.background.value.toRadixString(16).toUpperCase()}',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      Text(
-                        '표면색: ${Theme.of(context).colorScheme.surface.value.toRadixString(16).toUpperCase()}',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      Text(
-                        '텍스트색: ${Theme.of(context).colorScheme.onSurface.value.toRadixString(16).toUpperCase()}',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade800,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '이것은 다크 모드의 샘플 텍스트입니다.',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                Text(
+                  '현재 선택된 테마: ${_selectedThemeMode == ThemeMode.light ? "라이트 모드" : "다크 모드"}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   ),
                 ),
               ],
@@ -239,19 +229,7 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
     );
   }
 
-  List<Color> _getPrimaryColorOptions() {
-    return [
-      AppTheme.primary,
-      AppTheme.secondary,
-      AppTheme.joy,
-      AppTheme.love,
-      AppTheme.calm,
-      AppTheme.sadness,
-      AppTheme.anger,
-      AppTheme.fear,
-      AppTheme.surprise,
-    ];
-  }
+
 
   Widget _buildSection({
     required String title,
