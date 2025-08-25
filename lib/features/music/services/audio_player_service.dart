@@ -46,6 +46,26 @@ class AudioPlayerService {
   Future<void> dispose() async {
     await _player.dispose();
   }
+
+  // 미니 플레이어를 위한 getter들
+  bool get isPlaying => _player.playing;
+  
+  Duration get position => _player.position;
+  
+  Duration get duration => _player.duration ?? Duration.zero;
+  
+  double get progress {
+    if (_player.duration == null || _player.duration!.inMilliseconds == 0) {
+      return 0.0;
+    }
+    return _player.position.inMilliseconds / _player.duration!.inMilliseconds;
+  }
+  
+  Stream<bool> get playingStream => _player.playingStream;
+  
+  Stream<Duration> get positionStream => _player.positionStream;
+  
+  Stream<Duration?> get durationStream => _player.durationStream.map((d) => d ?? Duration.zero);
 }
 
 

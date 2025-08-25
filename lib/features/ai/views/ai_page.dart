@@ -448,7 +448,7 @@ class _AIPageState extends ConsumerState<AIPage> {
               size: 64,
               color: AppTheme.textSecondary,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
             Text(
               '월간 감정 기록이 없습니다',
               style: AppTypography.titleMedium.copyWith(
@@ -547,9 +547,26 @@ class _AIPageState extends ConsumerState<AIPage> {
     
     final dominantEmotion = _getDominantEmotion(entries);
     final avgIntensity = _calculateAverageIntensity(entries);
+    final emotionVariety = _calculateEmotionVariety(entries);
+    final weeklyPattern = _analyzeWeeklyPattern(entries);
     
-    return '이번 주는 주로 $dominantEmotion 감정을 경험하셨네요. 평균 강도는 ${avgIntensity.toStringAsFixed(1)}/10입니다. '
-           '전반적으로 ${avgIntensity > 7 ? '강한' : avgIntensity > 4 ? '보통' : '약한'} 감정 상태를 보이고 있어요.';
+    String analysis = '이번 주는 주로 $dominantEmotion 감정을 경험하셨네요. ';
+    analysis += '평균 강도는 ${avgIntensity.toStringAsFixed(1)}/10으로 ';
+    analysis += '${avgIntensity > 7 ? '매우 강한' : avgIntensity > 4 ? '보통' : '약한'} 감정 상태입니다. ';
+    
+    if (emotionVariety > 0.7) {
+      analysis += '다양한 감정을 경험하고 있어 감정 표현이 풍부하시네요. ';
+    } else if (emotionVariety > 0.4) {
+      analysis += '비교적 안정적인 감정 상태를 유지하고 계세요. ';
+    } else {
+      analysis += '감정 변화가 적어 안정적인 한 주를 보내고 계세요. ';
+    }
+    
+    if (weeklyPattern.isNotEmpty) {
+      analysis += weeklyPattern;
+    }
+    
+    return analysis;
   }
 
   // 월간 분석 텍스트 생성
@@ -558,9 +575,26 @@ class _AIPageState extends ConsumerState<AIPage> {
     
     final dominantEmotion = _getDominantEmotion(entries);
     final avgIntensity = _calculateAverageIntensity(entries);
+    final monthlyTrend = _analyzeMonthlyTrend(entries);
+    final emotionStability = _calculateEmotionStability(entries);
     
-    return '이번 달은 주로 $dominantEmotion 감정을 경험하셨네요. 평균 강도는 ${avgIntensity.toStringAsFixed(1)}/10입니다. '
-           '월간 감정 패턴을 보면 ${avgIntensity > 7 ? '강한' : avgIntensity > 4 ? '보통' : '약한'} 감정 상태를 유지하고 있어요.';
+    String analysis = '이번 달은 주로 $dominantEmotion 감정을 경험하셨네요. ';
+    analysis += '평균 강도는 ${avgIntensity.toStringAsFixed(1)}/10으로 ';
+    analysis += '${avgIntensity > 7 ? '매우 강한' : avgIntensity > 4 ? '보통' : '약한'} 감정 상태입니다. ';
+    
+    if (emotionStability > 0.8) {
+      analysis += '감정이 매우 안정적으로 유지되고 있어요. ';
+    } else if (emotionStability > 0.6) {
+      analysis += '감정에 약간의 변화가 있지만 전반적으로 안정적입니다. ';
+    } else {
+      analysis += '감정 변화가 다소 크게 나타나고 있어요. ';
+    }
+    
+    if (monthlyTrend.isNotEmpty) {
+      analysis += monthlyTrend;
+    }
+    
+    return analysis;
   }
 
   // 지배적인 감정 찾기
@@ -597,6 +631,86 @@ class _AIPageState extends ConsumerState<AIPage> {
     }
     
     return count > 0 ? totalIntensity / count : 5.0;
+  }
+
+  // 감정 다양성 계산
+  double _calculateEmotionVariety(List<DiaryEntry> entries) {
+    if (entries.isEmpty) return 0.0;
+    
+    final uniqueEmotions = <String>{};
+    for (final entry in entries) {
+      uniqueEmotions.addAll(entry.emotions);
+    }
+    
+    // 감정 종류가 많을수록 높은 값 (0.0 ~ 1.0)
+    return uniqueEmotions.length / 8.0; // 8가지 기본 감정 기준
+  }
+
+  // 주간 패턴 분석
+  String _analyzeWeeklyPattern(List<DiaryEntry> entries) {
+    if (entries.length < 3) return '';
+    
+    final weekData = _getWeeklyChartData(entries);
+    final midWeekAvg = (weekData[1]['intensity'] + weekData[2]['intensity'] + weekData[3]['intensity']) / 3;
+    final weekendAvg = (weekData[5]['intensity'] + weekData[6]['intensity']) / 2;
+    
+    if (midWeekAvg > weekendAvg + 2) {
+      return '평일에는 감정이 더 강하게 나타나고 주말에는 상대적으로 평온한 패턴을 보이고 있어요.';
+    } else if (weekendAvg > midWeekAvg + 2) {
+      return '주말에 감정이 더 강하게 나타나고 평일에는 상대적으로 안정적인 패턴을 보이고 있어요.';
+    } else {
+      return '평일과 주말의 감정 패턴이 비슷하게 나타나고 있어요.';
+    }
+  }
+
+  // 월간 트렌드 분석
+  String _analyzeMonthlyTrend(List<DiaryEntry> entries) {
+    if (entries.length < 5) return '';
+    
+    final monthData = _getMonthlyChartData(entries);
+    bool isIncreasing = true;
+    bool isDecreasing = true;
+    
+    for (int i = 1; i < monthData.length; i++) {
+      if (monthData[i]['intensity'] <= monthData[i-1]['intensity']) {
+        isIncreasing = false;
+      }
+      if (monthData[i]['intensity'] >= monthData[i-1]['intensity']) {
+        isDecreasing = false;
+      }
+    }
+    
+    if (isIncreasing) {
+      return '한 달 동안 감정 강도가 점진적으로 증가하는 추세를 보이고 있어요.';
+    } else if (isDecreasing) {
+      return '한 달 동안 감정 강도가 점진적으로 감소하는 추세를 보이고 있어요.';
+    } else {
+      return '한 달 동안 감정 강도가 일정하게 유지되는 패턴을 보이고 있어요.';
+    }
+  }
+
+  // 감정 안정성 계산
+  double _calculateEmotionStability(List<DiaryEntry> entries) {
+    if (entries.length < 2) return 1.0;
+    
+    double totalVariation = 0.0;
+    int count = 0;
+    
+    for (int i = 1; i < entries.length; i++) {
+      final prevIntensity = entries[i-1].emotionIntensities.values.isNotEmpty 
+          ? entries[i-1].emotionIntensities.values.first.toDouble() 
+          : 5.0;
+      final currIntensity = entries[i].emotionIntensities.values.isNotEmpty 
+          ? entries[i].emotionIntensities.values.first.toDouble() 
+          : 5.0;
+      
+      totalVariation += (currIntensity - prevIntensity).abs();
+      count++;
+    }
+    
+    // 변화가 적을수록 높은 값 (0.0 ~ 1.0)
+    final avgVariation = totalVariation / count;
+    return (10.0 - avgVariation) / 10.0;
   }
 
   // 주간 조언 및 피드백 섹션
@@ -1060,6 +1174,7 @@ class _AIPageState extends ConsumerState<AIPage> {
   void _selectAdviceCard(Map<String, dynamic> card, List<DiaryEntry> entries) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Row(
           children: [
@@ -1080,11 +1195,16 @@ class _AIPageState extends ConsumerState<AIPage> {
 
     _generateAIAdvice(card, entries).then((advice) {
       Navigator.pop(context);
-      _showAdviceResult(card, advice);
+      // 카드 선택 완료 후 상태 업데이트 및 맨 위로 스크롤
+      _saveSelectedCard(card, advice);
+      _scrollToTopImmediately();
     }).catchError((error) {
       Navigator.pop(context);
       final dominantEmotion = _getDominantEmotion(entries.take(5).toList());
-      _showAdviceResult(card, _getFallbackAdvice(card['category'], dominantEmotion));
+      final fallbackAdvice = _getFallbackAdvice(card['category'], dominantEmotion);
+      // 카드 선택 완료 후 상태 업데이트 및 맨 위로 스크롤
+      _saveSelectedCard(card, fallbackAdvice);
+      _scrollToTopImmediately();
     });
   }
 
@@ -1223,5 +1343,40 @@ class _AIPageState extends ConsumerState<AIPage> {
         ],
       ),
     );
+  }
+
+  /// 선택된 카드 저장
+  Future<void> _saveSelectedCard(Map<String, dynamic> card, String advice) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final today = DateTime.now().toIso8601String().split('T')[0];
+      
+      await prefs.setString('last_advice_card_date', today);
+      await prefs.setString('selected_advice_card_id', card['id']);
+      await prefs.setString('selected_advice_text', advice);
+      
+      // 상태 업데이트를 위해 setState 호출
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      // 에러 처리
+    }
+  }
+
+  /// 즉시 맨 위로 스크롤
+  void _scrollToTopImmediately() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        // 즉시 맨 위로 스크롤
+        final scrollController = PrimaryScrollController.of(context);
+        if (scrollController != null) {
+          scrollController.jumpTo(0); // animateTo 대신 jumpTo 사용
+        }
+        
+        // UI 강제 업데이트
+        setState(() {});
+      }
+    });
   }
 }
