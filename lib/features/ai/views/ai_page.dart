@@ -9,6 +9,7 @@ import 'package:emoti_flow/features/diary/models/diary_entry.dart';
 import 'package:emoti_flow/shared/widgets/charts/bar_chart_painter.dart';
 import 'package:emoti_flow/core/ai/gemini/gemini_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 
 class AIPage extends ConsumerStatefulWidget {
   const AIPage({super.key});
@@ -900,8 +901,12 @@ class _AIPageState extends ConsumerState<AIPage> {
         final entries = diaryState.diaryEntries;
         final adviceCards = _generateDynamicAdviceCards(entries);
         
+        // SharedPreferences 변경을 감지하기 위한 키
+        final key = ValueKey(DateTime.now().millisecondsSinceEpoch);
+        
         // 오늘 선택된 카드 불러오기
         return FutureBuilder<Map<String, dynamic>?>(
+          key: key,
           future: _loadTodaySelectedCard(),
           builder: (context, snapshot) {
             final selectedCard = snapshot.data;
@@ -962,6 +967,7 @@ class _AIPageState extends ConsumerState<AIPage> {
                             ),
                             const SizedBox(height: 16),
                             FutureBuilder<String?>(
+                              key: key,
                               future: _loadTodayAdviceText(),
                               builder: (context, adviceSnapshot) {
                                 if (adviceSnapshot.connectionState == ConnectionState.waiting) {
@@ -1373,9 +1379,6 @@ class _AIPageState extends ConsumerState<AIPage> {
         if (scrollController != null) {
           scrollController.jumpTo(0); // animateTo 대신 jumpTo 사용
         }
-        
-        // UI 강제 업데이트
-        setState(() {});
       }
     });
   }

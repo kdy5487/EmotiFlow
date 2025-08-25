@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
+import 'package:emoti_flow/theme/theme_provider.dart';
 
 class ThemeSettingsPage extends ConsumerStatefulWidget {
   const ThemeSettingsPage({super.key});
@@ -11,32 +12,24 @@ class ThemeSettingsPage extends ConsumerStatefulWidget {
 }
 
 class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
-  ThemeMode _selectedThemeMode = ThemeMode.system;
-  Color _selectedPrimaryColor = AppTheme.primary;
-  bool _useDynamicColors = false;
-
-  final List<Color> _primaryColorOptions = [
-    AppTheme.primary,
-    AppTheme.secondary,
-    AppTheme.joy,
-    AppTheme.love,
-    AppTheme.calm,
-    AppTheme.sadness,
-    AppTheme.anger,
-    AppTheme.fear,
-    AppTheme.surprise,
-  ];
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final themeState = ref.watch(themeProvider);
+    final isDarkMode = ref.watch(isDarkModeProvider);
+    
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           '테마 설정',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: AppTheme.primary,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         backgroundColor: Colors.transparent,
@@ -45,6 +38,20 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // 설정이 이미 실시간으로 적용되므로 저장 완료 메시지만 표시
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('테마 설정이 저장되었습니다.'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            child: const Text('저장'),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -60,33 +67,33 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                   title: const Text('시스템 설정'),
                   subtitle: const Text('시스템 테마를 따릅니다'),
                   value: ThemeMode.system,
-                  groupValue: _selectedThemeMode,
+                  groupValue: themeState.themeMode,
                   onChanged: (value) {
-                    setState(() {
-                      _selectedThemeMode = value!;
-                    });
+                    if (value != null) {
+                      ref.read(themeProvider.notifier).setThemeMode(value);
+                    }
                   },
                 ),
                 RadioListTile<ThemeMode>(
                   title: const Text('라이트 모드'),
                   subtitle: const Text('밝은 테마를 사용합니다'),
                   value: ThemeMode.light,
-                  groupValue: _selectedThemeMode,
+                  groupValue: themeState.themeMode,
                   onChanged: (value) {
-                    setState(() {
-                      _selectedThemeMode = value!;
-                    });
+                    if (value != null) {
+                      ref.read(themeProvider.notifier).setThemeMode(value);
+                    }
                   },
                 ),
                 RadioListTile<ThemeMode>(
                   title: const Text('다크 모드'),
                   subtitle: const Text('어두운 테마를 사용합니다'),
                   value: ThemeMode.dark,
-                  groupValue: _selectedThemeMode,
+                  groupValue: themeState.themeMode,
                   onChanged: (value) {
-                    setState(() {
-                      _selectedThemeMode = value!;
-                    });
+                    if (value != null) {
+                      ref.read(themeProvider.notifier).setThemeMode(value);
+                    }
                   },
                 ),
               ],
@@ -101,14 +108,12 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                 SwitchListTile(
                   title: const Text('동적 컬러'),
                   subtitle: const Text('시스템 컬러를 따릅니다'),
-                  value: _useDynamicColors,
+                  value: themeState.useDynamicColors,
                   onChanged: (value) {
-                    setState(() {
-                      _useDynamicColors = value;
-                    });
+                    ref.read(themeProvider.notifier).setUseDynamicColors(value);
                   },
                 ),
-                if (!_useDynamicColors) ...[
+                if (!themeState.useDynamicColors) ...[
                   const SizedBox(height: 16),
                   const Text(
                     '컬러 선택',
@@ -121,12 +126,10 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                   Wrap(
                     spacing: 12,
                     runSpacing: 12,
-                    children: _primaryColorOptions.map((color) {
+                    children: _getPrimaryColorOptions().map((color) {
                       return GestureDetector(
                         onTap: () {
-                          setState(() {
-                            _selectedPrimaryColor = color;
-                          });
+                          ref.read(themeProvider.notifier).setPrimaryColor(color);
                         },
                         child: Container(
                           width: 48,
@@ -135,13 +138,13 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                             color: color,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: _selectedPrimaryColor == color
-                                  ? AppTheme.textPrimary
+                              color: themeState.primaryColor == color
+                                  ? Theme.of(context).colorScheme.onSurface
                                   : Colors.transparent,
                               width: 3,
                             ),
                           ),
-                          child: _selectedPrimaryColor == color
+                          child: themeState.primaryColor == color
                               ? const Icon(
                                   Icons.check,
                                   color: Colors.white,
@@ -165,17 +168,17 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: _selectedPrimaryColor,
+                    color: themeState.primaryColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Icon(
                         Icons.favorite,
                         color: Colors.white,
                         size: 24,
                       ),
-                      SizedBox(width: 12),
+                      const SizedBox(width: 12),
                       Text(
                         '샘플 버튼',
                         style: TextStyle(
@@ -189,10 +192,43 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  '현재 선택된 컬러: ${_selectedPrimaryColor.value.toRadixString(16).toUpperCase()}',
-                  style: const TextStyle(
+                  '현재 선택된 컬러: ${themeState.primaryColor.value.toRadixString(16).toUpperCase()}',
+                  style: TextStyle(
                     fontSize: 14,
-                    color: AppTheme.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '현재 테마: ${isDarkMode ? "다크 모드" : "라이트 모드"}',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '배경색: ${Theme.of(context).colorScheme.background.value.toRadixString(16).toUpperCase()}',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      Text(
+                        '표면색: ${Theme.of(context).colorScheme.surface.value.toRadixString(16).toUpperCase()}',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      Text(
+                        '텍스트색: ${Theme.of(context).colorScheme.onSurface.value.toRadixString(16).toUpperCase()}',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -201,6 +237,20 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
         ),
       ),
     );
+  }
+
+  List<Color> _getPrimaryColorOptions() {
+    return [
+      AppTheme.primary,
+      AppTheme.secondary,
+      AppTheme.joy,
+      AppTheme.love,
+      AppTheme.calm,
+      AppTheme.sadness,
+      AppTheme.anger,
+      AppTheme.fear,
+      AppTheme.surprise,
+    ];
   }
 
   Widget _buildSection({
@@ -213,14 +263,14 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
       children: [
         Row(
           children: [
-            Icon(icon, color: AppTheme.primary, size: 24),
+            Icon(icon, color: Theme.of(context).colorScheme.primary, size: 24),
             const SizedBox(width: 12),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],
@@ -228,9 +278,9 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: AppTheme.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.border),
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),

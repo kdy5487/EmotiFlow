@@ -23,7 +23,7 @@ class MusicWavePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppTheme.primary.withOpacity(0.3)
+      ..color = const Color(0xFF8B7FF6).withOpacity(0.3) // 테마 색상 사용
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
     
@@ -36,7 +36,7 @@ class MusicWavePainter extends CustomPainter {
       final opacity = (1.0 - animationValue) * (0.8 - i * 0.2);
       
       if (opacity > 0) {
-        paint.color = AppTheme.primary.withOpacity(opacity);
+        paint.color = const Color(0xFF8B7FF6).withOpacity(opacity); // 테마 색상 사용
         canvas.drawCircle(center, waveRadius, paint);
       }
     }
@@ -54,9 +54,14 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // 홈 진입 시, 예약된 음악 전환 안내가 있으면 모달을 통해 간단하게 표시
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final pending = ref.read(pendingMusicPromptProvider);
@@ -65,7 +70,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         if (settings.enabled && settings.showPostDiaryMusicTip) {
           final confirm = await showModalBottomSheet<bool>(
             context: context,
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
@@ -83,18 +88,15 @@ class _HomePageState extends ConsumerState<HomePage> {
         ref.read(pendingMusicPromptProvider.notifier).state = null;
       }
     });
-  }
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'EmotiFlow',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: AppTheme.primary,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         backgroundColor: Colors.transparent,
@@ -116,7 +118,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                     content: const Text(
                       '이 기능은 현재 개발 중입니다.\n\n추후 업데이트를 통해 제공될 예정이니\n잠시만 기다려주세요!',
-                      textAlign: TextAlign.center,
                     ),
                     actions: [
                       TextButton(
@@ -178,7 +179,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           children: [
             Row(
               children: [
-                const Icon(Icons.music_note, color: AppTheme.primary),
+                Icon(Icons.music_note, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 8),
                 const Text('음악 전환', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
               ],
@@ -198,7 +199,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
-                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white),
+                    style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary, foregroundColor: Theme.of(context).colorScheme.onPrimary),
                     child: const Text('바꾸기'),
                   ),
                 ),
@@ -228,7 +229,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
-          const Icon(Icons.music_note, color: AppTheme.primary),
+                          Icon(Icons.music_note, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -320,8 +321,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.primary.withOpacity(0.1),
-                  AppTheme.secondary.withOpacity(0.1),
+                  Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  Theme.of(context).colorScheme.secondary.withOpacity(0.1),
                 ],
               ),
             ),
@@ -334,7 +335,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: AppTheme.primary,
+                        color: Theme.of(context).colorScheme.primary,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Icon(
@@ -352,14 +353,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                             '감정 요약',
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: AppTheme.textPrimary,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             '${todayDiaries.length}개의 일기를 완성했어요',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textSecondary,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                               fontSize: 13,
                             ),
                           ),
@@ -380,15 +381,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.1),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+                    border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.psychology,
-                        color: AppTheme.primary,
+                        color: Theme.of(context).colorScheme.primary,
                         size: 20,
                       ),
                       const SizedBox(width: 12),
@@ -396,7 +397,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         child: Text(
                           '주요 감정: ${dominantEmotion.key} (${dominantEmotion.value.toStringAsFixed(1)}/10)',
                           style: TextStyle(
-                            color: AppTheme.primary,
+                            color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),
@@ -426,8 +427,8 @@ class _HomePageState extends ConsumerState<HomePage> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTheme.primary.withOpacity(0.1),
-              AppTheme.secondary.withOpacity(0.1),
+              Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              Theme.of(context).colorScheme.secondary.withOpacity(0.1),
             ],
           ),
         ),
@@ -440,7 +441,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: AppTheme.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(
@@ -458,14 +459,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                         '안녕하세요, $userName님!',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '오늘 하루는 어떠셨나요?',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -1270,37 +1271,37 @@ class _HomePageState extends ConsumerState<HomePage> {
               'id': 'nature',
               'title': '자연과 힐링',
               'icon': Icons.nature,
-              'color': AppTheme.success,
+              'color': Colors.green,
             },
             {
               'id': 'gratitude',
               'title': '감사와 성찰',
               'icon': Icons.favorite,
-              'color': AppTheme.error,
+              'color': Colors.red,
             },
             {
               'id': 'growth',
               'title': '새로운 시작',
               'icon': Icons.trending_up,
-              'color': AppTheme.warning,
+              'color': Colors.blue,
             },
             {
               'id': 'relationship',
               'title': '관계와 소통',
               'icon': Icons.people,
-              'color': AppTheme.primary,
+              'color': Colors.purple,
             },
             {
               'id': 'selfcare',
               'title': '자기 돌봄',
               'icon': Icons.spa,
-              'color': AppTheme.secondary,
+              'color': Colors.orange,
             },
             {
               'id': 'creativity',
               'title': '창의적 활동',
               'icon': Icons.brush,
-              'color': AppTheme.info,
+              'color': Colors.teal,
             },
           ];
           
