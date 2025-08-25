@@ -32,9 +32,9 @@ class BarChartPainter extends CustomPainter {
     final double chartWidth = size.width - (padding * 2);
     final double chartHeight = size.height - padding - bottomPadding;
 
-    // 막대 너비 계산 - 더 넓은 막대와 적은 간격
-    final double barWidth = chartWidth / data.length * 0.85; // 85% 너비 사용
-    final double barSpacing = chartWidth / data.length * 0.15; // 15% 간격
+    // 막대 너비 계산 - 더 얇은 막대와 넓은 간격
+    final double barWidth = chartWidth / data.length * 0.6; // 60% 너비 사용
+    final double barSpacing = chartWidth / data.length * 0.4; // 40% 간격
 
     // 배경 그리드 그리기
     _drawGrid(canvas, size, padding, bottomPadding, chartHeight);
