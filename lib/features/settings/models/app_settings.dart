@@ -92,6 +92,7 @@ class MusicSettings {
   final double volume; // 0.0 ~ 1.0
   final bool showPostDiaryMusicTip; // 일기 저장 후 음악 설정 안내 노출
   final bool showPostAiAnalysisMusicTip; // AI 분석 후 음악 설정 안내 노출
+  final bool showHomeMiniPlayer; // 홈 화면에서 미니 플레이어 표시 여부
 
   const MusicSettings({
     required this.enabled,
@@ -101,6 +102,7 @@ class MusicSettings {
     required this.volume,
     required this.showPostDiaryMusicTip,
     required this.showPostAiAnalysisMusicTip,
+    required this.showHomeMiniPlayer,
   });
 
   factory MusicSettings.defaultSettings() {
@@ -112,6 +114,7 @@ class MusicSettings {
       volume: 0.7,
       showPostDiaryMusicTip: true,
       showPostAiAnalysisMusicTip: true,
+      showHomeMiniPlayer: true,
     );
   }
 
@@ -124,6 +127,7 @@ class MusicSettings {
       volume: (map['volume'] ?? 0.7).toDouble(),
       showPostDiaryMusicTip: map['showPostDiaryMusicTip'] ?? true,
       showPostAiAnalysisMusicTip: map['showPostAiAnalysisMusicTip'] ?? true,
+      showHomeMiniPlayer: map['showHomeMiniPlayer'] ?? true,
     );
   }
 
@@ -136,6 +140,7 @@ class MusicSettings {
       'volume': volume,
       'showPostDiaryMusicTip': showPostDiaryMusicTip,
       'showPostAiAnalysisMusicTip': showPostAiAnalysisMusicTip,
+      'showHomeMiniPlayer': showHomeMiniPlayer,
     };
   }
 
@@ -147,6 +152,7 @@ class MusicSettings {
     double? volume,
     bool? showPostDiaryMusicTip,
     bool? showPostAiAnalysisMusicTip,
+    bool? showHomeMiniPlayer,
   }) {
     return MusicSettings(
       enabled: enabled ?? this.enabled,
@@ -156,6 +162,7 @@ class MusicSettings {
       volume: volume ?? this.volume,
       showPostDiaryMusicTip: showPostDiaryMusicTip ?? this.showPostDiaryMusicTip,
       showPostAiAnalysisMusicTip: showPostAiAnalysisMusicTip ?? this.showPostAiAnalysisMusicTip,
+      showHomeMiniPlayer: showHomeMiniPlayer ?? this.showHomeMiniPlayer,
     );
   }
 }
