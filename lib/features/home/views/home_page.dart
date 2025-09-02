@@ -8,6 +8,7 @@ import 'package:emoti_flow/features/music/providers/music_prompt_provider.dart';
 import 'package:emoti_flow/features/music/providers/music_provider.dart';
 import 'package:emoti_flow/features/settings/providers/settings_provider.dart';
 import 'package:emoti_flow/shared/widgets/buttons/emoti_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:emoti_flow/features/diary/providers/diary_provider.dart';
 import 'package:emoti_flow/features/diary/models/diary_entry.dart';
 
@@ -63,11 +64,11 @@ class HomePage extends ConsumerWidget {
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    title: Row(
+                    title: const Row(
                       children: [
-                        const Icon(Icons.construction, color: Colors.orange),
-                        const SizedBox(width: 8),
-                        const Text('알림'),
+                        Icon(Icons.construction, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text('알림'),
                       ],
                     ),
                     content: const Text(
@@ -106,6 +107,13 @@ class HomePage extends ConsumerWidget {
             // AI 일일 조언
             _buildAIDailyTipSection(context),
             const SizedBox(height: 24),
+            
+            // 최근 일기 섹션
+            _buildRecentDiariesSection(context, ref),
+            const SizedBox(height: 24),
+            
+            // 오늘의 조언 섹션 (AI 카드 선택 연동)
+            _buildTodayAdviceSection(context),
           ],
         ),
       ),
@@ -123,11 +131,11 @@ class HomePage extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
-                const Icon(Icons.music_note, color: AppTheme.primary),
-                const SizedBox(width: 8),
-                const Text('음악 전환', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                Icon(Icons.music_note, color: AppTheme.primary),
+                SizedBox(width: 8),
+                Text('음악 전환', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
               ],
             ),
             const SizedBox(height: 8),
@@ -521,6 +529,248 @@ class HomePage extends ConsumerWidget {
     );
   }
 
+  // 최근 일기 섹션 (깔끔한 카드형 UI)
+  Widget _buildRecentDiariesSection(BuildContext context, WidgetRef ref) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final diaryState = ref.watch(diaryProvider);
+        final entries = diaryState.diaryEntries.take(3).toList();
+        if (entries.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return EmotiCard(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.history, color: AppTheme.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      '최근 일기',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => context.push('/diary'),
+                      child: const Text('전체 보기'),
+                    )
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...List.generate(entries.length, (i) {
+                  final e = entries[i];
+                  return Column(
+                    children: [
+                      _buildRecentDiaryTile(context, e),
+                      if (i < entries.length - 1)
+                        const Divider(height: 12, color: AppTheme.border),
+                    ],
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRecentDiaryTile(BuildContext context, DiaryEntry entry) {
+    final createdAt = entry.createdAt is DateTime
+        ? entry.createdAt as DateTime
+        : (entry.createdAt as dynamic).toDate() as DateTime;
+    final dateLabel = '${createdAt.month.toString().padLeft(2, '0')}/${createdAt.day.toString().padLeft(2, '0')} ${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
+
+    return InkWell(
+      onTap: () => context.push('/diary/detail/${entry.id}'),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 좌측 점 아이콘
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.edit_note, color: AppTheme.primary),
+            ),
+            const SizedBox(width: 12),
+            // 본문
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          entry.title.isNotEmpty ? entry.title : '제목 없음',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        dateLabel,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    entry.content,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      if (entry.tags.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '#${entry.tags.first}',
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppTheme.primary),
+                          ),
+                        ),
+                      const SizedBox(width: 8),
+                      if (entry.mediaCount > 0) ...[
+                        const Icon(Icons.image, size: 14, color: AppTheme.textSecondary),
+                        const SizedBox(width: 4),
+                        Text('${entry.mediaCount}', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppTheme.textSecondary)),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, size: 18, color: AppTheme.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 오늘의 조언 섹션 (카드 스타일, AI 탭과 동일 데이터)
+  Widget _buildTodayAdviceSection(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: _loadTodayAdviceFromPrefs(),
+      builder: (context, snapshot) {
+        final data = snapshot.data;
+        if (data == null) return const SizedBox.shrink();
+        final meta = _adviceMetaById(data['cardId'] as String?);
+        final Color color = meta['color'] as Color;
+        final IconData icon = meta['icon'] as IconData;
+        final String title = meta['title'] as String;
+
+        return EmotiCard(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: color.withOpacity(0.3)),
+                      ),
+                      child: Icon(icon, color: color),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '오늘의 조언 카드',
+                            style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppTheme.textSecondary),
+                          ),
+                          Text(
+                            title,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: color),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push('/ai'),
+                      child: const Text('AI 탭 열기'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color.withOpacity(0.15)),
+                  ),
+                  child: Text(
+                    data['advice'] as String? ?? '',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>?> _loadTodayAdviceFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    final last = prefs.getString('last_advice_card_date');
+    if (last != today) return null;
+    final advice = prefs.getString('selected_advice_text');
+    final cardId = prefs.getString('selected_advice_card_id');
+    if (advice == null || advice.isEmpty) return null;
+    return {'advice': advice, 'cardId': cardId};
+  }
+
+  Map<String, Object> _adviceMetaById(String? id) {
+    switch (id) {
+      case 'nature':
+        return {'title': '자연과 힐링', 'icon': Icons.nature, 'color': Colors.green};
+      case 'gratitude':
+        return {'title': '감사와 성찰', 'icon': Icons.favorite, 'color': Colors.red};
+      case 'growth':
+        return {'title': '새로운 시작', 'icon': Icons.trending_up, 'color': Colors.blue};
+      case 'relationship':
+        return {'title': '관계와 소통', 'icon': Icons.people, 'color': Colors.purple};
+      case 'selfcare':
+        return {'title': '자기 돌봄', 'icon': Icons.spa, 'color': Colors.orange};
+      case 'creativity':
+        return {'title': '창의적 활동', 'icon': Icons.brush, 'color': Colors.teal};
+      default:
+        return {'title': '오늘의 조언', 'icon': Icons.card_giftcard, 'color': AppTheme.secondary};
+    }
+  }
 
 
   Widget _buildBottomNavigationBar(BuildContext context) {
