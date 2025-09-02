@@ -313,7 +313,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   AnimatedRotation(
                     turns: isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: Icon(
+                    child: const Icon(
                       Icons.keyboard_arrow_down,
                       color: AppTheme.textSecondary,
                       size: 24,
@@ -326,7 +326,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           
           // 구분선
           if (isExpanded)
-            Divider(
+            const Divider(
               height: 1,
               color: AppTheme.divider,
               indent: 20,
@@ -368,12 +368,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
+        style: const TextStyle(
           color: AppTheme.textSecondary,
           fontSize: 12,
         ),
       ),
-      trailing: Icon(
+      trailing: const Icon(
         Icons.chevron_right,
         color: AppTheme.textTertiary,
         size: 20,

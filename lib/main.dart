@@ -10,6 +10,8 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  const buildSha = String.fromEnvironment('GIT_SHA', defaultValue: 'unknown');
+  const buildNumber = String.fromEnvironment('BUILD_NUMBER', defaultValue: '0');
   
   try {
     // .env 파일 로드
@@ -25,6 +27,7 @@ void main() async {
     // Firebase 서비스 초기화
     await FirebaseService.instance.initialize();
     print('✅ Firebase 서비스 초기화 성공!');
+    print('🔖 BUILD_SHA=$buildSha BUILD_NUMBER=$buildNumber');
   } catch (e) {
     print('❌ Firebase 초기화 실패: $e');
   }

@@ -305,7 +305,7 @@ class _AccountSettingsPageState extends ConsumerState<AccountSettingsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   '현재 이메일',
                   style: TextStyle(
                     fontSize: 14,
@@ -333,11 +333,11 @@ class _AccountSettingsPageState extends ConsumerState<AccountSettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(Icons.email_outlined, color: AppTheme.primary, size: 20),
-            const SizedBox(width: 12),
-            const Text(
+            SizedBox(width: 12),
+            Text(
               '새 이메일',
               style: TextStyle(
                 fontSize: 16,
@@ -392,10 +392,10 @@ class _AccountSettingsPageState extends ConsumerState<AccountSettingsPage> {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppTheme.info.withOpacity(0.3)),
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
                         Icon(Icons.info_outline, color: AppTheme.info, size: 20),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             '새 이메일로 인증 메일이 발송됩니다.',
@@ -421,11 +421,11 @@ class _AccountSettingsPageState extends ConsumerState<AccountSettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(Icons.lock, color: AppTheme.primary, size: 20),
-            const SizedBox(width: 12),
-            const Text(
+            SizedBox(width: 12),
+            Text(
               '비밀번호 확인',
               style: TextStyle(
                 fontSize: 16,
@@ -475,11 +475,11 @@ class _AccountSettingsPageState extends ConsumerState<AccountSettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(Icons.lock, color: AppTheme.primary, size: 20),
-            const SizedBox(width: 12),
-            const Text(
+            SizedBox(width: 12),
+            Text(
               '현재 비밀번호',
               style: TextStyle(
                 fontSize: 16,
@@ -542,11 +542,11 @@ class _AccountSettingsPageState extends ConsumerState<AccountSettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(Icons.lock_outline, color: AppTheme.primary, size: 20),
-            const SizedBox(width: 12),
-            const Text(
+            SizedBox(width: 12),
+            Text(
               '새 비밀번호',
               style: TextStyle(
                 fontSize: 16,
@@ -609,11 +609,11 @@ class _AccountSettingsPageState extends ConsumerState<AccountSettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(Icons.lock_outline, color: AppTheme.primary, size: 20),
-            const SizedBox(width: 12),
-            const Text(
+            SizedBox(width: 12),
+            Text(
               '비밀번호 확인',
               style: TextStyle(
                 fontSize: 16,
@@ -677,10 +677,10 @@ class _AccountSettingsPageState extends ConsumerState<AccountSettingsPage> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.warning.withOpacity(0.3)),
       ),
-      child: Row(
+      child: const Row(
         children: [
           Icon(Icons.warning_amber_outlined, color: AppTheme.warning, size: 20),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Text(
               '이메일을 변경하면 로그인 시 새 이메일을 사용해야 합니다.',
@@ -703,13 +703,13 @@ class _AccountSettingsPageState extends ConsumerState<AccountSettingsPage> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.info.withOpacity(0.3)),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Icon(Icons.security, color: AppTheme.info, size: 20),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Text(
                 '보안 팁',
                 style: TextStyle(
@@ -720,7 +720,7 @@ class _AccountSettingsPageState extends ConsumerState<AccountSettingsPage> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Text(
             '• 8자 이상의 비밀번호를 사용하세요\n• 영문과 숫자를 포함하세요\n• 개인정보와 관련된 단어는 피하세요\n• 정기적으로 비밀번호를 변경하세요',
             style: TextStyle(

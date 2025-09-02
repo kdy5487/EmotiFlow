@@ -101,7 +101,7 @@ class _LanguageSettingsPageState extends ConsumerState<LanguageSettingsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   '현재 언어',
                   style: TextStyle(
                     fontSize: 14,
@@ -129,11 +129,11 @@ class _LanguageSettingsPageState extends ConsumerState<LanguageSettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
-            const Icon(Icons.translate, color: AppTheme.primary, size: 24),
-            const SizedBox(width: 12),
-            const Text(
+            Icon(Icons.translate, color: AppTheme.primary, size: 24),
+            SizedBox(width: 12),
+            Text(
               '언어 선택',
               style: TextStyle(
                 fontSize: 18,
@@ -154,7 +154,7 @@ class _LanguageSettingsPageState extends ConsumerState<LanguageSettingsPage> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _languages.length,
-            separatorBuilder: (context, index) => Divider(
+            separatorBuilder: (context, index) => const Divider(
               height: 1,
               color: AppTheme.divider,
             ),
@@ -171,7 +171,7 @@ class _LanguageSettingsPageState extends ConsumerState<LanguageSettingsPage> {
                 ),
                 subtitle: Text(
                   language['name']!,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 12,
                   ),
@@ -213,11 +213,11 @@ class _LanguageSettingsPageState extends ConsumerState<LanguageSettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
-            const Icon(Icons.public, color: AppTheme.primary, size: 24),
-            const SizedBox(width: 12),
-            const Text(
+            Icon(Icons.public, color: AppTheme.primary, size: 24),
+            SizedBox(width: 12),
+            Text(
               '지역 설정',
               style: TextStyle(
                 fontSize: 18,
@@ -263,7 +263,7 @@ class _LanguageSettingsPageState extends ConsumerState<LanguageSettingsPage> {
               ),
               Text(
                 _selectedRegion,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
                   color: AppTheme.textSecondary,
                   fontWeight: FontWeight.bold,
@@ -284,14 +284,14 @@ class _LanguageSettingsPageState extends ConsumerState<LanguageSettingsPage> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.info.withOpacity(0.3)),
       ),
-      child: Row(
+      child: const Row(
         children: [
           Icon(
             Icons.info_outline,
             color: AppTheme.info,
             size: 24,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Text(
               '언어를 변경하면 앱을 재시작해야 할 수 있습니다.',

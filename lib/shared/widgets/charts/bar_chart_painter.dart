@@ -68,7 +68,7 @@ class BarChartPainter extends CustomPainter {
       // 값 표시 (막대 위에)
       textPainter.text = TextSpan(
         text: data[i].toStringAsFixed(1),
-        style: TextStyle(
+        style: const TextStyle(
           color: AppTheme.textPrimary,
           fontSize: 11,
           fontWeight: FontWeight.w600,
@@ -87,7 +87,7 @@ class BarChartPainter extends CustomPainter {
       if (i < labels.length) {
         textPainter.text = TextSpan(
           text: labels[i],
-          style: TextStyle(
+          style: const TextStyle(
             color: AppTheme.textSecondary,
             fontSize: 12,
             fontWeight: FontWeight.w500,
@@ -136,7 +136,7 @@ class BarChartPainter extends CustomPainter {
 
       textPainter.text = TextSpan(
         text: value.toStringAsFixed(1),
-        style: TextStyle(
+        style: const TextStyle(
           color: AppTheme.textSecondary,
           fontSize: 10,
           fontWeight: FontWeight.w500,

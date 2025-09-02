@@ -119,11 +119,11 @@ class _FontSettingsPageState extends ConsumerState<FontSettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
-            const Icon(Icons.text_fields, color: AppTheme.primary, size: 24),
-            const SizedBox(width: 12),
-            const Text(
+            Icon(Icons.text_fields, color: AppTheme.primary, size: 24),
+            SizedBox(width: 12),
+            Text(
               '폰트 크기',
               style: TextStyle(
                 fontSize: 18,
@@ -149,7 +149,7 @@ class _FontSettingsPageState extends ConsumerState<FontSettingsPage> {
                   const Text('작게'),
                   Text(
                     '${_fontSize.round()}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primary,
@@ -200,11 +200,11 @@ class _FontSettingsPageState extends ConsumerState<FontSettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
-            const Icon(Icons.font_download, color: AppTheme.primary, size: 24),
-            const SizedBox(width: 12),
-            const Text(
+            Icon(Icons.font_download, color: AppTheme.primary, size: 24),
+            SizedBox(width: 12),
+            Text(
               '폰트 패밀리',
               style: TextStyle(
                 fontSize: 18,
@@ -225,7 +225,7 @@ class _FontSettingsPageState extends ConsumerState<FontSettingsPage> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _fontFamilies.length,
-            separatorBuilder: (context, index) => Divider(
+            separatorBuilder: (context, index) => const Divider(
               height: 1,
               color: AppTheme.divider,
             ),
@@ -268,11 +268,11 @@ class _FontSettingsPageState extends ConsumerState<FontSettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
-            const Icon(Icons.format_line_spacing, color: AppTheme.primary, size: 24),
-            const SizedBox(width: 12),
-            const Text(
+            Icon(Icons.format_line_spacing, color: AppTheme.primary, size: 24),
+            SizedBox(width: 12),
+            Text(
               '줄 간격',
               style: TextStyle(
                 fontSize: 18,
@@ -298,7 +298,7 @@ class _FontSettingsPageState extends ConsumerState<FontSettingsPage> {
                   const Text('좁게'),
                   Text(
                     '${_lineHeight.toStringAsFixed(1)}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primary,
@@ -332,11 +332,11 @@ class _FontSettingsPageState extends ConsumerState<FontSettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
-            const Icon(Icons.visibility, color: AppTheme.primary, size: 24),
-            const SizedBox(width: 12),
-            const Text(
+            Icon(Icons.visibility, color: AppTheme.primary, size: 24),
+            SizedBox(width: 12),
+            Text(
               '미리보기',
               style: TextStyle(
                 fontSize: 18,
@@ -377,7 +377,7 @@ class _FontSettingsPageState extends ConsumerState<FontSettingsPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 '현재 설정',
                 style: TextStyle(
                   fontSize: 14,
