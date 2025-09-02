@@ -110,11 +110,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    title: Row(
+                    title: const Row(
                       children: [
-                        const Icon(Icons.construction, color: Colors.orange),
-                        const SizedBox(width: 8),
-                        const Text('알림'),
+                        Icon(Icons.construction, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text('알림'),
                       ],
                     ),
                     content: const Text(
@@ -372,7 +372,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ],
                       ),
                     ),
-                    Icon(
+                    const Icon(
                       Icons.arrow_forward_ios,
                       color: AppTheme.textTertiary,
                       size: 16,
@@ -477,7 +477,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ],
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.arrow_forward_ios,
                   color: AppTheme.textTertiary,
                   size: 16,
@@ -849,7 +849,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ],
                       ),
                     ),
-                    Icon(
+                    const Icon(
                       Icons.arrow_forward_ios,
                       color: AppTheme.textTertiary,
                       size: 16,
@@ -871,7 +871,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           '주간 감정 변화',
                           style: TextStyle(
                             color: AppTheme.info,
@@ -998,7 +998,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             color: AppTheme.textSecondary,
             fontSize: 10,
             fontWeight: FontWeight.w500,
@@ -1151,7 +1151,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ],
                       ),
                     ),
-                    Icon(
+                    const Icon(
                       Icons.arrow_forward_ios,
                       color: AppTheme.textTertiary,
                       size: 16,
@@ -1205,7 +1205,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     const SizedBox(height: 12),
                                     Text(
                                       advice.isNotEmpty ? advice : '오늘의 조언을 확인해보세요',
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color: AppTheme.textPrimary,
                                         fontSize: 13,
                                         height: 1.4,
@@ -1226,14 +1226,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: AppTheme.warning.withOpacity(0.2)),
                             ),
-                            child: Row(
+                            child: const Row(
                               children: [
                                 Icon(
                                   Icons.card_giftcard,
                                   color: AppTheme.warning,
                                   size: 20,
                                 ),
-                                const SizedBox(width: 12),
+                                SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
                                     '조언 카드를 뽑아보세요!',
@@ -1365,7 +1365,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       color: AppTheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.edit,
                       color: AppTheme.primary,
                       size: 20,
@@ -1381,7 +1381,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       color: AppTheme.secondary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.list,
                       color: AppTheme.secondary,
                       size: 20,
@@ -1452,7 +1452,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             color: AppTheme.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.emoji_emotions,
                             color: AppTheme.primary,
                             size: 18,
@@ -1481,7 +1481,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             ],
                           ),
                         ),
-                        Icon(
+                        const Icon(
                           Icons.arrow_forward_ios,
                           color: AppTheme.textTertiary,
                           size: 14,

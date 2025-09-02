@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
 import 'package:emoti_flow/features/profile/providers/profile_provider.dart';
+import 'package:emoti_flow/core/providers/auth_provider.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -397,9 +398,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           TextButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              await ref.read(profileProvider.notifier).signOut();
+              await ref.read(authProvider.notifier).signOut();
               if (context.mounted) {
-                context.go('/login');
+                context.go('/auth/login');
               }
             },
             child: const Text('로그아웃'),

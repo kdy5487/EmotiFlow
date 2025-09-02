@@ -273,7 +273,7 @@ class _AIPageState extends ConsumerState<AIPage> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Text('분석 기간: ', style: AppTypography.bodyMedium),
+                    const Text('분석 기간: ', style: AppTypography.bodyMedium),
                     GestureDetector(
                       onTap: () => setState(() => _selectedPeriod = 'weekly'),
                       child: Container(
@@ -396,7 +396,7 @@ class _AIPageState extends ConsumerState<AIPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.bar_chart_rounded,
               size: 64,
               color: AppTheme.textSecondary,
@@ -444,7 +444,7 @@ class _AIPageState extends ConsumerState<AIPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.bar_chart_rounded,
               size: 64,
               color: AppTheme.textSecondary,
@@ -1028,7 +1028,7 @@ class _AIPageState extends ConsumerState<AIPage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline, color: AppTheme.info, size: 20),
+                          const Icon(Icons.info_outline, color: AppTheme.info, size: 20),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(

@@ -158,7 +158,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // 섹션 제목
-        Row(
+        const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
@@ -166,10 +166,10 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               color: AppTheme.primary,
               size: 20,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               '프로필 이미지',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textPrimary,
@@ -206,7 +206,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                   right: 0,
                   child: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppTheme.primary,
                       shape: BoxShape.circle,
                     ),
@@ -239,17 +239,17 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(
               Icons.person_outline,
               color: AppTheme.primary,
               size: 20,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               '기본 정보',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textPrimary,
@@ -302,7 +302,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
             ),
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.email,
                   color: AppTheme.primary,
                   size: 20,
@@ -312,7 +312,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         '이메일',
                         style: TextStyle(
                           fontSize: 12,
@@ -322,7 +322,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                       const SizedBox(height: 4),
                       Text(
                         currentProfile?.email ?? user?.email ?? '이메일 없음',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppTheme.textPrimary,
                           fontSize: 16,
                         ),
@@ -343,9 +343,9 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           '생년월일',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -363,7 +363,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
             ),
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.calendar_today,
                   color: AppTheme.primary,
                   size: 20,
@@ -381,7 +381,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                     ),
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.arrow_drop_down,
                   color: AppTheme.textTertiary,
                 ),
@@ -398,17 +398,17 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(
               Icons.edit_note,
               color: AppTheme.primary,
               size: 20,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               '자기소개',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textPrimary,
@@ -552,7 +552,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         builder: (context, child) {
           return Theme(
             data: Theme.of(context).copyWith(
-              colorScheme: ColorScheme.light(
+              colorScheme: const ColorScheme.light(
                 primary: AppTheme.primary,
                 onPrimary: Colors.white,
                 surface: AppTheme.surface,

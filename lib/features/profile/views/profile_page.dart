@@ -28,7 +28,7 @@ class ProfilePage extends ConsumerWidget {
               const Text('로그인이 필요합니다'),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => context.go('/login'),
+                onPressed: () => context.go('/auth/login'),
                 child: const Text('로그인하기'),
               ),
             ],
@@ -123,7 +123,7 @@ class ProfilePage extends ConsumerWidget {
                 ? NetworkImage(profile!.profileImageUrl!) 
                 : (user.photoURL != null ? NetworkImage(user.photoURL!) : null),
             child: (profile?.profileImageUrl == null && user.photoURL == null)
-                ? Icon(
+                ? const Icon(
                     Icons.person,
                     size: 40,
                     color: AppTheme.primary,
@@ -149,7 +149,7 @@ class ProfilePage extends ConsumerWidget {
                 Flexible(
                   child: Text(
                     profile?.email ?? user.email ?? '이메일 없음',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
                       color: AppTheme.textSecondary,
                     ),
@@ -164,7 +164,7 @@ class ProfilePage extends ConsumerWidget {
                     color: AppTheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text(
+                  child: const Text(
                     '활성 사용자',
                     style: TextStyle(
                       fontSize: 12,
@@ -193,15 +193,15 @@ class ProfilePage extends ConsumerWidget {
           // 섹션 헤더
           Container(
             padding: const EdgeInsets.all(16),
-            child: Row(
+            child: const Row(
               children: [
                 Icon(
                   Icons.account_circle,
                   color: AppTheme.primary,
                   size: 20,
                 ),
-                const SizedBox(width: 12),
-                const Text(
+                SizedBox(width: 12),
+                Text(
                   '계정 설정',
                   style: TextStyle(
                     fontSize: 16,
@@ -214,7 +214,7 @@ class ProfilePage extends ConsumerWidget {
           ),
           
           // 구분선
-          Divider(height: 1, color: AppTheme.divider),
+          const Divider(height: 1, color: AppTheme.divider),
           
           // 설정 항목들
           _buildSettingItem(
@@ -258,12 +258,12 @@ class ProfilePage extends ConsumerWidget {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 12,
           color: AppTheme.textSecondary,
         ),
       ),
-      trailing: Icon(
+      trailing: const Icon(
         Icons.chevron_right,
         color: AppTheme.textTertiary,
         size: 16,
@@ -284,15 +284,15 @@ class ProfilePage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.analytics,
                 color: AppTheme.primary,
                 size: 20,
               ),
-              const SizedBox(width: 12),
-              const Text(
+              SizedBox(width: 12),
+              Text(
                 '활동 통계',
                 style: TextStyle(
                   fontSize: 16,
@@ -356,7 +356,7 @@ class ProfilePage extends ConsumerWidget {
         ),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 12,
             color: AppTheme.textSecondary,
           ),
@@ -376,15 +376,15 @@ class ProfilePage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.psychology,
                 color: AppTheme.primary,
                 size: 20,
               ),
-              const SizedBox(width: 12),
-              const Text(
+              SizedBox(width: 12),
+              Text(
                 '감정 프로필',
                 style: TextStyle(
                   fontSize: 16,
@@ -454,7 +454,7 @@ class ProfilePage extends ConsumerWidget {
         ),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 10,
             color: AppTheme.textSecondary,
           ),

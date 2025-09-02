@@ -50,8 +50,8 @@ dependencies:
   firebase_storage: ^11.5.6
   firebase_messaging: ^14.7.10
   
-  # Google 로그인
-  google_sign_in: ^6.2.1
+  # Google 로그인 (Dart SDK 3.5.x 호환 상한)
+  google_sign_in: ^6.2.2
   
   # 상태 관리
   flutter_riverpod: ^2.4.9

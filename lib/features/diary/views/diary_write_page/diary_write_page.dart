@@ -136,11 +136,11 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.calendar_today, size: 16, color: AppTheme.primary),
+              const Icon(Icons.calendar_today, size: 16, color: AppTheme.primary),
               const SizedBox(width: 8),
               Text(
                 '${_selectedDate.month}월 ${_selectedDate.day}일',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.textPrimary,
@@ -177,13 +177,13 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.sentiment_satisfied,
                 color: AppTheme.primary,
                 size: 20,
               ),
               const SizedBox(width: 8),
-              Text(
+              const Text(
                 '오늘의 감정',
                 style: TextStyle(
                   fontSize: 16,
@@ -198,7 +198,7 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
                   color: AppTheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Text(
+                child: const Text(
                   '최대 2개',
                   style: TextStyle(
                     color: AppTheme.primary,
@@ -280,14 +280,14 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
               ),
-              child: Row(
+              child: const Row(
                 children: [
                   Icon(
                     Icons.info_outline,
                     color: AppTheme.primary,
                     size: 16,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       '감정은 최대 2개까지 선택할 수 있습니다.',
@@ -327,7 +327,7 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
             children: [
               Text(
                 emotionName,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.textPrimary,
@@ -335,7 +335,7 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
               ),
               Text(
                 '$intensity/10',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   color: AppTheme.primary,
                   fontWeight: FontWeight.w600,
@@ -467,7 +467,7 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
             onTap: () => _removeMedia(file, type),
             child: Container(
               padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.error,
                 shape: BoxShape.circle,
               ),

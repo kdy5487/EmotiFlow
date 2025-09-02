@@ -151,7 +151,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
         // 날짜와 시간
         Row(
           children: [
-            Icon(
+            const Icon(
               Icons.calendar_today,
               size: 16,
               color: AppTheme.textSecondary,
@@ -159,13 +159,13 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             const SizedBox(width: 8),
             Text(
               _formatDate(entry.createdAt),
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 14,
               ),
             ),
             const SizedBox(width: 16),
-            Icon(
+            const Icon(
               Icons.access_time,
               size: 16,
               color: AppTheme.textSecondary,
@@ -173,7 +173,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             const SizedBox(width: 8),
             Text(
               _formatTime(entry.createdAt),
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 14,
               ),
@@ -209,14 +209,14 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.emoji_emotions,
                 color: AppTheme.primary,
                 size: 20,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 '오늘의 감정',
                 style: TextStyle(
@@ -311,13 +311,13 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.photo_library,
                 color: AppTheme.primary,
                 size: 20,
               ),
               const SizedBox(width: 8),
-              Text(
+              const Text(
                 '첨부된 미디어',
                 style: TextStyle(
                   fontSize: 16,
@@ -334,7 +334,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                 ),
                 child: Text(
                   '${entry.mediaFiles.length}개',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.primary,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -391,10 +391,10 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.psychology, color: AppTheme.info),
-              const SizedBox(width: 8),
+              Icon(Icons.psychology, color: AppTheme.info),
+              SizedBox(width: 8),
               Text(
                 'AI 간단 조언',
                 style: TextStyle(
@@ -408,7 +408,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
           const SizedBox(height: 12),
           Text(
             advice,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textPrimary,
               height: 1.5,
             ),
@@ -421,14 +421,14 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
             ),
-            child: Row(
+            child: const Row(
               children: [
                 Icon(
                   Icons.info_outline,
                   color: AppTheme.primary,
                   size: 16,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     '앱바의 🧠 아이콘을 눌러 더 자세한 AI 분석을 확인할 수 있습니다.',
@@ -483,14 +483,14 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.edit_note,
                 color: AppTheme.primary,
                 size: 20,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 '일기 내용',
                 style: TextStyle(
@@ -505,7 +505,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
           
           Text(
             entry.content,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               height: 1.6,
               color: AppTheme.textPrimary,
@@ -672,7 +672,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                         const Spacer(),
                         Text(
                           _formatTime(message.timestamp),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 10,
                             color: AppTheme.textTertiary,
                           ),
@@ -682,7 +682,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                     const SizedBox(height: 8),
                     Text(
                       message.content,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         color: AppTheme.textPrimary,
                       ),
@@ -796,10 +796,10 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.summarize, color: AppTheme.primary),
-              const SizedBox(width: 8),
+              Icon(Icons.summarize, color: AppTheme.primary),
+              SizedBox(width: 8),
               Text(
                 '일기 요약',
                 style: TextStyle(
@@ -823,7 +823,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             entry.content.length > 100 
                 ? '${entry.content.substring(0, 100)}...'
                 : entry.content,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textSecondary,
               height: 1.5,
             ),
@@ -831,7 +831,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Text(
+              const Text(
                 '주요 감정: ',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
@@ -875,10 +875,10 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.calendar_today, color: AppTheme.secondary),
-              const SizedBox(width: 8),
+              Icon(Icons.calendar_today, color: AppTheme.secondary),
+              SizedBox(width: 8),
               Text(
                 '주간 조언',
                 style: TextStyle(
@@ -892,7 +892,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
           const SizedBox(height: 12),
           Text(
             _generateWeeklyAdvice(emotion),
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textPrimary,
               height: 1.5,
             ),
@@ -916,10 +916,10 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.calendar_month, color: AppTheme.warning),
-              const SizedBox(width: 8),
+              Icon(Icons.calendar_month, color: AppTheme.warning),
+              SizedBox(width: 8),
               Text(
                 '월간 조언',
                 style: TextStyle(
@@ -933,7 +933,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
           const SizedBox(height: 12),
           Text(
             _generateMonthlyAdvice(emotion),
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textPrimary,
               height: 1.5,
             ),
@@ -958,10 +958,10 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.card_giftcard, color: AppTheme.info),
-              const SizedBox(width: 8),
+              Icon(Icons.card_giftcard, color: AppTheme.info),
+              SizedBox(width: 8),
               Text(
                 '오늘의 조언 카드',
                 style: TextStyle(
@@ -973,7 +973,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             ],
           ),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             '3개의 카드 중 하나를 선택해서 오늘의 조언을 받아보세요! ✨',
             style: TextStyle(
               color: AppTheme.textSecondary,
@@ -1021,7 +1021,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 4),
-                          Text(
+                          const Text(
                             '터치하기',
                             style: TextStyle(
                               color: AppTheme.textSecondary,
@@ -1158,7 +1158,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
               ),
               child: Text(
                 card['advice'],
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppTheme.textPrimary,
                   height: 1.5,
                 ),
@@ -1182,16 +1182,16 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
+        title: const Row(
           children: [
             Icon(Icons.delete_forever, color: Colors.red),
-            const SizedBox(width: 8),
-            const Text('일기 삭제'),
+            SizedBox(width: 8),
+            Text('일기 삭제'),
           ],
         ),
         content: Text(
           '정말로 이 일기를 삭제하시겠습니까?\n\n"${entry.title.isNotEmpty ? entry.title : '제목 없음'}"\n\n삭제된 일기는 복구할 수 없습니다.',
-          style: TextStyle(height: 1.5),
+          style: const TextStyle(height: 1.5),
         ),
         actions: [
           TextButton(

@@ -127,14 +127,14 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
                           Icon(
                             Icons.light_mode,
                             color: Colors.orange,
                             size: 20,
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Text(
                             '라이트 모드',
                             style: TextStyle(
@@ -152,7 +152,7 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                           color: Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
+                        child: const Text(
                           '이것은 라이트 모드의 샘플 텍스트입니다.',
                           style: TextStyle(
                             color: Colors.black87,
@@ -176,14 +176,14 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
                           Icon(
                             Icons.dark_mode,
                             color: Colors.blue,
                             size: 20,
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Text(
                             '다크 모드',
                             style: TextStyle(
@@ -201,7 +201,7 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                           color: Colors.grey.shade800,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
+                        child: const Text(
                           '이것은 다크 모드의 샘플 텍스트입니다.',
                           style: TextStyle(
                             color: Colors.white,
