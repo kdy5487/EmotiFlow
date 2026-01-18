@@ -1,7 +1,7 @@
 import 'package:emoti_flow/theme/app_colors.dart';
 import 'package:emoti_flow/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import '../../../models/emotion.dart';
+import '../../../domain/entities/emotion.dart';
 
 class FilterDialog extends StatefulWidget {
   final Map<String, dynamic> currentFilters;

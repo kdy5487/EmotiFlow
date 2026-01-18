@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:emoti_flow/features/diary/models/diary_entry.dart';
+import 'package:emoti_flow/features/diary/domain/entities/diary_entry.dart';
 import 'package:emoti_flow/features/diary/providers/diary_provider.dart';
 import 'package:emoti_flow/core/ai/gemini/gemini_service.dart';
 import 'package:emoti_flow/shared/widgets/cards/emoti_card.dart';
@@ -13,10 +13,12 @@ class AdviceCardSelectionPage extends ConsumerStatefulWidget {
   const AdviceCardSelectionPage({super.key});
 
   @override
-  ConsumerState<AdviceCardSelectionPage> createState() => _AdviceCardSelectionPageState();
+  ConsumerState<AdviceCardSelectionPage> createState() =>
+      _AdviceCardSelectionPageState();
 }
 
-class _AdviceCardSelectionPageState extends ConsumerState<AdviceCardSelectionPage> {
+class _AdviceCardSelectionPageState
+    extends ConsumerState<AdviceCardSelectionPage> {
   Map<String, dynamic>? _selectedCard;
   String? _selectedAdvice;
   bool _isLoading = false;
@@ -83,11 +85,11 @@ class _AdviceCardSelectionPageState extends ConsumerState<AdviceCardSelectionPag
     final prefs = await SharedPreferences.getInstance();
     final today = DateTime.now().toIso8601String().split('T')[0];
     final lastSelectedDate = prefs.getString('last_advice_card_date');
-    
+
     if (lastSelectedDate == today) {
       final selectedCardId = prefs.getString('selected_advice_card_id');
       final selectedAdvice = prefs.getString('selected_advice_text');
-      
+
       if (selectedCardId != null && selectedAdvice != null) {
         final card = _adviceCards.firstWhere(
           (card) => card['id'] == selectedCardId,
@@ -111,7 +113,7 @@ class _AdviceCardSelectionPageState extends ConsumerState<AdviceCardSelectionPag
       final diaryState = ref.read(diaryProvider);
       final entries = diaryState.diaryEntries;
       final dominantEmotion = _getDominantEmotion(entries.take(5).toList());
-      
+
       // AI 조언 생성
       final prompt = '''
 사용자의 현재 감정 상태를 분석하여 간단하고 실용적인 오늘의 조언을 제공해주세요.
@@ -131,13 +133,16 @@ class _AdviceCardSelectionPageState extends ConsumerState<AdviceCardSelectionPag
 ''';
 
       final geminiService = GeminiService.instance;
-      final aiResponse = await geminiService.analyzeEmotionAndComfort(prompt, dominantEmotion);
-      
-      final advice = aiResponse.isNotEmpty ? aiResponse : _getFallbackAdvice(card['category'], dominantEmotion);
-      
+      final aiResponse =
+          await geminiService.analyzeEmotionAndComfort(prompt, dominantEmotion);
+
+      final advice = aiResponse.isNotEmpty
+          ? aiResponse
+          : _getFallbackAdvice(card['category'], dominantEmotion);
+
       // 선택된 카드와 조언 저장
       await _saveSelectedCard(card, advice);
-      
+
       setState(() {
         _selectedCard = card;
         _selectedAdvice = advice;
@@ -154,7 +159,7 @@ class _AdviceCardSelectionPageState extends ConsumerState<AdviceCardSelectionPag
       setState(() {
         _isLoading = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('조언 생성에 실패했습니다. 다시 시도해주세요.'),
@@ -165,10 +170,11 @@ class _AdviceCardSelectionPageState extends ConsumerState<AdviceCardSelectionPag
   }
 
   /// 선택된 카드 저장
-  Future<void> _saveSelectedCard(Map<String, dynamic> card, String advice) async {
+  Future<void> _saveSelectedCard(
+      Map<String, dynamic> card, String advice) async {
     final prefs = await SharedPreferences.getInstance();
     final today = DateTime.now().toIso8601String().split('T')[0];
-    
+
     await prefs.setString('last_advice_card_date', today);
     await prefs.setString('selected_advice_card_id', card['id']);
     await prefs.setString('selected_advice_text', advice);
@@ -180,12 +186,12 @@ class _AdviceCardSelectionPageState extends ConsumerState<AdviceCardSelectionPag
     await prefs.remove('last_advice_card_date');
     await prefs.remove('selected_advice_card_id');
     await prefs.remove('selected_advice_text');
-    
+
     setState(() {
       _selectedCard = null;
       _selectedAdvice = null;
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('카드가 초기화되었습니다. 새로운 카드를 선택해주세요!'),
@@ -197,19 +203,19 @@ class _AdviceCardSelectionPageState extends ConsumerState<AdviceCardSelectionPag
   /// 지배적인 감정 찾기
   String _getDominantEmotion(List<DiaryEntry> entries) {
     if (entries.isEmpty) return '평온';
-    
+
     final emotionCounts = <String, int>{};
     for (final entry in entries) {
       for (final emotion in entry.emotions) {
         emotionCounts[emotion] = (emotionCounts[emotion] ?? 0) + 1;
       }
     }
-    
+
     if (emotionCounts.isEmpty) return '평온';
-    
-    final dominant = emotionCounts.entries
-        .reduce((a, b) => a.value > b.value ? a : b);
-    
+
+    final dominant =
+        emotionCounts.entries.reduce((a, b) => a.value > b.value ? a : b);
+
     return dominant.key;
   }
 
@@ -396,9 +402,9 @@ class _AdviceCardSelectionPageState extends ConsumerState<AdviceCardSelectionPag
 
             // 카드 선택 안내
             Text(
-              _selectedCard != null 
-                ? '다른 카드로 변경하고 싶다면 아래에서 선택하세요'
-                : '오늘의 조언을 받을 카드를 선택해주세요',
+              _selectedCard != null
+                  ? '다른 카드로 변경하고 싶다면 아래에서 선택하세요'
+                  : '오늘의 조언을 받을 카드를 선택해주세요',
               style: AppTypography.bodyMedium.copyWith(
                 color: AppTheme.textSecondary,
               ),
@@ -422,29 +428,31 @@ class _AdviceCardSelectionPageState extends ConsumerState<AdviceCardSelectionPag
                   itemBuilder: (context, index) {
                     final card = _adviceCards[index];
                     final isSelected = _selectedCard?['id'] == card['id'];
-                    
+
                     return GestureDetector(
                       onTap: _isLoading ? null : () => _selectCard(card),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         decoration: BoxDecoration(
-                          color: isSelected 
-                            ? card['color'].withOpacity(0.2)
-                            : card['color'].withOpacity(0.1),
+                          color: isSelected
+                              ? card['color'].withOpacity(0.2)
+                              : card['color'].withOpacity(0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: isSelected 
-                              ? card['color']
-                              : card['color'].withOpacity(0.3),
+                            color: isSelected
+                                ? card['color']
+                                : card['color'].withOpacity(0.3),
                             width: isSelected ? 3 : 2,
                           ),
-                          boxShadow: isSelected ? [
-                            BoxShadow(
-                              color: card['color'].withOpacity(0.3),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ] : null,
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: card['color'].withOpacity(0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ]
+                              : null,
                         ),
                         child: Stack(
                           children: [
@@ -535,7 +543,8 @@ class _AdviceCardSelectionPageState extends ConsumerState<AdviceCardSelectionPag
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _selectedCard!['color'],
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
                     textStyle: AppTypography.bodyMedium.copyWith(
                       fontWeight: FontWeight.w600,
                     ),

@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/diary_entry.dart';
-import '../../models/emotion.dart';
+import '../../domain/entities/diary_entry.dart';
+import '../../domain/entities/emotion.dart';
+import '../../domain/entities/media_file.dart';
+import '../../domain/entities/chat_message.dart';
 
 /// 일기 작성 화면의 상태를 관리하는 클래스
 class DiaryWriteState {

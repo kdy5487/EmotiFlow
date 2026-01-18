@@ -6,7 +6,7 @@
 |------|------|
 | **프로젝트명** | EmotiFlow (AI 기반 감정 일기 앱) |
 | **개발 기간** | 2주 |
-| **개발 도구** | Flutter + Firebase + OpenAI API |
+| **개발 도구** | Flutter + Firebase + Google Gemini API |
 | **목표** | AI와 함께하는 일상의 감정 파트너, 개인화된 감정 관리 및 성장 도구 |
 
 ---
@@ -25,9 +25,7 @@
 - **Firebase Performance**: 앱 성능 모니터링
 
 ### **AI Services**
-- **OpenAI GPT-4 API**: 감정 분석 및 AI 대화형 일기
-- **OpenAI DALL-E API**: 감정 기반 이미지 생성
-- **Gemini 1.5 Flash API**: 감정 기반 음악 추천 및 대화형 인터페이스
+- **Gemini 1.5 Flash API**: 감정 분석/대화/조언 생성 및 감정 기반 추천에 활용
 
 ### **Data Visualization & Media**
 - **fl_chart**: 감정 통계 차트

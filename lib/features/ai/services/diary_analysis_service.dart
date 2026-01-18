@@ -1,5 +1,5 @@
 import '../../../core/ai/gemini/gemini_service.dart';
-import '../../diary/models/diary_entry.dart';
+import '../../diary/domain/entities/diary_entry.dart';
 
 /// AI 일기 분석 결과
 class DiaryAnalysisResult {

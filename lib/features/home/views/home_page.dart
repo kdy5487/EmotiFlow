@@ -3,15 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
-import 'package:emoti_flow/theme/theme_provider.dart';
 import 'package:emoti_flow/shared/widgets/cards/emoti_card.dart';
 import 'package:emoti_flow/features/music/providers/music_prompt_provider.dart';
 import 'package:emoti_flow/features/music/providers/music_provider.dart';
 import 'package:emoti_flow/features/settings/providers/settings_provider.dart';
-import 'package:emoti_flow/shared/widgets/buttons/emoti_button.dart';
 import 'package:emoti_flow/features/diary/providers/diary_provider.dart';
-import 'package:emoti_flow/features/diary/models/diary_entry.dart';
-import 'package:emoti_flow/features/music/services/audio_player_service.dart';
+import 'package:emoti_flow/features/diary/domain/entities/diary_entry.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
@@ -55,10 +52,21 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  // 성능 최적화: Future를 상태로 관리하여 빌드 시마다 생성되지 않도록 함
+  Future<Map<String, dynamic>?>? _selectedCardFuture;
+  Future<String?>? _adviceTextFuture;
   
   @override
   void initState() {
     super.initState();
+    _refreshAdvice();
+  }
+
+  void _refreshAdvice() {
+    setState(() {
+      _selectedCardFuture = _loadTodaySelectedCard();
+      _adviceTextFuture = _loadTodayAdviceText();
+    });
   }
 
   @override
@@ -143,16 +151,12 @@ class _HomePageState extends ConsumerState<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 테마 전환 테스트 카드
-            _buildThemeTestCard(context, ref),
-            const SizedBox(height: 24),
-            
             // 오늘의 감정 체크 카드
             _buildEmotionCheckCard(context, ref),
             const SizedBox(height: 24),
             
             // 빠른 액션 섹션
-            _buildQuickActionsSection(context),
+            _buildQuickActionsSection(context, ref),
             const SizedBox(height: 24),
             
             // 최근 일기 요약
@@ -169,7 +173,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
       ),
       bottomSheet: _buildMiniPlayer(context, ref),
-      bottomNavigationBar: _buildBottomNavigationBar(context),
     );
   }
 
@@ -315,7 +318,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         const SizedBox(height: 16),
         
         EmotiCard(
-          onTap: () => context.push('/diary'),
+          onTap: () => context.push('/diaries'),
           isClickable: true,
           child: Container(
             width: double.infinity,
@@ -422,7 +425,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   /// 일기 작성 유도 섹션
   Widget _buildDiaryWritingPrompt(BuildContext context, WidgetRef ref, String userName) {
     return EmotiCard(
-      onTap: () => context.push('/diary'),
+      onTap: () => context.push('/diaries'),
       isClickable: true,
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -496,7 +499,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     title: '자유 일기',
                     subtitle: '직접 작성하기',
                     color: AppTheme.success,
-                    onTap: () => context.push('/diary/write'),
+                    onTap: () => _handleProtectedAction(context, ref, () => context.push('/diaries/write')),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -507,7 +510,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     title: 'AI 채팅 일기',
                     subtitle: 'AI와 대화하며',
                     color: AppTheme.info,
-                    onTap: () => context.push('/diary/chat-write'),
+                    onTap: () => _handleProtectedAction(context, ref, () => context.push('/diaries/chat')),
                   ),
                 ),
               ],
@@ -568,7 +571,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildQuickActionsSection(BuildContext context) {
+  Widget _buildQuickActionsSection(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -589,7 +592,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 icon: Icons.list,
                 title: '일기 목록',
                 color: AppTheme.primary,
-                onTap: () => context.push('/diary'),
+                onTap: () => _handleProtectedAction(context, ref, () => context.push('/diaries')),
               ),
             ),
             const SizedBox(width: 12),
@@ -599,7 +602,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 icon: Icons.edit,
                 title: '일기 작성',
                 color: AppTheme.success,
-                onTap: () => _showDiaryWritingOptions(context),
+                onTap: () => _handleProtectedAction(context, ref, () => _showDiaryWritingOptions(context, ref)),
               ),
             ),
           ],
@@ -613,7 +616,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 icon: Icons.music_note,
                 title: '음악',
                 color: AppTheme.secondary,
-                onTap: () => context.push('/music'),
+                onTap: () => _handleProtectedAction(context, ref, () => context.push('/music')),
               ),
             ),
             const SizedBox(width: 12),
@@ -623,12 +626,44 @@ class _HomePageState extends ConsumerState<HomePage> {
                 icon: Icons.psychology,
                 title: 'AI 분석',
                 color: AppTheme.info,
-                onTap: () => context.push('/ai'),
+                onTap: () => _handleProtectedAction(context, ref, () => context.push('/ai')),
               ),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  void _handleProtectedAction(BuildContext context, WidgetRef ref, VoidCallback action) {
+    final isLoggedIn = ref.read(authProvider).user != null;
+    if (isLoggedIn) {
+      action();
+    } else {
+      _showLoginRequiredDialog(context);
+    }
+  }
+
+  void _showLoginRequiredDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('로그인 필요'),
+        content: const Text('이 기능을 사용하려면 로그인이 필요합니다.\n로그인 페이지로 이동할까요?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.push('/login');
+            },
+            child: const Text('로그인'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -673,7 +708,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   /// 일기 작성 옵션 선택 다이얼로그
-  void _showDiaryWritingOptions(BuildContext context) {
+  void _showDiaryWritingOptions(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -704,7 +739,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     color: AppTheme.success,
                     onTap: () {
                       Navigator.pop(context);
-                      context.push('/diary/write');
+                      _handleProtectedAction(context, ref, () => context.push('/diaries/write'));
                     },
                   ),
                 ),
@@ -718,7 +753,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     color: AppTheme.info,
                     onTap: () {
                       Navigator.pop(context);
-                      context.push('/diary/chat-write');
+                      _handleProtectedAction(context, ref, () => context.push('/diaries/chat'));
                     },
                   ),
                 ),
@@ -965,7 +1000,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     // 실제 데이터 기반으로 계산
     for (final entry in entries) {
-      final entryDate = entry.createdAt is DateTime ? entry.createdAt : (entry.createdAt as dynamic).toDate();
+      final entryDate = entry.createdAt;
       final daysDiff = entryDate.difference(weekStart).inDays;
       if (daysDiff >= 0 && daysDiff < 7) {
         final intensity = entry.emotionIntensities.values.isNotEmpty 
@@ -1102,7 +1137,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         const SizedBox(height: 16),
         
         EmotiCard(
-          onTap: () => context.push('/ai'),
+          onTap: () => _handleProtectedAction(context, ref, () => context.push('/ai')),
           isClickable: true,
           child: Container(
             padding: const EdgeInsets.all(20),
@@ -1151,7 +1186,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ],
                       ),
                     ),
-                    Icon(
+                    const Icon(
                       Icons.arrow_forward_ios,
                       color: AppTheme.textTertiary,
                       size: 16,
@@ -1160,98 +1195,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
                 const SizedBox(height: 16),
                 
-                // 오늘 뽑은 카드가 있으면 표시
-                Consumer(
-                  builder: (context, ref, child) {
-                    return FutureBuilder<Map<String, dynamic>?>(
-                      future: _loadTodaySelectedCard(),
-                      builder: (context, snapshot) {
-                        final selectedCard = snapshot.data;
-                        
-                        if (selectedCard != null) {
-                          return FutureBuilder<String?>(
-                            future: _loadTodayAdviceText(),
-                            builder: (context, adviceSnapshot) {
-                              final advice = adviceSnapshot.data ?? '';
-                              
-                              return Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: selectedCard['color'].withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: selectedCard['color'].withOpacity(0.3)),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          selectedCard['icon'],
-                                          color: selectedCard['color'],
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          selectedCard['title'],
-                                          style: TextStyle(
-                                            color: selectedCard['color'],
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      advice.isNotEmpty ? advice : '오늘의 조언을 확인해보세요',
-                                      style: TextStyle(
-                                        color: AppTheme.textPrimary,
-                                        fontSize: 13,
-                                        height: 1.4,
-                                      ),
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );
-                        } else {
-                          return Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppTheme.warning.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppTheme.warning.withOpacity(0.2)),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.card_giftcard,
-                                  color: AppTheme.warning,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    '조언 카드를 뽑아보세요!',
-                                    style: TextStyle(
-                                      color: AppTheme.warning,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                      },
-                    );
-                  },
-                ),
+                // 성능 최적화: 로그인 상태에서만 표시
+                if (ref.watch(authProvider).user != null)
+                  _buildAdviceContent(ref)
+                else
+                  _buildLoginPrompt(context),
               ],
             ),
           ),
@@ -1259,6 +1207,109 @@ class _HomePageState extends ConsumerState<HomePage> {
       ],
     );
   }
+
+  Widget _buildAdviceContent(WidgetRef ref) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: _selectedCardFuture, // 고정된 Future 사용
+      builder: (context, snapshot) {
+        final selectedCard = snapshot.data;
+        if (selectedCard == null) return _buildDefaultPrompt();
+
+        return FutureBuilder<String?>(
+          future: _adviceTextFuture, // 고정된 Future 사용
+          builder: (context, adviceSnapshot) {
+            final advice = adviceSnapshot.data ?? '';
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: (selectedCard['color'] as Color).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: (selectedCard['color'] as Color).withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        selectedCard['icon'] as IconData,
+                        color: selectedCard['color'] as Color,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        selectedCard['title'] as String,
+                        style: TextStyle(
+                          color: selectedCard['color'] as Color,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    advice.isNotEmpty ? advice : '오늘의 조언을 확인해보세요',
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildDefaultPrompt() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.warning.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.warning.withOpacity(0.2)),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.card_giftcard, color: AppTheme.warning, size: 20),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              '조언 카드를 뽑아보세요!',
+              style: TextStyle(
+                color: AppTheme.warning,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginPrompt(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Center(
+        child: Text(
+          '로그인하고 맞춤 조언을 받아보세요',
+          style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+        ),
+      ),
+    );
+  }
+
 
   /// 오늘 선택된 카드 불러오기
   Future<Map<String, dynamic>?> _loadTodaySelectedCard() async {
@@ -1358,7 +1409,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             Row(
               children: [
                 GestureDetector(
-                  onTap: () => _showDiaryWritingOptions(context),
+                  onTap: () => _handleProtectedAction(context, ref, () => _showDiaryWritingOptions(context, ref)),
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -1374,7 +1425,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
                 const SizedBox(width: 8),
                 GestureDetector(
-                  onTap: () => context.push('/diary'),
+                  onTap: () => context.push('/diaries'),
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -1397,7 +1448,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         // 데이터 로딩 중이거나 비어있을 때
         if (diaries.isEmpty) 
           EmotiCard(
-            onTap: () => context.push('/diary'),
+            onTap: () => context.push('/diaries'),
             isClickable: true,
             child: Container(
               height: 80,
@@ -1438,7 +1489,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               return Container(
                 margin: const EdgeInsets.only(bottom: 6),
                 child: EmotiCard(
-                  onTap: () => context.push('/diary/detail/${diary.id}'),
+                  onTap: () => context.push('/diaries/${diary.id}'),
                   isClickable: true,
                   child: Container(
                     width: double.infinity,
@@ -1518,173 +1569,5 @@ class _HomePageState extends ConsumerState<HomePage> {
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
-
-
-  Widget _buildBottomNavigationBar(BuildContext context) {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      currentIndex: 0,
-      onTap: (index) {
-        switch (index) {
-          case 0:
-            // 홈 - 이미 있음
-            break;
-          case 1:
-            context.push('/diary');
-            break;
-          case 2:
-            context.push('/ai');
-            break;
-          case 3:
-            context.push('/community');
-            break;
-          case 4:
-            context.push('/settings');
-            break;
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: '홈',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.book),
-          label: '일기',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.psychology),
-          label: 'AI',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.people),
-          label: '커뮤니티',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: '설정',
-        ),
-      ],
-    );
-  }
-
-  /// 테마 테스트 카드
-  Widget _buildThemeTestCard(BuildContext context, WidgetRef ref) {
-    final isDarkMode = ref.watch(isDarkModeProvider);
-    
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            Theme.of(context).colorScheme.secondary.withOpacity(0.1),
-          ],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                color: Theme.of(context).colorScheme.primary,
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '테마 테스트',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '현재 테마: ${isDarkMode ? "다크 모드" : "라이트 모드"}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '테마를 변경하려면 설정 > 앱 테마 설정으로 이동하세요.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () => context.push('/settings'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-            ),
-            child: const Text('테마 설정으로 이동'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 테마 정보 카드
-  Widget _buildThemeInfoCard(BuildContext context, WidgetRef ref) {
-    final isDarkMode = ref.watch(isDarkModeProvider);
-    
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '현재 테마 정보',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '테마 모드: ${isDarkMode ? "다크 모드" : "라이트 모드"}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '배경색: ${Theme.of(context).colorScheme.background.value.toRadixString(16).toUpperCase()}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-            ),
-          ),
-          Text(
-            '표면색: ${Theme.of(context).colorScheme.surface.value.toRadixString(16).toUpperCase()}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-            ),
-          ),
-          Text(
-            '프라이머리: ${Theme.of(context).colorScheme.primary.value.toRadixString(16).toUpperCase()}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

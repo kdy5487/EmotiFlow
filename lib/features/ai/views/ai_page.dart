@@ -5,7 +5,7 @@ import 'package:emoti_flow/theme/app_theme.dart';
 import 'package:emoti_flow/theme/app_typography.dart';
 import 'package:emoti_flow/shared/widgets/cards/emoti_card.dart';
 import 'package:emoti_flow/features/diary/providers/diary_provider.dart';
-import 'package:emoti_flow/features/diary/models/diary_entry.dart';
+import 'package:emoti_flow/features/diary/domain/entities/diary_entry.dart';
 import 'package:emoti_flow/shared/widgets/charts/bar_chart_painter.dart';
 import 'package:emoti_flow/core/ai/gemini/gemini_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -105,7 +105,8 @@ class _AIPageState extends ConsumerState<AIPage> {
         ],
       ),
       body: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16), // 가로 여백 더 줄임
+        padding: const EdgeInsets.symmetric(
+            horizontal: 8, vertical: 16), // 가로 여백 더 줄임
         itemCount: 4,
         itemBuilder: (context, index) {
           switch (index) {
@@ -153,16 +154,19 @@ class _AIPageState extends ConsumerState<AIPage> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  const Icon(Icons.sentiment_neutral, size: 48, color: AppTheme.textSecondary),
+                  const Icon(Icons.sentiment_neutral,
+                      size: 48, color: AppTheme.textSecondary),
                   const SizedBox(height: 16),
                   Text(
                     '아직 일기 기록이 없습니다',
-                    style: AppTypography.titleMedium.copyWith(color: AppTheme.textSecondary),
+                    style: AppTypography.titleMedium
+                        .copyWith(color: AppTheme.textSecondary),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '일기를 작성하면 AI가 감정을 분석해드려요!',
-                    style: AppTypography.bodyMedium.copyWith(color: AppTheme.textSecondary),
+                    style: AppTypography.bodyMedium
+                        .copyWith(color: AppTheme.textSecondary),
                   ),
                 ],
               ),
@@ -178,9 +182,11 @@ class _AIPageState extends ConsumerState<AIPage> {
           }
         }
 
-        final dominantEmotion = emotionCounts.isEmpty 
-            ? '평온' 
-            : emotionCounts.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+        final dominantEmotion = emotionCounts.isEmpty
+            ? '평온'
+            : emotionCounts.entries
+                .reduce((a, b) => a.value > b.value ? a : b)
+                .key;
 
         return EmotiCard(
           child: Padding(
@@ -207,7 +213,8 @@ class _AIPageState extends ConsumerState<AIPage> {
                   decoration: BoxDecoration(
                     color: AppTheme.primary.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+                    border:
+                        Border.all(color: AppTheme.primary.withOpacity(0.2)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,10 +284,11 @@ class _AIPageState extends ConsumerState<AIPage> {
                     GestureDetector(
                       onTap: () => setState(() => _selectedPeriod = 'weekly'),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: _selectedPeriod == 'weekly' 
-                              ? AppTheme.primary 
+                          color: _selectedPeriod == 'weekly'
+                              ? AppTheme.primary
                               : AppTheme.background,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: AppTheme.primary),
@@ -288,8 +296,8 @@ class _AIPageState extends ConsumerState<AIPage> {
                         child: Text(
                           '주간',
                           style: AppTypography.bodySmall.copyWith(
-                            color: _selectedPeriod == 'weekly' 
-                                ? Colors.white 
+                            color: _selectedPeriod == 'weekly'
+                                ? Colors.white
                                 : AppTheme.primary,
                           ),
                         ),
@@ -299,10 +307,11 @@ class _AIPageState extends ConsumerState<AIPage> {
                     GestureDetector(
                       onTap: () => setState(() => _selectedPeriod = 'monthly'),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: _selectedPeriod == 'monthly' 
-                              ? AppTheme.primary 
+                          color: _selectedPeriod == 'monthly'
+                              ? AppTheme.primary
                               : AppTheme.background,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: AppTheme.primary),
@@ -310,8 +319,8 @@ class _AIPageState extends ConsumerState<AIPage> {
                         child: Text(
                           '월간',
                           style: AppTypography.bodySmall.copyWith(
-                            color: _selectedPeriod == 'monthly' 
-                                ? Colors.white 
+                            color: _selectedPeriod == 'monthly'
+                                ? Colors.white
                                 : AppTheme.primary,
                           ),
                         ),
@@ -355,7 +364,8 @@ class _AIPageState extends ConsumerState<AIPage> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.psychology, color: AppTheme.info, size: 20),
+                          const Icon(Icons.psychology,
+                              color: AppTheme.info, size: 20),
                           const SizedBox(width: 8),
                           Text(
                             'AI 분석 결과',
@@ -390,7 +400,7 @@ class _AIPageState extends ConsumerState<AIPage> {
   // 주간 막대 차트
   Widget _buildWeeklyBarChart(List<DiaryEntry> entries) {
     final chartData = _getWeeklyChartData(entries);
-    
+
     if (chartData.isEmpty) {
       return Center(
         child: Column(
@@ -438,7 +448,7 @@ class _AIPageState extends ConsumerState<AIPage> {
   // 월간 막대 차트
   Widget _buildMonthlyBarChart(List<DiaryEntry> entries) {
     final chartData = _getMonthlyChartData(entries);
-    
+
     if (chartData.isEmpty) {
       return Center(
         child: Column(
@@ -491,20 +501,24 @@ class _AIPageState extends ConsumerState<AIPage> {
     final labels = ['월', '화', '수', '목', '금', '토', '일'];
 
     for (final entry in entries) {
-      final entryDate = entry.createdAt is DateTime ? entry.createdAt : (entry.createdAt as dynamic).toDate();
+      final entryDate = entry.createdAt is DateTime
+          ? entry.createdAt
+          : (entry.createdAt as dynamic).toDate();
       final daysDiff = entryDate.difference(weekStart).inDays;
       if (daysDiff >= 0 && daysDiff < 7) {
-        final intensity = entry.emotionIntensities.values.isNotEmpty 
-            ? entry.emotionIntensities.values.first.toDouble() 
+        final intensity = entry.emotionIntensities.values.isNotEmpty
+            ? entry.emotionIntensities.values.first.toDouble()
             : 5.0;
         weekData[daysDiff] = intensity;
       }
     }
 
-    return List.generate(7, (index) => {
-      'intensity': weekData[index],
-      'label': labels[index],
-    });
+    return List.generate(
+        7,
+        (index) => {
+              'intensity': weekData[index],
+              'label': labels[index],
+            });
   }
 
   // 월간 차트 데이터
@@ -516,12 +530,14 @@ class _AIPageState extends ConsumerState<AIPage> {
     final labels = ['1주', '2주', '3주', '4주'];
 
     for (final entry in entries) {
-      final entryDate = entry.createdAt is DateTime ? entry.createdAt : (entry.createdAt as dynamic).toDate();
+      final entryDate = entry.createdAt is DateTime
+          ? entry.createdAt
+          : (entry.createdAt as dynamic).toDate();
       if (entryDate.isAfter(monthStart)) {
         final weekIndex = ((entryDate.day - 1) / 7).floor();
         if (weekIndex >= 0 && weekIndex < 4) {
-          final intensity = entry.emotionIntensities.values.isNotEmpty 
-              ? entry.emotionIntensities.values.first.toDouble() 
+          final intensity = entry.emotionIntensities.values.isNotEmpty
+              ? entry.emotionIntensities.values.first.toDouble()
               : 5.0;
           weekData[weekIndex] += intensity;
           weekCounts[weekIndex]++;
@@ -536,25 +552,28 @@ class _AIPageState extends ConsumerState<AIPage> {
       }
     }
 
-    return List.generate(4, (index) => {
-      'intensity': weekData[index],
-      'label': labels[index],
-    });
+    return List.generate(
+        4,
+        (index) => {
+              'intensity': weekData[index],
+              'label': labels[index],
+            });
   }
 
   // 주간 분석 텍스트 생성
   String _generateWeeklyAnalysisText(List<DiaryEntry> entries) {
     if (entries.isEmpty) return '주간 데이터가 부족합니다.';
-    
+
     final dominantEmotion = _getDominantEmotion(entries);
     final avgIntensity = _calculateAverageIntensity(entries);
     final emotionVariety = _calculateEmotionVariety(entries);
     final weeklyPattern = _analyzeWeeklyPattern(entries);
-    
+
     String analysis = '이번 주는 주로 $dominantEmotion 감정을 경험하셨네요. ';
     analysis += '평균 강도는 ${avgIntensity.toStringAsFixed(1)}/10으로 ';
-    analysis += '${avgIntensity > 7 ? '매우 강한' : avgIntensity > 4 ? '보통' : '약한'} 감정 상태입니다. ';
-    
+    analysis +=
+        '${avgIntensity > 7 ? '매우 강한' : avgIntensity > 4 ? '보통' : '약한'} 감정 상태입니다. ';
+
     if (emotionVariety > 0.7) {
       analysis += '다양한 감정을 경험하고 있어 감정 표현이 풍부하시네요. ';
     } else if (emotionVariety > 0.4) {
@@ -562,27 +581,28 @@ class _AIPageState extends ConsumerState<AIPage> {
     } else {
       analysis += '감정 변화가 적어 안정적인 한 주를 보내고 계세요. ';
     }
-    
+
     if (weeklyPattern.isNotEmpty) {
       analysis += weeklyPattern;
     }
-    
+
     return analysis;
   }
 
   // 월간 분석 텍스트 생성
   String _generateMonthlyAnalysisText(List<DiaryEntry> entries) {
     if (entries.isEmpty) return '월간 데이터가 부족합니다.';
-    
+
     final dominantEmotion = _getDominantEmotion(entries);
     final avgIntensity = _calculateAverageIntensity(entries);
     final monthlyTrend = _analyzeMonthlyTrend(entries);
     final emotionStability = _calculateEmotionStability(entries);
-    
+
     String analysis = '이번 달은 주로 $dominantEmotion 감정을 경험하셨네요. ';
     analysis += '평균 강도는 ${avgIntensity.toStringAsFixed(1)}/10으로 ';
-    analysis += '${avgIntensity > 7 ? '매우 강한' : avgIntensity > 4 ? '보통' : '약한'} 감정 상태입니다. ';
-    
+    analysis +=
+        '${avgIntensity > 7 ? '매우 강한' : avgIntensity > 4 ? '보통' : '약한'} 감정 상태입니다. ';
+
     if (emotionStability > 0.8) {
       analysis += '감정이 매우 안정적으로 유지되고 있어요. ';
     } else if (emotionStability > 0.6) {
@@ -590,59 +610,59 @@ class _AIPageState extends ConsumerState<AIPage> {
     } else {
       analysis += '감정 변화가 다소 크게 나타나고 있어요. ';
     }
-    
+
     if (monthlyTrend.isNotEmpty) {
       analysis += monthlyTrend;
     }
-    
+
     return analysis;
   }
 
   // 지배적인 감정 찾기
   String _getDominantEmotion(List<DiaryEntry> entries) {
     if (entries.isEmpty) return '평온';
-    
+
     final emotionCounts = <String, int>{};
     for (final entry in entries) {
       for (final emotion in entry.emotions) {
         emotionCounts[emotion] = (emotionCounts[emotion] ?? 0) + 1;
       }
     }
-    
+
     if (emotionCounts.isEmpty) return '평온';
-    
-    final dominant = emotionCounts.entries
-        .reduce((a, b) => a.value > b.value ? a : b);
-    
+
+    final dominant =
+        emotionCounts.entries.reduce((a, b) => a.value > b.value ? a : b);
+
     return dominant.key;
   }
 
   // 평균 강도 계산
   double _calculateAverageIntensity(List<DiaryEntry> entries) {
     if (entries.isEmpty) return 5.0;
-    
+
     double totalIntensity = 0.0;
     int count = 0;
-    
+
     for (final entry in entries) {
       if (entry.emotionIntensities.isNotEmpty) {
         totalIntensity += entry.emotionIntensities.values.first.toDouble();
         count++;
       }
     }
-    
+
     return count > 0 ? totalIntensity / count : 5.0;
   }
 
   // 감정 다양성 계산
   double _calculateEmotionVariety(List<DiaryEntry> entries) {
     if (entries.isEmpty) return 0.0;
-    
+
     final uniqueEmotions = <String>{};
     for (final entry in entries) {
       uniqueEmotions.addAll(entry.emotions);
     }
-    
+
     // 감정 종류가 많을수록 높은 값 (0.0 ~ 1.0)
     return uniqueEmotions.length / 8.0; // 8가지 기본 감정 기준
   }
@@ -650,11 +670,15 @@ class _AIPageState extends ConsumerState<AIPage> {
   // 주간 패턴 분석
   String _analyzeWeeklyPattern(List<DiaryEntry> entries) {
     if (entries.length < 3) return '';
-    
+
     final weekData = _getWeeklyChartData(entries);
-    final midWeekAvg = (weekData[1]['intensity'] + weekData[2]['intensity'] + weekData[3]['intensity']) / 3;
-    final weekendAvg = (weekData[5]['intensity'] + weekData[6]['intensity']) / 2;
-    
+    final midWeekAvg = (weekData[1]['intensity'] +
+            weekData[2]['intensity'] +
+            weekData[3]['intensity']) /
+        3;
+    final weekendAvg =
+        (weekData[5]['intensity'] + weekData[6]['intensity']) / 2;
+
     if (midWeekAvg > weekendAvg + 2) {
       return '평일에는 감정이 더 강하게 나타나고 주말에는 상대적으로 평온한 패턴을 보이고 있어요.';
     } else if (weekendAvg > midWeekAvg + 2) {
@@ -667,20 +691,20 @@ class _AIPageState extends ConsumerState<AIPage> {
   // 월간 트렌드 분석
   String _analyzeMonthlyTrend(List<DiaryEntry> entries) {
     if (entries.length < 5) return '';
-    
+
     final monthData = _getMonthlyChartData(entries);
     bool isIncreasing = true;
     bool isDecreasing = true;
-    
+
     for (int i = 1; i < monthData.length; i++) {
-      if (monthData[i]['intensity'] <= monthData[i-1]['intensity']) {
+      if (monthData[i]['intensity'] <= monthData[i - 1]['intensity']) {
         isIncreasing = false;
       }
-      if (monthData[i]['intensity'] >= monthData[i-1]['intensity']) {
+      if (monthData[i]['intensity'] >= monthData[i - 1]['intensity']) {
         isDecreasing = false;
       }
     }
-    
+
     if (isIncreasing) {
       return '한 달 동안 감정 강도가 점진적으로 증가하는 추세를 보이고 있어요.';
     } else if (isDecreasing) {
@@ -693,22 +717,22 @@ class _AIPageState extends ConsumerState<AIPage> {
   // 감정 안정성 계산
   double _calculateEmotionStability(List<DiaryEntry> entries) {
     if (entries.length < 2) return 1.0;
-    
+
     double totalVariation = 0.0;
     int count = 0;
-    
+
     for (int i = 1; i < entries.length; i++) {
-      final prevIntensity = entries[i-1].emotionIntensities.values.isNotEmpty 
-          ? entries[i-1].emotionIntensities.values.first.toDouble() 
+      final prevIntensity = entries[i - 1].emotionIntensities.values.isNotEmpty
+          ? entries[i - 1].emotionIntensities.values.first.toDouble()
           : 5.0;
-      final currIntensity = entries[i].emotionIntensities.values.isNotEmpty 
-          ? entries[i].emotionIntensities.values.first.toDouble() 
+      final currIntensity = entries[i].emotionIntensities.values.isNotEmpty
+          ? entries[i].emotionIntensities.values.first.toDouble()
           : 5.0;
-      
+
       totalVariation += (currIntensity - prevIntensity).abs();
       count++;
     }
-    
+
     // 변화가 적을수록 높은 값 (0.0 ~ 1.0)
     final avgVariation = totalVariation / count;
     return (10.0 - avgVariation) / 10.0;
@@ -746,14 +770,16 @@ class _AIPageState extends ConsumerState<AIPage> {
                   decoration: BoxDecoration(
                     color: AppTheme.warning.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.warning.withOpacity(0.2)),
+                    border:
+                        Border.all(color: AppTheme.warning.withOpacity(0.2)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today, color: AppTheme.warning),
+                          const Icon(Icons.calendar_today,
+                              color: AppTheme.warning),
                           const SizedBox(width: 8),
                           Text(
                             '이번 주 (${_getCurrentWeekRange()})',
@@ -800,21 +826,21 @@ class _AIPageState extends ConsumerState<AIPage> {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     final weekEnd = weekStart.add(const Duration(days: 6));
-    
+
     return '${weekStart.month}/${weekStart.day} - ${weekEnd.month}/${weekEnd.day}';
   }
 
   // 주간 조언 텍스트 생성
   String _generateWeeklyAdviceText(List<DiaryEntry> entries) {
     if (entries.isEmpty) return '이번 주 일기 기록이 없습니다.';
-    
+
     final dominantEmotion = _getDominantEmotion(entries);
     final avgIntensity = _calculateAverageIntensity(entries);
-    
+
     return '이번 주는 주로 $dominantEmotion 감정을 경험하셨네요. '
-           '감정 강도는 평균 ${avgIntensity.toStringAsFixed(1)}/10으로 '
-           '${avgIntensity > 7 ? '매우 강한' : avgIntensity > 4 ? '보통' : '약한'} 상태입니다. '
-           '이런 감정 패턴을 바탕으로 개선 방안을 제시해드릴게요.';
+        '감정 강도는 평균 ${avgIntensity.toStringAsFixed(1)}/10으로 '
+        '${avgIntensity > 7 ? '매우 강한' : avgIntensity > 4 ? '보통' : '약한'} 상태입니다. '
+        '이런 감정 패턴을 바탕으로 개선 방안을 제시해드릴게요.';
   }
 
   // 주간 조언 아이템 생성
@@ -900,17 +926,17 @@ class _AIPageState extends ConsumerState<AIPage> {
         final diaryState = ref.watch(diaryProvider);
         final entries = diaryState.diaryEntries;
         final adviceCards = _generateDynamicAdviceCards(entries);
-        
+
         // SharedPreferences 변경을 감지하기 위한 키
         final key = ValueKey(DateTime.now().millisecondsSinceEpoch);
-        
+
         // 오늘 선택된 카드 불러오기
         return FutureBuilder<Map<String, dynamic>?>(
           key: key,
           future: _loadTodaySelectedCard(),
           builder: (context, snapshot) {
             final selectedCard = snapshot.data;
-            
+
             return EmotiCard(
               child: Padding(
                 padding: const EdgeInsets.all(24), // 패딩 증가로 더 넓게
@@ -919,7 +945,8 @@ class _AIPageState extends ConsumerState<AIPage> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.card_giftcard, color: AppTheme.warning),
+                        const Icon(Icons.card_giftcard,
+                            color: AppTheme.warning),
                         const SizedBox(width: 12),
                         Text(
                           '오늘의 조언 카드',
@@ -931,7 +958,7 @@ class _AIPageState extends ConsumerState<AIPage> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // 선택된 카드가 있으면 표시
                     if (selectedCard != null) ...[
                       Container(
@@ -970,11 +997,14 @@ class _AIPageState extends ConsumerState<AIPage> {
                               key: key,
                               future: _loadTodayAdviceText(),
                               builder: (context, adviceSnapshot) {
-                                if (adviceSnapshot.connectionState == ConnectionState.waiting) {
-                                  return const Center(child: CircularProgressIndicator());
+                                if (adviceSnapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
                                 }
-                                
-                                final advice = adviceSnapshot.data ?? '조언을 불러올 수 없습니다.';
+
+                                final advice =
+                                    adviceSnapshot.data ?? '조언을 불러올 수 없습니다.';
                                 return Text(
                                   advice,
                                   style: AppTypography.bodyMedium.copyWith(
@@ -989,14 +1019,14 @@ class _AIPageState extends ConsumerState<AIPage> {
                       ),
                       const SizedBox(height: 16),
                     ],
-                    
+
                     Row(
                       children: [
                         Expanded(
                           child: Text(
                             selectedCard != null
-                              ? '다른 카드로 변경하고 싶다면 카드 선택하기를 눌러주세요! ✨'
-                              : '${adviceCards.length}개의 카드 중 하나를 선택해서 오늘의 맞춤형 조언을 받아보세요! ✨',
+                                ? '다른 카드로 변경하고 싶다면 카드 선택하기를 눌러주세요! ✨'
+                                : '${adviceCards.length}개의 카드 중 하나를 선택해서 오늘의 맞춤형 조언을 받아보세요! ✨',
                             style: AppTypography.bodyMedium.copyWith(
                               color: AppTheme.textSecondary,
                             ),
@@ -1006,29 +1036,33 @@ class _AIPageState extends ConsumerState<AIPage> {
                         ElevatedButton.icon(
                           onPressed: () => context.push('/ai/advice-cards'),
                           icon: const Icon(Icons.card_giftcard, size: 16),
-                          label: Text(selectedCard != null ? '카드 변경' : '카드 선택하기'),
+                          label:
+                              Text(selectedCard != null ? '카드 변경' : '카드 선택하기'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primary,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
                             textStyle: AppTypography.bodySmall,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // 카드 선택 안내
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: AppTheme.info.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.info.withOpacity(0.2)),
+                        border:
+                            Border.all(color: AppTheme.info.withOpacity(0.2)),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline, color: AppTheme.info, size: 20),
+                          Icon(Icons.info_outline,
+                              color: AppTheme.info, size: 20),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -1058,7 +1092,7 @@ class _AIPageState extends ConsumerState<AIPage> {
       final prefs = await SharedPreferences.getInstance();
       final today = DateTime.now().toIso8601String().split('T')[0];
       final lastSelectedDate = prefs.getString('last_advice_card_date');
-      
+
       if (lastSelectedDate == today) {
         final selectedCardId = prefs.getString('selected_advice_card_id');
         if (selectedCardId != null) {
@@ -1080,7 +1114,7 @@ class _AIPageState extends ConsumerState<AIPage> {
       final prefs = await SharedPreferences.getInstance();
       final today = DateTime.now().toIso8601String().split('T')[0];
       final lastSelectedDate = prefs.getString('last_advice_card_date');
-      
+
       if (lastSelectedDate == today) {
         return prefs.getString('selected_advice_text');
       }
@@ -1091,7 +1125,8 @@ class _AIPageState extends ConsumerState<AIPage> {
   }
 
   /// 동적 조언 카드 생성
-  List<Map<String, dynamic>> _generateDynamicAdviceCards(List<DiaryEntry> entries) {
+  List<Map<String, dynamic>> _generateDynamicAdviceCards(
+      List<DiaryEntry> entries) {
     final List<Map<String, dynamic>> allCards = [
       {
         'title': '자연과 힐링',
@@ -1135,10 +1170,10 @@ class _AIPageState extends ConsumerState<AIPage> {
     if (entries.isNotEmpty) {
       final recentEntries = entries.take(3).toList();
       final dominantEmotion = _getDominantEmotion(recentEntries);
-      
+
       // 감정에 따라 관련 카드 우선 선택
       List<Map<String, dynamic>> selectedCards = [];
-      
+
       switch (dominantEmotion) {
         case '슬픔':
         case '두려움':
@@ -1169,10 +1204,10 @@ class _AIPageState extends ConsumerState<AIPage> {
         default:
           selectedCards = allCards.take(4).toList();
       }
-      
+
       return selectedCards;
     }
-    
+
     return allCards.take(4).toList();
   }
 
@@ -1207,7 +1242,8 @@ class _AIPageState extends ConsumerState<AIPage> {
     }).catchError((error) {
       Navigator.pop(context);
       final dominantEmotion = _getDominantEmotion(entries.take(5).toList());
-      final fallbackAdvice = _getFallbackAdvice(card['category'], dominantEmotion);
+      final fallbackAdvice =
+          _getFallbackAdvice(card['category'], dominantEmotion);
       // 카드 선택 완료 후 상태 업데이트 및 맨 위로 스크롤
       _saveSelectedCard(card, fallbackAdvice);
       _scrollToTopImmediately();
@@ -1215,13 +1251,14 @@ class _AIPageState extends ConsumerState<AIPage> {
   }
 
   /// AI 기반 조언 생성
-  Future<String> _generateAIAdvice(Map<String, dynamic> card, List<DiaryEntry> entries) async {
+  Future<String> _generateAIAdvice(
+      Map<String, dynamic> card, List<DiaryEntry> entries) async {
     try {
       // 최근 일기 분석
       final recentEntries = entries.take(5).toList();
       final dominantEmotion = _getDominantEmotion(recentEntries);
       final cardCategory = card['category'] as String;
-      
+
       // 카드 카테고리와 감정에 따른 맞춤형 조언 생성
       final prompt = '''
 사용자의 현재 감정 상태를 분석하여 간단하고 실용적인 오늘의 조언을 제공해주세요.
@@ -1241,9 +1278,12 @@ class _AIPageState extends ConsumerState<AIPage> {
 ''';
 
       final geminiService = GeminiService.instance;
-      final aiResponse = await geminiService.analyzeEmotionAndComfort(prompt, dominantEmotion);
-      
-      return aiResponse.isNotEmpty ? aiResponse : _getFallbackAdvice(cardCategory, dominantEmotion);
+      final aiResponse =
+          await geminiService.analyzeEmotionAndComfort(prompt, dominantEmotion);
+
+      return aiResponse.isNotEmpty
+          ? aiResponse
+          : _getFallbackAdvice(cardCategory, dominantEmotion);
     } catch (e) {
       final dominantEmotion = _getDominantEmotion(entries.take(5).toList());
       return _getFallbackAdvice(card['category'] as String, dominantEmotion);
@@ -1352,15 +1392,16 @@ class _AIPageState extends ConsumerState<AIPage> {
   }
 
   /// 선택된 카드 저장
-  Future<void> _saveSelectedCard(Map<String, dynamic> card, String advice) async {
+  Future<void> _saveSelectedCard(
+      Map<String, dynamic> card, String advice) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final today = DateTime.now().toIso8601String().split('T')[0];
-      
+
       await prefs.setString('last_advice_card_date', today);
       await prefs.setString('selected_advice_card_id', card['id']);
       await prefs.setString('selected_advice_text', advice);
-      
+
       // 상태 업데이트를 위해 setState 호출
       if (mounted) {
         setState(() {});

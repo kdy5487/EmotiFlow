@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../../shared/widgets/cards/emoti_card.dart';
 import '../../../../../theme/app_colors.dart';
 import '../../../../../theme/app_typography.dart';
-import '../../../models/diary_entry.dart';
+import '../../../domain/entities/diary_entry.dart';
 
 class DiaryListCard extends StatelessWidget {
   final DiaryEntry entry;

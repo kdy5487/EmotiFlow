@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../../theme/app_colors.dart';
 import '../../../../../theme/app_typography.dart';
-import '../../../models/diary_entry.dart';
-import '../../../models/emotion.dart';
+import '../../../domain/entities/diary_entry.dart';
+import '../../../domain/entities/emotion.dart';
 
 class DiaryGridCard extends StatelessWidget {
   final DiaryEntry entry;

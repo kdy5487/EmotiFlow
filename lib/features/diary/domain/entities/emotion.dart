@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// 감정 모델
+/// 감정 엔티티
 class Emotion {
   final String id;
   final String name;
@@ -181,3 +181,4 @@ class Emotion {
     return emoji;
   }
 }
+
