@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/ai/gemini/gemini_service.dart';
 import '../../../../core/providers/auth_provider.dart';
-import '../../../../theme/app_colors.dart';
-import '../../../../theme/app_typography.dart';
 import '../../domain/entities/diary_entry.dart';
 import '../../domain/entities/chat_message.dart';
 import '../diary_write_page/diary_write_view_model.dart';
@@ -45,6 +43,9 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   }
 
   void _startNewConversation() async {
+    // 디버깅을 위해 모델 리스트 먼저 조회
+    await GeminiService.instance.listAvailableModels();
+
     final viewModel = ref.read(diaryWriteProvider.notifier);
     viewModel.resetForm();
     viewModel.setIsChatMode(true);
@@ -63,6 +64,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
         isFromAI: true,
         timestamp: DateTime.now(),
       ));
+      _conversationHistory.add('AI: $initialPrompt');
     } catch (e) {
       viewModel.addChatMessage(ChatMessage(
         id: 'fallback_${DateTime.now().millisecondsSinceEpoch}',
@@ -70,6 +72,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
         isFromAI: true,
         timestamp: DateTime.now(),
       ));
+      _conversationHistory.add('AI: 안녕하세요! 오늘 하루는 어떠셨나요? 마음속 이야기를 들려주세요. 😊');
     }
   }
 
@@ -84,7 +87,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       isFromAI: false,
       timestamp: DateTime.now(),
     ));
-    _conversationHistory.add(message);
+    _conversationHistory.add('사용자: $message');
     _messageController.clear();
 
     setState(() => _isTyping = true);
@@ -101,7 +104,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
         isFromAI: true,
         timestamp: DateTime.now(),
       ));
-      _conversationHistory.add(aiResponse);
+      _conversationHistory.add('AI: $aiResponse');
     } finally {
       setState(() => _isTyping = false);
       _scrollToBottom();
@@ -129,6 +132,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
         isFromAI: true,
         timestamp: DateTime.now(),
       ));
+      _conversationHistory.add('AI: $aiResponse');
     } finally {
       setState(() => _isTyping = false);
       _scrollToBottom();

@@ -93,9 +93,19 @@ class AppRouter {
           ],
         ),
         GoRoute(
+          path: AppRoutes.diaryChat,
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) => const DiaryChatWritePage(),
+        ),
+        GoRoute(
           path: AppRoutes.diaryWrite,
           parentNavigatorKey: _rootNavigatorKey,
           builder: (context, state) => const DiaryWritePage(),
+        ),
+        GoRoute(
+          path: AppRoutes.diaryDrawing,
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) => const DrawingCanvasPage(),
         ),
         GoRoute(
           path: AppRoutes.diaryDetail,
@@ -104,16 +114,6 @@ class AppRouter {
             final id = state.pathParameters['id']!;
             return DiaryDetailPage(diaryId: id);
           },
-        ),
-        GoRoute(
-          path: AppRoutes.diaryChat,
-          parentNavigatorKey: _rootNavigatorKey,
-          builder: (context, state) => const DiaryChatWritePage(),
-        ),
-        GoRoute(
-          path: AppRoutes.diaryDrawing,
-          parentNavigatorKey: _rootNavigatorKey,
-          builder: (context, state) => const DrawingCanvasPage(),
         ),
         GoRoute(
           path: AppRoutes.settings,

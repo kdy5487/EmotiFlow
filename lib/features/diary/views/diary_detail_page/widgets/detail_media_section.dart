@@ -73,14 +73,9 @@ class DetailMediaSection extends StatelessWidget {
               final file = entry.mediaFiles[index];
               return GestureDetector(
                 onTap: () => _showFullScreenImage(context, file.url),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    image: DecorationImage(
-                      image: _getImageProvider(file.url),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: _buildThumbnail(file.url),
                 ),
               );
             },
@@ -90,15 +85,61 @@ class DetailMediaSection extends StatelessWidget {
     );
   }
 
-  ImageProvider _getImageProvider(String url) {
+  Widget _buildThumbnail(String url) {
     if (url.startsWith('http://') || url.startsWith('https://')) {
-      return NetworkImage(url);
-    } else {
-      return FileImage(File(url));
+      return Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildMissingThumbnail();
+        },
+      );
     }
+
+    final file = File(url);
+    if (!file.existsSync()) {
+      return _buildMissingThumbnail();
+    }
+
+    return Image.file(
+      file,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return _buildMissingThumbnail();
+      },
+    );
+  }
+
+  Widget _buildMissingThumbnail() {
+    return Container(
+      color: AppTheme.background,
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.broken_image, color: AppTheme.textTertiary, size: 28),
+          const SizedBox(height: 6),
+          Text(
+            '이미지 없음',
+            style: TextStyle(
+              color: AppTheme.textTertiary,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showFullScreenImage(BuildContext context, String imageUrl) {
+    if (!imageUrl.startsWith('http://') &&
+        !imageUrl.startsWith('https://') &&
+        !File(imageUrl).existsSync()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이미지를 찾을 수 없습니다.')),
+      );
+      return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => Scaffold(

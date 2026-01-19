@@ -64,13 +64,16 @@ class DiaryListViewModel extends StateNotifier<DiaryListUiState> {
   }
 
   /// 검색바를 토글합니다.
-  void toggleSearch() => state = state.copyWith(isSearchActive: !state.isSearchActive);
+  void toggleSearch() =>
+      state = state.copyWith(isSearchActive: !state.isSearchActive);
 
   /// 삭제 모드로 진입합니다.
-  void enterDeleteMode() => state = state.copyWith(isDeleteMode: true, selectedEntryIds: {});
+  void enterDeleteMode() =>
+      state = state.copyWith(isDeleteMode: true, selectedEntryIds: {});
 
   /// 삭제 모드를 종료합니다.
-  void exitDeleteMode() => state = state.copyWith(isDeleteMode: false, selectedEntryIds: {});
+  void exitDeleteMode() =>
+      state = state.copyWith(isDeleteMode: false, selectedEntryIds: {});
 
   /// 항목 선택을 토글합니다.
   void toggleSelect(String id) {
@@ -108,7 +111,7 @@ class DiaryListViewModel extends StateNotifier<DiaryListUiState> {
 }
 
 /// DiaryListViewModel 제공자
-final diaryListUiProvider = StateNotifierProvider<DiaryListViewModel, DiaryListUiState>((ref) {
+final diaryListUiProvider =
+    StateNotifierProvider<DiaryListViewModel, DiaryListUiState>((ref) {
   return DiaryListViewModel();
 });
-
