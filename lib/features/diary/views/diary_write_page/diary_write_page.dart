@@ -184,7 +184,7 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
   Widget _buildEmotionSelector() {
     final emotions = EmotionCharacterMap.availableEmotions;
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     // "선택 없음" 옵션 추가
     final allOptions = ['선택 없음', ...emotions];
 
@@ -255,15 +255,15 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 4, // 4열
                   crossAxisSpacing: 10,
-                  mainAxisSpacing: 22, // ✅ 간격 더 넓힘 (18 → 22)
+                  mainAxisSpacing: 20, // ✅ 간격 조정 (22 → 20)
                   childAspectRatio:
-                      itemWidth / (itemWidth + 18), // ✅ 비율 조정 (15 → 18)
+                      itemWidth / (itemWidth + 20), // ✅ 비율 조정 (높이 더 줄임)
                 ),
-                itemCount: allOptions.length, // ✅ "선택 없음" 포함
+                itemCount: allOptions.length, // ✅ "선택 없음" 포함 (11개)
                 itemBuilder: (context, index) {
                   final option = allOptions[index];
                   final isNoneOption = option == '선택 없음';
-                  
+
                   if (isNoneOption) {
                     // "선택 없음" - 대표 캐릭터 사용
                     final isSelected = _selectedEmotions.isEmpty;

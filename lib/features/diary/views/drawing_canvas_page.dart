@@ -230,6 +230,16 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
     _autoSave();
   }
 
+  /// 마지막 요소 삭제 (NEW!)
+  void _deleteLast() {
+    if (_elements.isEmpty) return;
+    setState(() {
+      _elements.removeLast();
+      _redo.clear();
+    });
+    _autoSave();
+  }
+
   void _clearAll() {
     showDialog(
       context: context,
@@ -273,54 +283,110 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('그림 그리기'),
-        actions: [
-          IconButton(
-            onPressed: () async {
-              final path = await _exportToImage();
-              if (!mounted) return;
-              Navigator.pop(context, path != null ? File(path) : null);
-            },
-            icon: const Icon(Icons.check),
-            tooltip: '완료',
+    return WillPopScope(
+      onWillPop: () async {
+        if (_elements.isEmpty) {
+          // 빈 화면이면 임시 저장 삭제하고 나가기
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('temp_drawing');
+          return true;
+        }
+
+        // 뒤로가기 시 저장 여부 선택
+        final result = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('그림 저장'),
+            content: const Text('작성중인 그림을 어떻게 하시겠습니까?'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context, false); // 저장 안함
+                },
+                child: const Text(
+                  '저장 안함',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context, true); // 임시 저장
+                },
+                child: const Text('임시 저장'),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // 캔버스
-          Expanded(
-            child: Container(
-              color: const Color(0xFFF7F7F7),
-              child: GestureDetector(
-                onPanStart: (d) => _onPanStart(d.localPosition),
-                onPanUpdate: (d) => _onPanUpdate(d.localPosition),
-                onPanEnd: (_) => _onPanEnd(),
-                child: RepaintBoundary(
-                  key: _repaintKey,
-                  child: CustomPaint(
-                    painter: _CanvasPainter(elements: _elements),
-                    size: Size.infinite,
+        );
+
+        if (result == null) {
+          // 다이얼로그 취소 (뒤로가기 안 함)
+          return false;
+        } else if (result == true) {
+          // 임시 저장 후 나가기
+          await _autoSave();
+          return true;
+        } else {
+          // 저장 안함 (임시 저장 삭제 후 나가기)
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('temp_drawing');
+          return true;
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('그림 그리기'),
+          actions: [
+            IconButton(
+              onPressed: _elements.isEmpty ? null : _clearAll,
+              icon: const Icon(Icons.delete_forever),
+              color: Colors.red,
+              tooltip: '전체 지우기',
+            ),
+            IconButton(
+              onPressed: () async {
+                final path = await _exportToImage();
+                if (!mounted) return;
+                Navigator.pop(context, path != null ? File(path) : null);
+              },
+              icon: const Icon(Icons.check),
+              tooltip: '완료',
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // 캔버스
+            Expanded(
+              child: Container(
+                color: const Color(0xFFF7F7F7),
+                child: GestureDetector(
+                  onPanStart: (d) => _onPanStart(d.localPosition),
+                  onPanUpdate: (d) => _onPanUpdate(d.localPosition),
+                  onPanEnd: (_) => _onPanEnd(),
+                  child: RepaintBoundary(
+                    key: _repaintKey,
+                    child: CustomPaint(
+                      painter: _CanvasPainter(elements: _elements),
+                      size: Size.infinite,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          // 색상 팔레트
-          if (_showColorPalette) _buildColorPalette(),
+            // 색상 팔레트
+            if (_showColorPalette) _buildColorPalette(),
 
-          // 브러시 크기
-          if (_showBrushSizes) _buildBrushSizes(),
+            // 브러시 크기
+            if (_showBrushSizes) _buildBrushSizes(),
 
-          // 감정 스티커 (NEW!)
-          if (_showStickers) _buildStickerPalette(),
+            // 감정 스티커 (NEW!)
+            if (_showStickers) _buildStickerPalette(),
 
-          // 하단 도구 바
-          _buildToolBar(),
-        ],
+            // 하단 도구 바
+            _buildToolBar(),
+          ],
+        ),
       ),
     );
   }
@@ -499,120 +565,212 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
     );
   }
 
-  /// 하단 도구 바
+  /// 하단 도구 바 (중요도 순 배치 + 가로 스크롤)
   Widget _buildToolBar() {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ===== 고중요도: 기본 도구 =====
+            // 펜
+            IconButton(
+              onPressed: () => setState(() => _currentTool = DrawingTool.pen),
+              icon: const Icon(Icons.edit),
+              color:
+                  _currentTool == DrawingTool.pen ? Colors.blue : Colors.grey,
+              tooltip: '펜',
+            ),
+            // 지우개 (탭=지우개 메뉴, 길게 누르기=전체 지우기)
+            GestureDetector(
+              onTap: () => _showEraserMenu(),
+              onLongPress: () {
+                if (_elements.isNotEmpty) _clearAll();
+              },
+              child: Container(
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.auto_fix_high,
+                  color: _currentTool == DrawingTool.eraser
+                      ? Colors.blue
+                      : Colors.grey,
+                ),
+              ),
+            ),
+            // 색상
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  _showColorPalette = !_showColorPalette;
+                  _showBrushSizes = false;
+                  _showStickers = false;
+                });
+              },
+              icon: Icon(Icons.palette, color: _currentColor),
+              tooltip: '색상',
+            ),
+            // 브러시 크기
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  _showBrushSizes = !_showBrushSizes;
+                  _showColorPalette = false;
+                  _showStickers = false;
+                });
+              },
+              icon: const Icon(Icons.brush),
+              tooltip: '브러시 크기',
+            ),
+            Container(
+              height: 40,
+              width: 1,
+              color: Colors.grey[300],
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+            ),
+            // 실행 취소
+            IconButton(
+              onPressed: _elements.isEmpty ? null : _undo,
+              icon: const Icon(Icons.undo),
+              tooltip: '실행 취소',
+            ),
+            // 다시 실행
+            IconButton(
+              onPressed: _redo.isEmpty ? null : _redoAction,
+              icon: const Icon(Icons.redo),
+              tooltip: '다시 실행',
+            ),
+            // 마지막 삭제
+            IconButton(
+              onPressed: _elements.isEmpty ? null : _deleteLast,
+              icon: const Icon(Icons.backspace),
+              color: Colors.orange,
+              tooltip: '마지막 삭제',
+            ),
+            Container(
+              height: 40,
+              width: 1,
+              color: Colors.grey[300],
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+            ),
+            // ===== 저중요도: 도형 + 스티커 =====
+            // 원
+            IconButton(
+              onPressed: () =>
+                  setState(() => _currentTool = DrawingTool.circle),
+              icon: Icon(
+                Icons.circle_outlined,
+                color: _currentTool == DrawingTool.circle
+                    ? Colors.blue
+                    : Colors.grey,
+              ),
+              tooltip: '원',
+            ),
+            // 하트
+            IconButton(
+              onPressed: () => setState(() => _currentTool = DrawingTool.heart),
+              icon: Icon(
+                Icons.favorite_border,
+                color: _currentTool == DrawingTool.heart
+                    ? Colors.blue
+                    : Colors.grey,
+              ),
+              tooltip: '하트',
+            ),
+            // 별
+            IconButton(
+              onPressed: () => setState(() => _currentTool = DrawingTool.star),
+              icon: Icon(
+                Icons.star_border,
+                color: _currentTool == DrawingTool.star
+                    ? Colors.blue
+                    : Colors.grey,
+              ),
+              tooltip: '별',
+            ),
+            // 스티커
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  _showStickers = !_showStickers;
+                  _showColorPalette = false;
+                  _showBrushSizes = false;
+                });
+              },
+              icon: const Text('😊', style: TextStyle(fontSize: 20)),
+              tooltip: '스티커',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 지우개 메뉴 (크기 선택)
+  void _showEraserMenu() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '지우개 크기 선택',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildEraserSizeButton('작게', 10.0),
+                _buildEraserSizeButton('보통', 20.0),
+                _buildEraserSizeButton('크게', 40.0),
+                _buildEraserSizeButton('매우 크게', 80.0),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 지우개 크기 버튼
+  Widget _buildEraserSizeButton(String label, double size) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _currentTool = DrawingTool.eraser;
+          _currentWidth = size / 2; // 지우개는 2배로 적용되므로 /2
+        });
+        Navigator.pop(context);
+      },
+      child: Column(
         children: [
-          // 펜
-          IconButton(
-            onPressed: () => setState(() => _currentTool = DrawingTool.pen),
-            icon: const Icon(Icons.edit),
-            color: _currentTool == DrawingTool.pen ? Colors.blue : Colors.grey,
-            tooltip: '펜',
-          ),
-          // 지우개
-          IconButton(
-            onPressed: () => setState(() => _currentTool = DrawingTool.eraser),
-            icon: Icon(
-              Icons.auto_fix_high,
-              color: _currentTool == DrawingTool.eraser
-                  ? Colors.blue
-                  : Colors.grey,
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(12),
             ),
-            tooltip: '지우개',
-          ),
-          // 원 (NEW!)
-          IconButton(
-            onPressed: () => setState(() => _currentTool = DrawingTool.circle),
-            icon: Icon(
-              Icons.circle_outlined,
-              color: _currentTool == DrawingTool.circle
-                  ? Colors.blue
-                  : Colors.grey,
+            child: Center(
+              child: Container(
+                width: size.clamp(8.0, 40.0),
+                height: size.clamp(8.0, 40.0),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+              ),
             ),
-            tooltip: '원',
           ),
-          // 하트 (NEW!)
-          IconButton(
-            onPressed: () => setState(() => _currentTool = DrawingTool.heart),
-            icon: Icon(
-              Icons.favorite_border,
-              color:
-                  _currentTool == DrawingTool.heart ? Colors.blue : Colors.grey,
-            ),
-            tooltip: '하트',
-          ),
-          // 별 (NEW!)
-          IconButton(
-            onPressed: () => setState(() => _currentTool = DrawingTool.star),
-            icon: Icon(
-              Icons.star_border,
-              color:
-                  _currentTool == DrawingTool.star ? Colors.blue : Colors.grey,
-            ),
-            tooltip: '별',
-          ),
-          const VerticalDivider(),
-          // 스티커 (NEW!)
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _showStickers = !_showStickers;
-                _showColorPalette = false;
-                _showBrushSizes = false;
-              });
-            },
-            icon: const Text('😊', style: TextStyle(fontSize: 20)),
-            tooltip: '스티커',
-          ),
-          // 색상
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _showColorPalette = !_showColorPalette;
-                _showBrushSizes = false;
-                _showStickers = false;
-              });
-            },
-            icon: Icon(Icons.palette, color: _currentColor),
-            tooltip: '색상',
-          ),
-          // 브러시
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _showBrushSizes = !_showBrushSizes;
-                _showColorPalette = false;
-                _showStickers = false;
-              });
-            },
-            icon: const Icon(Icons.brush),
-            tooltip: '브러시 크기',
-          ),
-          const VerticalDivider(),
-          // 실행 취소
-          IconButton(
-            onPressed: _elements.isEmpty ? null : _undo,
-            icon: const Icon(Icons.undo),
-            tooltip: '실행 취소',
-          ),
-          // 다시 실행
-          IconButton(
-            onPressed: _redo.isEmpty ? null : _redoAction,
-            icon: const Icon(Icons.redo),
-            tooltip: '다시 실행',
-          ),
-          // 전체 지우기
-          IconButton(
-            onPressed: _elements.isEmpty ? null : _clearAll,
-            icon: const Icon(Icons.delete),
-            color: Colors.red,
-            tooltip: '전체 지우기',
-          ),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontSize: 12)),
         ],
       ),
     );
@@ -879,6 +1037,6 @@ class _CanvasPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _CanvasPainter oldDelegate) {
-    return oldDelegate.elements.length != elements.length;
+    return true; // ✅ 항상 다시 그려서 실시간 표시
   }
 }
