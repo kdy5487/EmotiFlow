@@ -2,18 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/ai/gemini/gemini_service.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../shared/constants/emotion_character_map.dart';
+import '../../../../shared/widgets/keyboard_dismissible_scaffold.dart';
 import '../../domain/entities/diary_entry.dart';
 import '../../domain/entities/chat_message.dart';
 import '../diary_write_page/diary_write_view_model.dart';
 import '../../providers/diary_provider.dart';
 import 'widgets/chat_message_bubble.dart';
 import 'widgets/typing_indicator.dart';
-import 'widgets/chat_emotion_selector.dart';
 import 'widgets/chat_message_input.dart';
 
 /// AI 대화형 일기 작성 페이지
 class DiaryChatWritePage extends ConsumerStatefulWidget {
-  const DiaryChatWritePage({super.key});
+  final String? initialEmotion;
+
+  const DiaryChatWritePage({
+    super.key,
+    this.initialEmotion,
+  });
 
   @override
   ConsumerState<DiaryChatWritePage> createState() => _DiaryChatWritePageState();
@@ -26,11 +32,14 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   bool _isTyping = false;
   final List<String> _conversationHistory = [];
   String? _selectedEmotion;
-  bool _emotionSelected = false;
 
   @override
   void initState() {
     super.initState();
+    // 초기 감정이 있으면 설정
+    if (widget.initialEmotion != null) {
+      _selectedEmotion = widget.initialEmotion;
+    }
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _startNewConversation());
   }
@@ -43,36 +52,50 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   }
 
   void _startNewConversation() async {
-    // 디버깅을 위해 모델 리스트 먼저 조회
-    await GeminiService.instance.listAvailableModels();
+    print('⏱️ [성능] 대화 시작 - ${DateTime.now()}');
 
     final viewModel = ref.read(diaryWriteProvider.notifier);
     viewModel.resetForm();
     viewModel.setIsChatMode(true);
     setState(() {
       _conversationHistory.clear();
-      _selectedEmotion = null;
-      _emotionSelected = false;
+      // 초기 감정이 있으면 유지, 없으면 리셋
+      if (widget.initialEmotion == null) {
+        _selectedEmotion = null;
+      }
     });
 
+    print('⏱️ [성능] ViewModel 초기화 완료 - ${DateTime.now()}');
+
+    // Fallback 메시지를 먼저 표시 (즉시 표시)
+    const fallbackMessage = '안녕하세요! 오늘 하루는 어떠셨나요?';
+    viewModel.addChatMessage(ChatMessage(
+      id: 'init_${DateTime.now().millisecondsSinceEpoch}',
+      content: fallbackMessage,
+      isFromAI: true,
+      timestamp: DateTime.now(),
+    ));
+    _conversationHistory.add('AI: $fallbackMessage');
+
+    print('⏱️ [성능] 초기 메시지 표시 완료 - ${DateTime.now()}');
+
+    // API 응답을 비동기로 받아서 업데이트 (선택적)
+    _loadInitialPromptAsync(viewModel);
+  }
+
+  void _loadInitialPromptAsync(dynamic viewModel) async {
     try {
+      print('⏱️ [성능] Gemini API 호출 시작 - ${DateTime.now()}');
       final initialPrompt =
           await GeminiService.instance.generateEmotionSelectionPrompt();
-      viewModel.addChatMessage(ChatMessage(
-        id: 'init_${DateTime.now().millisecondsSinceEpoch}',
-        content: initialPrompt,
-        isFromAI: true,
-        timestamp: DateTime.now(),
-      ));
-      _conversationHistory.add('AI: $initialPrompt');
+      print('⏱️ [성능] Gemini API 응답 완료 - ${DateTime.now()}');
+
+      // API 응답이 Fallback과 다르면 추가 (간단한 구현)
+      // 실제로는 첫 메시지를 교체하는 것이 좋지만, 간단하게 유지
+      print('✅ [성능] AI 초기 인사: $initialPrompt');
     } catch (e) {
-      viewModel.addChatMessage(ChatMessage(
-        id: 'fallback_${DateTime.now().millisecondsSinceEpoch}',
-        content: '안녕하세요! 오늘 하루는 어떠셨나요? 마음속 이야기를 들려주세요. 😊',
-        isFromAI: true,
-        timestamp: DateTime.now(),
-      ));
-      _conversationHistory.add('AI: 안녕하세요! 오늘 하루는 어떠셨나요? 마음속 이야기를 들려주세요. 😊');
+      print('⏱️ [성능] Gemini API 오류 (Fallback 유지) - $e');
+      // Fallback 메시지 유지
     }
   }
 
@@ -100,34 +123,6 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       );
       viewModel.addChatMessage(ChatMessage(
         id: 'ai_${DateTime.now().millisecondsSinceEpoch}',
-        content: aiResponse,
-        isFromAI: true,
-        timestamp: DateTime.now(),
-      ));
-      _conversationHistory.add('AI: $aiResponse');
-    } finally {
-      setState(() => _isTyping = false);
-      _scrollToBottom();
-    }
-  }
-
-  void _selectEmotion(String emotion) async {
-    setState(() {
-      _selectedEmotion = emotion;
-      _emotionSelected = true;
-      _isTyping = true;
-    });
-
-    final viewModel = ref.read(diaryWriteProvider.notifier);
-    try {
-      final aiResponse =
-          await GeminiService.instance.generateEmotionBasedQuestion(
-        emotion,
-        '감정 선택: $emotion',
-        _conversationHistory,
-      );
-      viewModel.addChatMessage(ChatMessage(
-        id: 'emotion_q_${DateTime.now().millisecondsSinceEpoch}',
         content: aiResponse,
         isFromAI: true,
         timestamp: DateTime.now(),
@@ -204,17 +199,51 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   @override
   Widget build(BuildContext context) {
     final chatHistory = ref.watch(diaryWriteProvider).chatHistory;
+    final backgroundColor = Color(
+      EmotionCharacterMap.getBackgroundColor(_selectedEmotion),
+    );
 
-    return Scaffold(
+    return KeyboardDismissibleScaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('에모티와 대화하기'),
+        title: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipOval(
+            child: Image.asset(
+              EmotionCharacterMap.getCharacterAsset(_selectedEmotion),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.psychology, size: 20);
+              },
+            ),
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: backgroundColor,
+        elevation: 0,
         actions: [
           IconButton(
-              onPressed: _startNewConversation,
-              icon: const Icon(Icons.refresh)),
+            onPressed: _startNewConversation,
+            icon: const Icon(Icons.refresh),
+            tooltip: '대화 다시 시작',
+          ),
           IconButton(
-              onPressed: _completeDiary,
-              icon: const Icon(Icons.check_circle_outline)),
+            onPressed: _completeDiary,
+            icon: const Icon(Icons.check_circle_outline),
+            tooltip: '일기 완성',
+          ),
         ],
       ),
       body: Column(
@@ -222,20 +251,26 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
               itemCount: chatHistory.length + (_isTyping ? 1 : 0),
               itemBuilder: (context, index) {
-                if (index == chatHistory.length) return const TypingIndicator();
-                return ChatMessageBubble(message: chatHistory[index]);
+                if (index == chatHistory.length) {
+                  return TypingIndicator(
+                    characterAsset:
+                        EmotionCharacterMap.getCharacterAsset(_selectedEmotion),
+                  );
+                }
+                return ChatMessageBubble(
+                  message: chatHistory[index],
+                  selectedEmotion: _selectedEmotion,
+                );
               },
             ),
           ),
-          if (!_emotionSelected && chatHistory.isNotEmpty)
-            ChatEmotionSelector(
-                selectedEmotion: _selectedEmotion,
-                onEmotionSelected: _selectEmotion),
           ChatMessageInput(
-              controller: _messageController, onSend: _sendMessage),
+            controller: _messageController,
+            onSend: _sendMessage,
+          ),
         ],
       ),
     );

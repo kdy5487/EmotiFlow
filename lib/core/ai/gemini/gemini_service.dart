@@ -96,6 +96,12 @@ class GeminiService {
           selectedEmotion, userResponse, conversationHistory);
     }
 
+    // 입력 검증: 의미 없는 답변 감지
+    if (_isInvalidUserResponse(userResponse)) {
+      print('⚠️ 이해할 수 없는 사용자 답변 감지: "$userResponse"');
+      return _getInvalidResponseMessage();
+    }
+
     try {
       final lastAiMessage = conversationHistory.reversed
           .firstWhere((m) => m.startsWith('AI:'), orElse: () => '')
@@ -344,9 +350,10 @@ $emotionDescription
 
     try {
       // 대화량 계산
-      final conversationCount = conversationHistory.where((m) => m.startsWith('사용자:')).length;
+      final conversationCount =
+          conversationHistory.where((m) => m.startsWith('사용자:')).length;
       final isShortConversation = conversationCount < 5;
-      
+
       final prompt = '''
 사용자와 나눈 대화를 바탕으로 일기를 완성해주세요.
 
@@ -456,6 +463,65 @@ ${isShortConversation ? '- 짧은 대화 → 4-6문장 (간결하게)\n- 무리�
       }
     }
     return null;
+  }
+
+  // 입력 검증 메서드들
+
+  /// 사용자 답변이 의미 없는지 검증
+  bool _isInvalidUserResponse(String response) {
+    final trimmed = response.trim();
+
+    // 1. 너무 짧은 답변 (1-2글자)
+    if (trimmed.length <= 2) {
+      return true;
+    }
+
+    // 2. 의미 없는 문자 반복 (예: "ㅋㅋㅋㅋ", "....", "ㅠㅠㅠ")
+    if (RegExp(r'^(.)\1{3,}$').hasMatch(trimmed)) {
+      return true;
+    }
+
+    // 3. 랜덤 키 입력처럼 보이는 경우 (예: "asdf", "qwer", "zxcv")
+    final randomKeyPatterns = [
+      'asdf',
+      'qwer',
+      'zxcv',
+      'asdfg',
+      'qwert',
+      'dfgh',
+      'fghj',
+      'ghjk',
+      'hjkl'
+    ];
+    if (randomKeyPatterns.any((pattern) =>
+        trimmed.toLowerCase().contains(pattern) && trimmed.length < 10)) {
+      return true;
+    }
+
+    // 4. 대부분이 특수문자인 경우
+    final specialCharCount =
+        RegExp(r'[^\wㄱ-ㅎㅏ-ㅣ가-힣\s]', unicode: true).allMatches(trimmed).length;
+    if (specialCharCount > trimmed.length * 0.7) {
+      return true;
+    }
+
+    // 5. 숫자만 입력한 경우 (날짜가 아닌)
+    if (RegExp(r'^\d+$').hasMatch(trimmed) && trimmed.length < 5) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /// 이해할 수 없는 답변에 대한 응답
+  String _getInvalidResponseMessage() {
+    final messages = [
+      '죄송해요, 제가 잘 이해하지 못했어요. 조금 더 자세히 말씀해 주실 수 있을까요?',
+      '음... 무슨 말씀이신지 잘 모르겠어요. 어떤 일이 있었는지 이야기해 주시겠어요?',
+      '잘 이해가 안 돼요. 지금 기분이 어떤지, 무슨 일이 있었는지 편하게 이야기해 주세요.',
+      '조금 더 구체적으로 말씀해 주실 수 있나요? 오늘 어떤 하루였는지 궁금해요.',
+    ];
+    return messages[DateTime.now().millisecond % messages.length];
   }
 
   // Fallback 응답들
