@@ -11,7 +11,6 @@ import 'package:emoti_flow/features/diary/providers/diary_provider.dart';
 import 'package:emoti_flow/features/diary/domain/entities/diary_entry.dart';
 import 'package:emoti_flow/features/diary/domain/entities/media_file.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
-import 'package:intl/intl.dart';
 
 class DiaryWritePage extends ConsumerStatefulWidget {
   const DiaryWritePage({super.key});
@@ -107,7 +106,6 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
               onPressed: _saveDiary,
               type: EmotiButtonType.primary,
               size: EmotiButtonSize.large,
-              icon: Icons.save,
               isFullWidth: true,
             ),
           ],
@@ -161,8 +159,7 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    DateFormat('yyyy년 M월 d일 (E)', 'ko_KR')
-                        .format(_selectedDate),
+                    _formatDate(_selectedDate),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -183,9 +180,13 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     );
   }
 
-  /// 2. 오늘의 감정 선택 (캐릭터 이미지, 4x3)
+  /// 2. 오늘의 감정 선택 (캐릭터 이미지, 4x3 + 선택없음) - 적응형
   Widget _buildEmotionSelector() {
     final emotions = EmotionCharacterMap.availableEmotions;
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // "선택 없음" 옵션 추가
+    final allOptions = ['선택 없음', ...emotions];
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -205,12 +206,15 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
         children: [
           Row(
             children: [
-              const Text(
-                '오늘의 감정',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
+              Flexible(
+                child: const Text(
+                  '오늘의 감정',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
@@ -232,38 +236,69 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
             ],
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             '오늘 느낀 감정을 선택해주세요',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: screenWidth * 0.03, // 적응형
               color: AppTheme.textSecondary,
             ),
           ),
           const SizedBox(height: 16),
 
-          // 감정 그리드 (4x3)
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4, // 4열
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 0.95,
-            ),
-            itemCount: emotions.length,
-            itemBuilder: (context, index) {
-              final emotion = emotions[index];
-              final isSelected = _selectedEmotions.contains(emotion);
-              final isDisabled = !isSelected && _selectedEmotions.length >= 2;
+          // 감정 그리드 (4x3 + 선택없음) - 적응형 (오버플로우 방지)
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final itemWidth = (constraints.maxWidth - 30) / 4; // 4열, 간격 고려
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4, // 4열
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 22, // ✅ 간격 더 넓힘 (18 → 22)
+                  childAspectRatio:
+                      itemWidth / (itemWidth + 18), // ✅ 비율 조정 (15 → 18)
+                ),
+                itemCount: allOptions.length, // ✅ "선택 없음" 포함
+                itemBuilder: (context, index) {
+                  final option = allOptions[index];
+                  final isNoneOption = option == '선택 없음';
+                  
+                  if (isNoneOption) {
+                    // "선택 없음" - 대표 캐릭터 사용
+                    final isSelected = _selectedEmotions.isEmpty;
+                    return _buildEmotionItem(
+                      emotion: '선택 없음',
+                      isSelected: isSelected,
+                      isDisabled: false,
+                      itemSize: itemWidth,
+                      isNoneOption: true,
+                      onTap: () {
+                        setState(() {
+                          _selectedEmotions.clear();
+                          _emotionIntensities.clear();
+                        });
+                      },
+                    );
+                  } else {
+                    // 일반 감정
+                    final emotion = option;
+                    final isSelected = _selectedEmotions.contains(emotion);
+                    final isDisabled =
+                        !isSelected && _selectedEmotions.length >= 2;
 
-              return _buildEmotionItem(
-                emotion: emotion,
-                isSelected: isSelected,
-                isDisabled: isDisabled,
-                onTap: () {
-                  if (!isDisabled) {
-                    _toggleEmotion(emotion);
+                    return _buildEmotionItem(
+                      emotion: emotion,
+                      isSelected: isSelected,
+                      isDisabled: isDisabled,
+                      itemSize: itemWidth,
+                      isNoneOption: false,
+                      onTap: () {
+                        if (!isDisabled) {
+                          _toggleEmotion(emotion);
+                        }
+                      },
+                    );
                   }
                 },
               );
@@ -288,10 +323,13 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     required String emotion,
     required bool isSelected,
     required bool isDisabled,
+    required double itemSize,
     required VoidCallback onTap,
+    bool isNoneOption = false,
   }) {
-    const double itemSize = 60.0;
-    final characterAsset = EmotionCharacterMap.getCharacterAsset(emotion);
+    final characterAsset = isNoneOption
+        ? EmotionCharacterMap.defaultCharacter
+        : EmotionCharacterMap.getCharacterAsset(emotion);
 
     return GestureDetector(
       onTap: isDisabled ? null : onTap,
@@ -375,7 +413,7 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     final intensity = _emotionIntensities[emotion] ?? 5;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 8), // 16 → 8 (간격 줄임)
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -400,18 +438,29 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
               ),
             ],
           ),
-          Slider(
-            value: intensity.toDouble(),
-            min: 1,
-            max: 10,
-            divisions: 9,
-            activeColor: AppTheme.primary,
-            inactiveColor: AppTheme.primary.withOpacity(0.2),
-            onChanged: (val) {
-              setState(() {
-                _emotionIntensities[emotion] = val.round();
-              });
-            },
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 3.0, // 슬라이더 굵기 줄임 (기본 4.0 → 3.0)
+              thumbShape: const RoundSliderThumbShape(
+                enabledThumbRadius: 8.0, // 썸 크기 조정
+              ),
+              overlayShape: const RoundSliderOverlayShape(
+                overlayRadius: 16.0, // 오버레이 크기 조정
+              ),
+            ),
+            child: Slider(
+              value: intensity.toDouble(),
+              min: 1,
+              max: 10,
+              divisions: 9,
+              activeColor: AppTheme.primary,
+              inactiveColor: AppTheme.primary.withOpacity(0.2),
+              onChanged: (val) {
+                setState(() {
+                  _emotionIntensities[emotion] = val.round();
+                });
+              },
+            ),
           ),
         ],
       ),
@@ -722,13 +771,33 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '일기 설정',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.textPrimary,
-            ),
+          Row(
+            children: [
+              const Text(
+                '일기 설정',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  '개발중',
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           SwitchListTile(
@@ -767,13 +836,19 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
 
   // ============ 기능 메서드들 ============
 
+  /// 날짜 포맷팅 (한국어)
+  String _formatDate(DateTime date) {
+    const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+    final weekday = weekdays[date.weekday - 1];
+    return '${date.year}년 ${date.month}월 ${date.day}일 ($weekday)';
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 1)),
-      locale: const Locale('ko', 'KR'),
     );
     if (picked != null && picked != _selectedDate) {
       setState(() => _selectedDate = picked);
