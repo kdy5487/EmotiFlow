@@ -1,6 +1,71 @@
-# EmotiFlow 개발 및 설계/트러블슈팅 가이드 01/19 (Clean Architecture + MVVM)
+# EmotiFlow 개발 및 설계/트러블슈팅 가이드 01/21 (Clean Architecture + MVVM)
 
 이 문서는 EmotiFlow 프로젝트의 지속 가능한 개발과 고품질 배포를 위한 설계 원칙, 구현 계획, 그리고 협업 규칙을 정의합니다.
+
+## 📊 구현 현황 요약 (2026-01-21 기준)
+
+### ✅ 완료된 기능
+- [x] Domain Layer 구현 (Entities, Repository Interfaces)
+- [x] 일부 UseCase 구현 (일기 CRUD 기본 기능)
+- [x] Data Layer 구현 (Models, Repository Implementations)
+- [x] Gemini AI 프롬프트 시스템 구현 및 최적화
+- [x] Firebase Authentication (Google 로그인)
+- [x] Firebase Firestore 연동
+- [x] 일기 작성/조회/삭제 기본 UI
+- [x] AI 채팅 일기 작성 기능
+- [x] 감정 선택 및 분석 시스템
+- [x] 감정 캐릭터 에셋 준비 (Emoti 및 기타 캐릭터)
+- [x] 기본 다크모드 구현
+
+### 🔄 진행 중인 기능
+- [ ] Clean Architecture 완전 전환 (일부 Provider가 아직 직접 Firebase 접근)
+- [ ] ViewModel 리팩토링 (Riverpod Notifier 패턴 적용)
+- [ ] UseCase 전체 구현 (통계, 필터링, 정렬 등)
+- [ ] 감정 캐릭터 UI 통합
+- [ ] 라우팅 전수 점검
+
+### 📝 해야 할 것 (우선순위순)
+1. **필수 (즉시 착수)**
+   - [ ] 감정 캐릭터 UI 적용 (assets/images/characters/ 활용)
+   - [ ] 라우팅 버그 수정 (AI 채팅 일기 → 상세 페이지 이슈)
+   - [ ] 다크모드 색상 대비 및 접근성 완성
+   - [ ] 테스트 코드 작성 (Domain UseCase 우선)
+
+2. **중요 (단기)**
+   - [ ] 감정 통계 대시보드 구현
+   - [ ] 감정 시각화 (레이어 캘린더, 스펙트럼 링 등)
+   - [ ] 오프라인 지원 (캐시 우선 전략)
+   - [ ] 에러 핸들링 및 로깅 체계 구축
+
+3. **보완 (중기)**
+   - [ ] BGM 기능 재구현 (자체 음원 라이브러리)
+   - [ ] AI 캐릭터 NPC 시스템 (멀티 캐릭터)
+   - [ ] 질문 던전 모드 구현
+   - [ ] 이메일/비밀번호 로그인 추가
+   - [ ] SNS 로그인 확장 (Kakao, Apple)
+
+4. **고도화 (장기)**
+   - [ ] 감정 성장 시각화
+   - [ ] 감정 회고 카드 자동 생성
+   - [ ] 데이터 백업/복구 기능
+   - [ ] Flutter Web 배포
+   - [ ] CI/CD 파이프라인 구축
+
+### 👤 사용자가 해야 할 작업 리스트
+1. **캐릭터 에셋 정리 및 적용**
+   - [ ] `assets/images/characters/` 폴더 내 캐릭터 이미지 파일명 정리
+   - [ ] 감정별 캐릭터 매핑 테이블 작성 (예: 기쁨 → Emoti3.png)
+   - [ ] UI에 캐릭터 이미지 표시 로직 구현 (감정 선택 화면, 일기 상세 등)
+   
+2. **디자인 및 UX 결정**
+   - [ ] 최종 감정 시각화 방식 선택 (레이어 캘린더 vs 스펙트럼 링 vs 성장 그래프)
+   - [ ] AI 캐릭터 페르소나 확정 (따뜻한/직설적인/유쾌한 등)
+   - [ ] 앱 전체 색상 팔레트 최종 검토 및 다크모드 색상 조정
+
+3. **테스트 및 피드백**
+   - [ ] 실제 사용 시나리오 테스트 (일기 작성 → 조회 → 삭제 플로우)
+   - [ ] AI 대화 품질 테스트 (다양한 감정 및 상황)
+   - [ ] 라우팅 버그 재현 및 보고
 
 ## 1. 설계 철학: Clean Architecture + MVVM + Riverpod
 
@@ -133,6 +198,47 @@ lib/features/diary/
 *   **운영 방침:** 개발 직후에는 **무료 제공**, 실제 사용량/비용 지표를 보고 정책 결정
 *   **확장 타이밍:** 데이터가 쌓이면 캐릭터/던전 모드 등 고급 기능을 단계적으로 활성화
 
+### 2.12 캐릭터 시스템 UI 적용 (신규 추가)
+*   **목표:** 대표 캐릭터 Emoti와 감정별 캐릭터들을 UI에 통합하여 브랜드 아이덴티티 강화
+*   **현황:**
+    *   캐릭터 에셋: `assets/images/characters/` 폴더에 준비됨
+    *   Emoti.png: 앱 로고로 이미 적용됨
+    *   감정별 캐릭터 이미지: 준비 완료, UI 적용 대기 중
+*   **구현 계획:**
+    1.  **감정-캐릭터 매핑 시스템:**
+        ```dart
+        // lib/shared/constants/emotion_character_map.dart
+        class EmotionCharacterMap {
+          static const Map<String, String> characterAssets = {
+            '기쁨': 'assets/images/characters/joy_character.png',
+            '슬픔': 'assets/images/characters/sad_character.png',
+            '분노': 'assets/images/characters/anger_character.png',
+            // ... 나머지 감정들
+          };
+          
+          static String getCharacterAsset(String emotion) {
+            return characterAssets[emotion] ?? 
+                   'assets/images/characters/Emoti.png'; // 기본 캐릭터
+          }
+        }
+        ```
+    2.  **UI 적용 지점:**
+        *   감정 선택 화면: 각 감정 버튼에 해당 캐릭터 미니 아이콘 표시
+        *   AI 채팅 화면: 선택한 감정의 캐릭터를 AI 메시지 옆에 표시
+        *   일기 상세 화면: 주요 감정의 캐릭터를 헤더에 표시
+        *   감정 통계 화면: 가장 많이 느낀 감정의 캐릭터를 강조 표시
+    3.  **애니메이션 및 인터랙션:**
+        *   캐릭터 등장 시 페이드인 애니메이션
+        *   감정 강도에 따라 캐릭터 크기 변화
+        *   탭 시 캐릭터 반응 애니메이션 (선택적)
+*   **이미지 최적화:**
+    *   PNG 파일 압축 (TinyPNG 등 활용)
+    *   WebP 포맷 전환 고려 (Flutter 3.0+ 지원)
+    *   적절한 해상도 설정 (1x, 2x, 3x)
+*   **접근성 고려:**
+    *   캐릭터 이미지에 Semantics 레이블 추가
+    *   색각 이상자를 위한 대체 표현 병행
+
 ---
 
 ## 3. 플랫폼 확장: Flutter Web 전략
@@ -184,6 +290,70 @@ lib/features/diary/
 *   **로그 구조화:** 사용자 플로우(로그인/작성/저장) 중심 구조화 로그 수집
 *   **성능 모니터링:** 앱 시작 시간/탭 전환 지연/네트워크 지연 지표 추적
 *   **오류 대응 정책:** 사용자에게는 간결한 메시지, 내부에는 상세 원인 로깅
+
+### 4.7 Gemini 프롬프트 관리 원칙
+*   **중앙화된 관리:** 모든 프롬프트는 `gemini_service.dart`에 집중 관리
+*   **버전 관리:** 프롬프트 변경 시 `docs/gemini_prompts_guide.md`에 히스토리 기록
+*   **테스트 및 검증:**
+    *   새 프롬프트 적용 전 최소 5개 이상의 다양한 시나리오로 테스트
+    *   응답 길이, 톤, 반복 여부, 맥락 유지 등 체크리스트 확인
+*   **Fallback 전략:** API 키 없음/네트워크 오류 시 자연스러운 대체 응답 제공
+*   **사용자 피드백 반영:** 실제 사용자 반응을 바탕으로 지속적으로 개선
+
+### 4.8 에셋 관리 규칙
+*   **폴더 구조 엄수:**
+    ```
+    assets/
+    ├── images/
+    │   ├── characters/      # 캐릭터 이미지 (Emoti 포함)
+    │   ├── emotions/        # 감정별 아이콘/일러스트
+    │   ├── backgrounds/     # 배경 이미지
+    │   └── icons/           # 앱 내 아이콘
+    ```
+*   **파일명 규칙:**
+    *   소문자 + 언더스코어 사용 (`emoti_happy.png`)
+    *   감정명은 영문 또는 한글 통일 (예: `joy_character.png` 또는 `기쁨_캐릭터.png`)
+*   **이미지 최적화:**
+    *   PNG는 TinyPNG 등으로 압축 후 커밋
+    *   큰 이미지(>500KB)는 WebP 전환 고려
+    *   불필요한 메타데이터 제거
+*   **pubspec.yaml 업데이트:**
+    *   새 에셋 폴더 추가 시 반드시 `pubspec.yaml`에 등록
+    *   변경 후 `flutter pub get` 실행 확인
+
+### 4.9 Git 커밋 및 브랜치 전략
+*   **커밋 메시지 규칙:**
+    ```
+    <type>: <subject>
+    
+    <body> (선택)
+    
+    타입:
+    - feat: 새 기능 추가
+    - fix: 버그 수정
+    - docs: 문서 수정
+    - refactor: 리팩토링
+    - style: 코드 스타일 변경 (포맷팅 등)
+    - test: 테스트 추가/수정
+    - chore: 빌드/설정 변경
+    
+    예시:
+    feat: 감정 캐릭터 UI 적용
+    fix: AI 채팅 일기 라우팅 버그 수정
+    docs: Gemini 프롬프트 가이드 업데이트
+    ```
+*   **브랜치 전략:**
+    *   `main`: 안정 버전 (배포 가능)
+    *   `develop`: 개발 중인 기능 통합
+    *   `feature/<기능명>`: 새 기능 개발
+    *   `fix/<버그명>`: 버그 수정
+*   **PR(Pull Request) 규칙:**
+    *   기능 완료 후 `develop`으로 PR 생성
+    *   최소 1명의 리뷰 후 머지 (개인 프로젝트의 경우 셀프 리뷰)
+    *   Conflict 해결 후 머지
+*   **중요 파일 보호:**
+    *   `.env` 파일은 절대 커밋하지 않음 (`.gitignore`에 포함 확인)
+    *   `google-services.json`은 민감 정보 제거 후 커밋 고려
 
 ---
 
