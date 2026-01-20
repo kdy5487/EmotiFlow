@@ -476,38 +476,67 @@ ${isShortConversation ? '- 짧은 대화 → 4-6문장 (간결하게)\n- 무리�
       return true;
     }
 
-    // 2. 의미 없는 문자 반복 (예: "ㅋㅋㅋㅋ", "....", "ㅠㅠㅠ")
+    // 2. 같은 문자 반복 (예: "fff", "ㅋㅋㅋ", "....", "ㅠㅠㅠ")
+    // 같은 문자가 2번 이상 반복되고 전체 길이가 5글자 이하면 무효
+    if (RegExp(r'^(.)\1{2,}$').hasMatch(trimmed) && trimmed.length <= 5) {
+      return true;
+    }
+    // 같은 문자가 4번 이상 반복되면 무조건 무효
     if (RegExp(r'^(.)\1{3,}$').hasMatch(trimmed)) {
       return true;
     }
 
-    // 3. 랜덤 키 입력처럼 보이는 경우 (예: "asdf", "qwer", "zxcv")
+    // 3. 랜덤 키 입력처럼 보이는 경우 (예: "asdf", "qwer", "zxcv", "fff")
     final randomKeyPatterns = [
-      'asdf',
-      'qwer',
-      'zxcv',
-      'asdfg',
-      'qwert',
-      'dfgh',
-      'fghj',
-      'ghjk',
-      'hjkl'
+      'asdf', 'qwer', 'zxcv', 'asdfg', 'qwert',
+      'dfgh', 'fghj', 'ghjk', 'hjkl',
+      'fff', 'ddd', 'sss', 'aaa', 'kkk', 'lll', 'jjj', // 같은 알파벳 반복
     ];
     if (randomKeyPatterns.any((pattern) =>
         trimmed.toLowerCase().contains(pattern) && trimmed.length < 10)) {
       return true;
     }
 
-    // 4. 대부분이 특수문자인 경우
+    // 4. 영문자만 있고 짧은 경우 (3-5글자) - 의미 있는 영단어가 아닌 경우
+    if (RegExp(r'^[a-zA-Z]{3,5}$').hasMatch(trimmed)) {
+      // 의미 있는 영단어 예외 처리
+      final validWords = ['yes', 'no', 'ok', 'bye', 'good', 'bad', 'help'];
+      if (!validWords.contains(trimmed.toLowerCase())) {
+        // 모음이 없으면 무효 (예: "fff", "ddd")
+        if (!RegExp(r'[aeiouAEIOU]').hasMatch(trimmed)) {
+          return true;
+        }
+      }
+    }
+
+    // 5. 한글 자음/모음만 있는 경우 (예: "ㅋㅋㅋ", "ㅠㅠ")
+    if (RegExp(r'^[ㄱ-ㅎㅏ-ㅣ]+$').hasMatch(trimmed)) {
+      return true;
+    }
+
+    // 6. 대부분이 특수문자인 경우
     final specialCharCount =
         RegExp(r'[^\wㄱ-ㅎㅏ-ㅣ가-힣\s]', unicode: true).allMatches(trimmed).length;
     if (specialCharCount > trimmed.length * 0.7) {
       return true;
     }
 
-    // 5. 숫자만 입력한 경우 (날짜가 아닌)
+    // 7. 숫자만 입력한 경우 (날짜가 아닌)
     if (RegExp(r'^\d+$').hasMatch(trimmed) && trimmed.length < 5) {
       return true;
+    }
+
+    // 8. 의미 없는 문자 조합 (예: "ggg", "hhh" 등)
+    // 같은 문자가 전체의 80% 이상이면 무효
+    if (trimmed.length >= 3) {
+      final charCounts = <String, int>{};
+      for (var char in trimmed.toLowerCase().split('')) {
+        charCounts[char] = (charCounts[char] ?? 0) + 1;
+      }
+      final maxCount = charCounts.values.reduce((a, b) => a > b ? a : b);
+      if (maxCount / trimmed.length > 0.8) {
+        return true;
+      }
     }
 
     return false;

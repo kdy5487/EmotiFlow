@@ -59,41 +59,33 @@ class _EmotionSelectionPageState extends ConsumerState<EmotionSelectionPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 대표 캐릭터 이미지 (적응형 크기)
+                        // 대표 캐릭터 이미지 (박스 없이 이미지만)
                         Center(
                           child: Container(
-                            width: screenWidth * 0.25,
-                            height: screenWidth * 0.25,
+                            width: screenWidth * 0.3,
+                            height: screenWidth * 0.3,
                             constraints: const BoxConstraints(
-                              minWidth: 80,
-                              maxWidth: 140,
-                              minHeight: 80,
-                              maxHeight: 140,
+                              minWidth: 100,
+                              maxWidth: 150,
+                              minHeight: 100,
+                              maxHeight: 150,
                             ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(26),
-                                child: Image.asset(
-                                  EmotionCharacterMap.getCharacterAsset(
-                                      _selectedEmotion),
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(Icons.psychology,
-                                        size: 60);
-                                  },
-                                ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(30),
+                              child: Image.asset(
+                                EmotionCharacterMap.getCharacterAsset(
+                                    _selectedEmotion),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primary.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    child:
+                                        const Icon(Icons.psychology, size: 60),
+                                  );
+                                },
                               ),
                             ),
                           ),
@@ -119,16 +111,16 @@ class _EmotionSelectionPageState extends ConsumerState<EmotionSelectionPage> {
                         ),
                         SizedBox(height: screenHeight * 0.02),
 
-                        // 감정 선택 그리드 (3x4 - 3열, 4행) - 적응형
+                        // 감정 선택 그리드 (3x4 - 3열, 4행) - 고정 간격
                         GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
+                              const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 3, // 3열
-                            crossAxisSpacing: screenWidth * 0.03,
-                            mainAxisSpacing: screenHeight * 0.015,
-                            childAspectRatio: 0.85,
+                            crossAxisSpacing: 12, // 가로 간격
+                            mainAxisSpacing: 10, // 세로 간격 줄임
+                            childAspectRatio: 0.95, // 높이를 줄여서 더 컴팩트하게
                           ),
                           itemCount: emotions.length + 1, // +1 for "선택 안함"
                           itemBuilder: (context, index) {
@@ -246,76 +238,78 @@ class _EmotionSelectionPageState extends ConsumerState<EmotionSelectionPage> {
     required String characterAsset,
     required VoidCallback onTap,
   }) {
+    // 모든 이미지를 동일한 크기로 (제일 큰 이미지 기준)
+    const double fixedSize = 75.0;
+    const double borderRadius = 20.0;
+    const double borderWidth = 3.5;
+
     return GestureDetector(
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Flexible(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              width: itemSize * 0.75,
-              height: itemSize * 0.75,
-              constraints: const BoxConstraints(
-                minWidth: 50,
-                maxWidth: 80,
-                minHeight: 50,
-                maxHeight: 80,
+          // 이미지와 바깥 사각형을 동일한 크기로
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            width: fixedSize,
+            height: fixedSize,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(borderRadius),
+              color: Colors.transparent, // 배경 투명
+              border: Border.all(
+                color: isSelected ? AppTheme.primary : Colors.transparent,
+                width: isSelected ? borderWidth : 0,
               ),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: Colors.white,
-                border: Border.all(
-                  color: isSelected ? AppTheme.primary : Colors.transparent,
-                  width: isSelected ? 3.5 : 0,
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: AppTheme.primary.withOpacity(0.5),
+                        blurRadius: 20,
+                        spreadRadius: 4,
+                      ),
+                    ]
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+            ),
+            // 패딩 없이 이미지가 박스를 채우되, border width만큼 안쪽으로
+            child: Padding(
+              padding: EdgeInsets.all(isSelected ? borderWidth : 0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(
+                  isSelected ? borderRadius - borderWidth : borderRadius,
                 ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: AppTheme.primary.withOpacity(0.5),
-                          blurRadius: 20,
-                          spreadRadius: 4,
-                        ),
-                      ]
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(2),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: Image.asset(
-                    characterAsset,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: AppTheme.primary.withOpacity(0.1),
-                        child: Icon(
-                          Icons.psychology,
-                          color: AppTheme.primary,
-                          size: 32,
-                        ),
-                      );
-                    },
-                  ),
+                child: Image.asset(
+                  characterAsset,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: AppTheme.primary.withOpacity(0.1),
+                      child: Icon(
+                        Icons.psychology,
+                        color: AppTheme.primary,
+                        size: 36,
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
           ),
           const SizedBox(height: 6),
-          Flexible(
+          SizedBox(
+            width: fixedSize,
             child: AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               style: AppTypography.bodySmall.copyWith(
                 color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                fontSize: screenWidth * 0.03,
+                fontSize: 11,
               ),
               child: Text(
                 emotionName,
