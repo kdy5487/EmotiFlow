@@ -206,15 +206,12 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
         children: [
           Row(
             children: [
-              Flexible(
-                child: const Text(
-                  '오늘의 감정',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              const Text(
+                '오늘의 감정',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
                 ),
               ),
               const SizedBox(width: 8),

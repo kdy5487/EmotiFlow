@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:convert';
-import 'dart:math' as math;
+import 'package:flutter/gestures.dart'; // ✅ PointerDeviceKind
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
@@ -18,7 +18,7 @@ class DrawingCanvasPage extends StatefulWidget {
   State<DrawingCanvasPage> createState() => _DrawingCanvasPageState();
 }
 
-enum DrawingTool { pen, eraser, circle, heart, star }
+enum DrawingTool { pen, eraser, circle, heart }
 
 class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   final GlobalKey _repaintKey = GlobalKey();
@@ -26,7 +26,8 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   final List<DrawingElement> _elements = [];
   final List<DrawingElement> _redo = [];
   Color _currentColor = Colors.black;
-  double _currentWidth = 4.0;
+  double _currentPenWidth = 4.0; // ✅ 펜 크기 (분리)
+  double _currentEraserWidth = 20.0; // ✅ 지우개 크기 (분리)
   DrawingTool _currentTool = DrawingTool.pen;
   bool _showColorPalette = false;
   bool _showBrushSizes = false;
@@ -89,7 +90,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
 
   @override
   void dispose() {
-    _autoSave();
+    // ✅ 자동 저장 제거: 사용자가 명시적으로 선택하도록 변경
     super.dispose();
   }
 
@@ -155,8 +156,8 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
             ? const Color(0xFFF7F7F7)
             : _currentColor,
         width: _currentTool == DrawingTool.eraser
-            ? _currentWidth * 2
-            : _currentWidth,
+            ? _currentEraserWidth // ✅ 지우개 전용 크기
+            : _currentPenWidth, // ✅ 펜 전용 크기
         points: [pos],
       );
       _redo.clear();
@@ -211,7 +212,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
       }
       _shapeStart = null;
     }
-    _autoSave(); // 자동 저장
+    // ✅ 자동 저장 제거: 사용자가 명시적으로 선택하도록 변경
   }
 
   void _undo() {
@@ -355,21 +356,44 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
         ),
         body: Column(
           children: [
-            // 캔버스
+            // 캔버스 (AppBar/도구바 영역 제외)
             Expanded(
               child: Container(
                 color: const Color(0xFFF7F7F7),
-                child: GestureDetector(
-                  onPanStart: (d) => _onPanStart(d.localPosition),
-                  onPanUpdate: (d) => _onPanUpdate(d.localPosition),
-                  onPanEnd: (_) => _onPanEnd(),
-                  child: RepaintBoundary(
-                    key: _repaintKey,
-                    child: CustomPaint(
-                      painter: _CanvasPainter(elements: _elements),
-                      size: Size.infinite,
-                    ),
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return ClipRect(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onPanStart: (d) {
+                          // ✅ 캔버스 영역 내부인지 확인
+                          if (d.localPosition.dx >= 0 &&
+                              d.localPosition.dx <= constraints.maxWidth &&
+                              d.localPosition.dy >= 0 &&
+                              d.localPosition.dy <= constraints.maxHeight) {
+                            _onPanStart(d.localPosition);
+                          }
+                        },
+                        onPanUpdate: (d) {
+                          // ✅ 캔버스 영역 내부인지 확인
+                          if (d.localPosition.dx >= 0 &&
+                              d.localPosition.dx <= constraints.maxWidth &&
+                              d.localPosition.dy >= 0 &&
+                              d.localPosition.dy <= constraints.maxHeight) {
+                            _onPanUpdate(d.localPosition);
+                          }
+                        },
+                        onPanEnd: (_) => _onPanEnd(),
+                        child: RepaintBoundary(
+                          key: _repaintKey,
+                          child: CustomPaint(
+                            painter: _CanvasPainter(elements: _elements),
+                            size: Size.infinite,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -476,7 +500,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                 .map((size) => GestureDetector(
                       onTap: () {
                         setState(() {
-                          _currentWidth = size;
+                          _currentPenWidth = size; // ✅ 펜 전용 크기 설정
                           _showBrushSizes = false;
                         });
                       },
@@ -484,15 +508,15 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: _currentWidth == size
+                          color: _currentPenWidth == size // ✅ 펜 크기와 비교
                               ? Colors.blue
                               : Colors.grey[300],
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: _currentWidth == size
+                            color: _currentPenWidth == size // ✅ 펜 크기와 비교
                                 ? Colors.blue
                                 : Colors.grey,
-                            width: _currentWidth == size ? 2 : 1,
+                            width: _currentPenWidth == size ? 2 : 1,
                           ),
                         ),
                         child: Center(
@@ -565,11 +589,13 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
     );
   }
 
-  /// 하단 도구 바 (중요도 순 배치 + 가로 스크롤)
+  /// 하단 도구 바 (중요도 순 배치 + 가로 스크롤, 높이 축소)
   Widget _buildToolBar() {
     return Container(
+      height: 56, // ✅ 고정 높이로 오버플로우 방지
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 4, vertical: 4), // ✅ 패딩 축소 (8→4)
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -577,16 +603,35 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
           children: [
             // ===== 고중요도: 기본 도구 =====
             // 펜
-            IconButton(
-              onPressed: () => setState(() => _currentTool = DrawingTool.pen),
-              icon: const Icon(Icons.edit),
-              color:
-                  _currentTool == DrawingTool.pen ? Colors.blue : Colors.grey,
-              tooltip: '펜',
+            Container(
+              decoration: _currentTool == DrawingTool.pen
+                  ? BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue, width: 2),
+                    )
+                  : null,
+              child: IconButton(
+                onPressed: () => setState(() => _currentTool = DrawingTool.pen),
+                icon: const Icon(Icons.edit),
+                color:
+                    _currentTool == DrawingTool.pen ? Colors.blue : Colors.grey,
+                tooltip: '펜',
+              ),
             ),
-            // 지우개 (탭=지우개 메뉴, 길게 누르기=전체 지우기)
+            // 지우개 (첫 클릭=활성화, 재클릭=크기 선택, 길게 누르기=전체 지우기)
             GestureDetector(
-              onTap: () => _showEraserMenu(),
+              onTap: () {
+                if (_currentTool == DrawingTool.eraser) {
+                  // ✅ 이미 지우개가 활성화되어 있으면 크기 선택 메뉴
+                  _showEraserMenu();
+                } else {
+                  // ✅ 첫 클릭은 지우개 활성화만
+                  setState(() {
+                    _currentTool = DrawingTool.eraser;
+                  });
+                }
+              },
               onLongPress: () {
                 if (_elements.isNotEmpty) _clearAll();
               },
@@ -594,6 +639,14 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
                 width: 48,
                 height: 48,
                 alignment: Alignment.center,
+                decoration: _currentTool == DrawingTool.eraser
+                    ? BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1), // ✅ 선택 시 배경색
+                        borderRadius: BorderRadius.circular(8),
+                        border:
+                            Border.all(color: Colors.blue, width: 2), // ✅ 테두리
+                      )
+                    : null,
                 child: Icon(
                   Icons.auto_fix_high,
                   color: _currentTool == DrawingTool.eraser
@@ -681,17 +734,6 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
               ),
               tooltip: '하트',
             ),
-            // 별
-            IconButton(
-              onPressed: () => setState(() => _currentTool = DrawingTool.star),
-              icon: Icon(
-                Icons.star_border,
-                color: _currentTool == DrawingTool.star
-                    ? Colors.blue
-                    : Colors.grey,
-              ),
-              tooltip: '별',
-            ),
             // 스티커
             IconButton(
               onPressed: () {
@@ -745,7 +787,7 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
       onTap: () {
         setState(() {
           _currentTool = DrawingTool.eraser;
-          _currentWidth = size / 2; // 지우개는 2배로 적용되므로 /2
+          _currentEraserWidth = size; // ✅ 지우개 전용 크기 설정
         });
         Navigator.pop(context);
       },
@@ -915,10 +957,6 @@ class ShapeElement implements DrawingElement {
         _drawHeart(canvas, paint);
         break;
 
-      case DrawingTool.star:
-        _drawStar(canvas, paint);
-        break;
-
       default:
         break;
     }
@@ -950,28 +988,6 @@ class ShapeElement implements DrawingElement {
       center.dx,
       center.dy + height / 4,
     );
-    canvas.drawPath(path, paint);
-  }
-
-  void _drawStar(Canvas canvas, Paint paint) {
-    final path = Path();
-    final center = Offset(
-      (start.dx + end.dx) / 2,
-      (start.dy + end.dy) / 2,
-    );
-    final radius = (end - start).distance / 2;
-
-    for (int i = 0; i < 5; i++) {
-      final angle = (i * 72 - 90) * math.pi / 180;
-      final x = center.dx + radius * (i % 2 == 0 ? 1.0 : 0.5) * math.cos(angle);
-      final y = center.dy + radius * (i % 2 == 0 ? 1.0 : 0.5) * math.sin(angle);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
     canvas.drawPath(path, paint);
   }
 }

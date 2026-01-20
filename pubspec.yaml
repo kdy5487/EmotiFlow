@@ -174,11 +174,9 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/characters/Emoti.png"
-  # 적응형 아이콘 (Android) - 여백 추가로 잘림 방지
-  adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/images/characters/Emoti.png"
-  # Android 아이콘 크기 조정 (66% 크기로 여백 확보)
+  image_path: "assets/images/characters/Emoti2.png"
+  # Adaptive icon 비활성화하고 일반 아이콘만 사용 (확대 방지)
+  # adaptive_icon_background: "#FFFFFF"
+  # adaptive_icon_foreground: "assets/images/characters/Emoti2.png"
   min_sdk_android: 21
-  # iOS 아이콘 여백 제거
   remove_alpha_ios: true
