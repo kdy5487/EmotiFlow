@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// 감정별 캐릭터 이미지 매핑
 ///
 /// EmotiFlow의 각 감정에 대응하는 캐릭터 이미지 경로를 관리합니다.
@@ -97,5 +99,60 @@ class EmotionCharacterMap {
   static bool hasCharacter(String emotion) {
     final emotionKorean = emotionIdToKorean[emotion] ?? emotion;
     return characterAssets.containsKey(emotionKorean);
+  }
+
+  /// 감정별 테마 색상 가져오기 (primary, secondary)
+  static Map<String, Color> getEmotionColors(String? emotion) {
+    if (emotion == null || emotion.isEmpty) {
+      return {
+        'primary': const Color(0xFF8B7FF6),
+        'secondary': const Color(0xFFDA77F2),
+      };
+    }
+
+    final emotionKorean = emotionIdToKorean[emotion] ?? emotion;
+
+    switch (emotionKorean) {
+      case '기쁨':
+        return {
+          'primary': const Color(0xFFFFD700),
+          'secondary': const Color(0xFFFFA500),
+        };
+      case '설렘':
+        return {
+          'primary': const Color(0xFFFF69B4),
+          'secondary': const Color(0xFFDA77F2),
+        };
+      case '감사':
+        return {
+          'primary': const Color(0xFF87CEEB),
+          'secondary': const Color(0xFF6B73FF),
+        };
+      case '평온':
+        return {
+          'primary': const Color(0xFF87CEEB),
+          'secondary': const Color(0xFF90EE90),
+        };
+      case '슬픔':
+        return {
+          'primary': const Color(0xFF6B73FF),
+          'secondary': const Color(0xFF9370DB),
+        };
+      case '분노':
+        return {
+          'primary': const Color(0xFFFF6B6B),
+          'secondary': const Color(0xFFFF4500),
+        };
+      case '걱정':
+        return {
+          'primary': const Color(0xFF9370DB),
+          'secondary': const Color(0xFF8B7FF6),
+        };
+      default:
+        return {
+          'primary': const Color(0xFF8B7FF6),
+          'secondary': const Color(0xFFDA77F2),
+        };
+    }
   }
 }

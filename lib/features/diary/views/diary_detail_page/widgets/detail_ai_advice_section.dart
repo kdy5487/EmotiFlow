@@ -25,10 +25,10 @@ class DetailAISimpleAdvice extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.psychology, color: AppTheme.info),
-              const SizedBox(width: 8),
+              Icon(Icons.psychology, color: AppTheme.info),
+              SizedBox(width: 8),
               Text(
                 'AI 간단 조언',
                 style: TextStyle(
@@ -42,7 +42,7 @@ class DetailAISimpleAdvice extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             advice,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textPrimary,
               height: 1.5,
             ),
@@ -55,18 +55,18 @@ class DetailAISimpleAdvice extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
             ),
-            child: Row(
+            child: const Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.info_outline,
                   color: AppTheme.primary,
                   size: 16,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     '앱바의 🧠 아이콘을 눌러 더 자세한 AI 분석을 확인할 수 있습니다.',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppTheme.primary,
                       fontWeight: FontWeight.w500,

@@ -25,13 +25,13 @@ class DetailMediaSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.photo_library,
                 color: AppTheme.primary,
                 size: 20,
               ),
               const SizedBox(width: 8),
-              Text(
+              const Text(
                 '첨부된 미디어',
                 style: TextStyle(
                   fontSize: 16,
@@ -58,7 +58,6 @@ class DetailMediaSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -114,11 +113,11 @@ class DetailMediaSection extends StatelessWidget {
     return Container(
       color: AppTheme.background,
       alignment: Alignment.center,
-      child: Column(
+      child: const Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.broken_image, color: AppTheme.textTertiary, size: 28),
-          const SizedBox(height: 6),
+          Icon(Icons.broken_image, color: AppTheme.textTertiary, size: 28),
+          SizedBox(height: 6),
           Text(
             '이미지 없음',
             style: TextStyle(

@@ -31,7 +31,7 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
   Widget build(BuildContext context) {
     final themeState = ref.watch(themeProvider);
     final isDarkMode = ref.watch(isDarkModeProvider);
-    
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
@@ -50,21 +50,25 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
         ),
         actions: [
           TextButton(
-            onPressed: _hasChanges ? () {
-              // 선택된 테마 모드 적용
-              ref.read(themeProvider.notifier).setThemeMode(_selectedThemeMode);
-              
-              // 저장 완료 메시지 표시
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('테마 설정이 저장되었습니다.'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-              
-              // 홈페이지로 이동
-              context.go('/');
-            } : null,
+            onPressed: _hasChanges
+                ? () {
+                    // 선택된 테마 모드 적용
+                    ref
+                        .read(themeProvider.notifier)
+                        .setThemeMode(_selectedThemeMode);
+
+                    // 저장 완료 메시지 표시
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('테마 설정이 저장되었습니다.'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+
+                    // 홈페이지로 이동
+                    context.go('/');
+                  }
+                : null,
             child: const Text('저장'),
           ),
         ],
@@ -110,7 +114,7 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
               ],
             ),
             const SizedBox(height: 24),
-            
+
             // 미리보기
             _buildSection(
               title: '미리보기',
@@ -127,14 +131,14 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
                           Icon(
                             Icons.light_mode,
                             color: Colors.orange,
                             size: 20,
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Text(
                             '라이트 모드',
                             style: TextStyle(
@@ -152,9 +156,9 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                           color: Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
+                        child: const Text(
                           '이것은 라이트 모드의 샘플 텍스트입니다.',
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Colors.black87,
                             fontSize: 14,
                           ),
@@ -164,7 +168,7 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // 다크 모드 미리보기
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -176,14 +180,14 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
                           Icon(
                             Icons.dark_mode,
                             color: Colors.blue,
                             size: 20,
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Text(
                             '다크 모드',
                             style: TextStyle(
@@ -201,7 +205,7 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                           color: Colors.grey.shade800,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
+                        child: const Text(
                           '이것은 다크 모드의 샘플 텍스트입니다.',
                           style: TextStyle(
                             color: Colors.white,
@@ -213,12 +217,15 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 Text(
                   '현재 선택된 테마: ${_selectedThemeMode == ThemeMode.light ? "라이트 모드" : "다크 모드"}',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
                   ),
                 ),
               ],
@@ -228,8 +235,6 @@ class _ThemeSettingsPageState extends ConsumerState<ThemeSettingsPage> {
       ),
     );
   }
-
-
 
   Widget _buildSection({
     required String title,

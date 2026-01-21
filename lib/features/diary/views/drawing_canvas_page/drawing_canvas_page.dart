@@ -1,16 +1,10 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:convert';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'constants/drawing_constants.dart';
-import 'widgets/color_palette_selector.dart';
-import 'widgets/brush_size_selector.dart';
-import 'widgets/sticker_palette.dart';
-import 'widgets/drawing_tool_bar.dart';
 
 /// 그림 그리기 페이지 (개선 버전)
 /// - 감정 스티커 추가
@@ -41,6 +35,52 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
   Offset? _shapeStart;
   DrawingElement? _activeElement;
 
+  // 색상 팔레트
+  final List<Color> _colorPalette = [
+    Colors.black,
+    Colors.red,
+    Colors.pink,
+    Colors.purple,
+    Colors.deepPurple,
+    Colors.indigo,
+    Colors.blue,
+    Colors.lightBlue,
+    Colors.cyan,
+    Colors.teal,
+    Colors.green,
+    Colors.lightGreen,
+    Colors.lime,
+    Colors.yellow,
+    Colors.amber,
+    Colors.orange,
+    Colors.deepOrange,
+    Colors.brown,
+    Colors.grey,
+    Colors.blueGrey,
+  ];
+
+  // 브러시 크기 옵션
+  final List<double> _brushSizes = [2.0, 4.0, 6.0, 8.0, 12.0, 16.0, 20.0, 24.0];
+
+  // 감정 스티커
+  final List<String> _emotionStickers = [
+    '😊',
+    '😢',
+    '😡',
+    '😱',
+    '😍',
+    '🤗',
+    '😴',
+    '🤔',
+    '😎',
+    '🥳',
+    '❤️',
+    '💔',
+    '⭐',
+    '✨',
+    '🌈',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -59,9 +99,9 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
       final prefs = await SharedPreferences.getInstance();
       final data = _elements.map((e) => e.toJson()).toList();
       await prefs.setString('temp_drawing', jsonEncode(data));
-      print('✅ 자동 저장 완료');
+      debugPrint('✅ 자동 저장 완료');
     } catch (e) {
-      print('⚠️ 자동 저장 실패: $e');
+      debugPrint('⚠️ 자동 저장 실패: $e');
     }
   }
 
@@ -77,10 +117,10 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
             jsonList.map((json) => DrawingElement.fromJson(json)).toList(),
           );
         });
-        print('✅ 자동 저장 복구 완료 (${_elements.length}개 요소)');
+        debugPrint('✅ 자동 저장 복구 완료 (${_elements.length}개 요소)');
       }
     } catch (e) {
-      print('⚠️ 자동 저장 복구 실패: $e');
+      debugPrint('⚠️ 자동 저장 복구 실패: $e');
     }
   }
 
@@ -243,13 +283,18 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
+        if (didPop) return;
         if (_elements.isEmpty) {
           // 빈 화면이면 임시 저장 삭제하고 나가기
           final prefs = await SharedPreferences.getInstance();
           await prefs.remove('temp_drawing');
-          return true;
+          if (context.mounted) {
+            Navigator.of(context).pop();
+          }
+          return;
         }
 
         // 뒤로가기 시 저장 여부 선택
@@ -280,16 +325,18 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
 
         if (result == null) {
           // 다이얼로그 취소 (뒤로가기 안 함)
-          return false;
+          return;
         } else if (result == true) {
           // 임시 저장 후 나가기
           await _autoSave();
-          return true;
         } else {
           // 저장 안함 (임시 저장 삭제 후 나가기)
           final prefs = await SharedPreferences.getInstance();
           await prefs.remove('temp_drawing');
-          return true;
+        }
+
+        if (context.mounted) {
+          Navigator.of(context).pop();
         }
       },
       child: Scaffold(

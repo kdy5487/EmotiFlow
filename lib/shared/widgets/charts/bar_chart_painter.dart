@@ -18,8 +18,7 @@ class BarChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (data.isEmpty) return;
 
-    final paint = Paint()
-      ..style = PaintingStyle.fill;
+    final paint = Paint()..style = PaintingStyle.fill;
 
     final textPainter = TextPainter(
       textAlign: TextAlign.center,
@@ -42,7 +41,8 @@ class BarChartPainter extends CustomPainter {
     // 막대 그래프 그리기
     for (int i = 0; i < data.length; i++) {
       final double barHeight = (data[i] / maxValue) * chartHeight;
-      final double x = padding + (i * (barWidth + barSpacing)) + (barSpacing / 2);
+      final double x =
+          padding + (i * (barWidth + barSpacing)) + (barSpacing / 2);
       final double y = size.height - bottomPadding - barHeight;
 
       // 그라디언트 효과
@@ -68,7 +68,7 @@ class BarChartPainter extends CustomPainter {
       // 값 표시 (막대 위에)
       textPainter.text = TextSpan(
         text: data[i].toStringAsFixed(1),
-        style: TextStyle(
+        style: const TextStyle(
           color: AppTheme.textPrimary,
           fontSize: 11,
           fontWeight: FontWeight.w600,
@@ -87,7 +87,7 @@ class BarChartPainter extends CustomPainter {
       if (i < labels.length) {
         textPainter.text = TextSpan(
           text: labels[i],
-          style: TextStyle(
+          style: const TextStyle(
             color: AppTheme.textSecondary,
             fontSize: 12,
             fontWeight: FontWeight.w500,
@@ -108,7 +108,8 @@ class BarChartPainter extends CustomPainter {
     _drawYAxisLabels(canvas, size, padding, bottomPadding, chartHeight);
   }
 
-  void _drawGrid(Canvas canvas, Size size, double padding, double bottomPadding, double chartHeight) {
+  void _drawGrid(Canvas canvas, Size size, double padding, double bottomPadding,
+      double chartHeight) {
     final gridPaint = Paint()
       ..color = AppTheme.border.withOpacity(0.3)
       ..strokeWidth = 1;
@@ -124,7 +125,8 @@ class BarChartPainter extends CustomPainter {
     }
   }
 
-  void _drawYAxisLabels(Canvas canvas, Size size, double padding, double bottomPadding, double chartHeight) {
+  void _drawYAxisLabels(Canvas canvas, Size size, double padding,
+      double bottomPadding, double chartHeight) {
     final textPainter = TextPainter(
       textAlign: TextAlign.right,
       textDirection: TextDirection.ltr,
@@ -136,7 +138,7 @@ class BarChartPainter extends CustomPainter {
 
       textPainter.text = TextSpan(
         text: value.toStringAsFixed(1),
-        style: TextStyle(
+        style: const TextStyle(
           color: AppTheme.textSecondary,
           fontSize: 10,
           fontWeight: FontWeight.w500,

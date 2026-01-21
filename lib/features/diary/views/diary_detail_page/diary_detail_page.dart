@@ -246,7 +246,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                         const Spacer(),
                         Text(
                           _formatTime(message.timestamp),
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 10, color: AppTheme.textTertiary),
                         ),
                       ],
@@ -254,8 +254,8 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                     const SizedBox(height: 8),
                     Text(
                       message.content,
-                      style:
-                          TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                      style: const TextStyle(
+                          fontSize: 14, color: AppTheme.textPrimary),
                     ),
                   ],
                 ),
@@ -277,11 +277,11 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(Icons.delete_forever, color: Colors.red),
-            const SizedBox(width: 8),
-            const Text('일기 삭제'),
+            Icon(Icons.delete_forever, color: Colors.red),
+            SizedBox(width: 8),
+            Text('일기 삭제'),
           ],
         ),
         content: Text(

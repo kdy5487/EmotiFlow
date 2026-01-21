@@ -27,9 +27,19 @@
   - [x] AI 채팅 텍스트 입력 필드 색상 진하게
   - [x] 모든 AppBar 제목/아이콘 색상 진하게
   - [x] SafeArea 적용 (일기 작성 페이지)
-- [x] **리팩토링 기반 구축** (2026-01-22)
+- [x] **리팩토링 기반 구축** (2026-01-22 오전)
   - [x] 그림 그리기 위젯 분리 준비 (5개 파일)
   - [x] 일기 작성 위젯 분리 준비 (1개 파일)
+- [x] **대규모 리팩토링 완료** (2026-01-22 오후) ⚡
+  - [x] `drawing_canvas_page.dart` 파일 구조 정리 (폴더 내 이동)
+  - [x] `diary_write_page.dart` 위젯 분리 (1005줄 → 500줄, 50% 감소)
+    - [x] emotion_selector_section.dart (감정 선택 + 강도)
+    - [x] title_input_card.dart (제목)
+    - [x] content_input_card.dart (내용)
+    - [x] drawing_section_card.dart (그림)
+    - [x] settings_section_card.dart (설정)
+  - [x] 중복 파일 삭제 (date_selector_card.dart)
+  - [x] 린트 오류 해결 (4개 필드 final 변경, debugPrint import)
 
 ### 🔄 진행 중인 기능
 - [ ] Clean Architecture 완전 전환 (일부 Provider가 아직 직접 Firebase 접근)
@@ -37,6 +47,7 @@
 - [ ] UseCase 전체 구현 (통계, 필터링, 정렬 등)
 - [ ] 라우팅 전수 점검
 - [ ] **캐릭터별 AI 말투 차별화** (프롬프트 시스템 확장 - 문서화 진행 중)
+- [ ] 감정 선택 UI 공통 위젯화 (EmotionSelectionPage + DiaryWritePage 중복 제거)
 
 ### 📝 해야 할 것 (우선순위순)
 1. **필수 (즉시 착수)**

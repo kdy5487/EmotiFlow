@@ -63,11 +63,11 @@ class AIDetailedAnalysisDialog extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.summarize, color: AppTheme.primary),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.summarize, color: AppTheme.primary),
+              SizedBox(width: 8),
+              Text(
                 '일기 요약',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
@@ -106,11 +106,11 @@ class AIDetailedAnalysisDialog extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.calendar_today, color: AppTheme.secondary),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.calendar_today, color: AppTheme.secondary),
+              SizedBox(width: 8),
+              Text(
                 '주간 조언',
                 style: TextStyle(
                     fontWeight: FontWeight.w600,
@@ -139,11 +139,11 @@ class AIDetailedAnalysisDialog extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.calendar_month, color: AppTheme.warning),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.calendar_month, color: AppTheme.warning),
+              SizedBox(width: 8),
+              Text(
                 '월간 조언',
                 style: TextStyle(
                     fontWeight: FontWeight.w600,
@@ -174,11 +174,11 @@ class AIDetailedAnalysisDialog extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.card_giftcard, color: AppTheme.info),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.card_giftcard, color: AppTheme.info),
+              SizedBox(width: 8),
+              Text(
                 '오늘의 조언 카드',
                 style: TextStyle(
                     fontWeight: FontWeight.w600,

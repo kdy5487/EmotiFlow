@@ -103,7 +103,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // 앱 설정
             _buildExpandableSection(
               key: 'app',
@@ -143,7 +143,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // 개인정보 설정
             _buildExpandableSection(
               key: 'privacy',
@@ -171,7 +171,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // 데이터 관리
             _buildExpandableSection(
               key: 'data',
@@ -190,7 +190,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   subtitle: '백업에서 데이터 복원 (추후 개발 예정)',
                   onTap: () => _showComingSoonDialog('데이터 복원'),
                 ),
-
                 _buildSettingItem(
                   icon: Icons.delete_forever,
                   title: '데이터 삭제',
@@ -200,7 +199,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // 지원 및 정보
             _buildExpandableSection(
               key: 'support',
@@ -228,7 +227,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // 위험한 작업
             _buildExpandableSection(
               key: 'danger',
@@ -264,7 +263,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     required List<Widget> children,
   }) {
     final isExpanded = _expandedSections[key] ?? false;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.surface,
@@ -313,7 +312,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   AnimatedRotation(
                     turns: isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: Icon(
+                    child: const Icon(
                       Icons.keyboard_arrow_down,
                       color: AppTheme.textSecondary,
                       size: 24,
@@ -323,16 +322,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
             ),
           ),
-          
+
           // 구분선
           if (isExpanded)
-            Divider(
+            const Divider(
               height: 1,
               color: AppTheme.divider,
               indent: 20,
               endIndent: 20,
             ),
-          
+
           // 하위 항목들
           if (isExpanded)
             AnimatedContainer(
@@ -368,12 +367,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
+        style: const TextStyle(
           color: AppTheme.textSecondary,
           fontSize: 12,
         ),
       ),
-      trailing: Icon(
+      trailing: const Icon(
         Icons.chevron_right,
         color: AppTheme.textTertiary,
         size: 20,
@@ -469,7 +468,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     if (confirmed == true && context.mounted) {
       try {
-        final success = await ref.read(profileProvider.notifier).deleteAccount();
+        final success =
+            await ref.read(profileProvider.notifier).deleteAccount();
         if (success && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('계정이 삭제되었습니다')),

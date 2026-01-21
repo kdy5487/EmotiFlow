@@ -8,7 +8,7 @@ import 'package:emoti_flow/features/diary/views/diary_list_page/diary_list_page.
 import 'package:emoti_flow/features/diary/views/diary_write_page/diary_write_page.dart';
 import 'package:emoti_flow/features/diary/views/diary_detail_page/diary_detail_page.dart';
 import 'package:emoti_flow/features/diary/views/emotion_selection_page/emotion_selection_page.dart';
-import 'package:emoti_flow/features/diary/views/drawing_canvas_page.dart';
+import 'package:emoti_flow/features/diary/views/drawing_canvas_page/drawing_canvas_page.dart';
 import 'package:emoti_flow/features/settings/views/settings_page.dart';
 import 'package:emoti_flow/features/main/views/main_shell.dart';
 import 'package:emoti_flow/features/ai/views/ai_page.dart';

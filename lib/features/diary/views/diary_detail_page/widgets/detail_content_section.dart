@@ -22,15 +22,15 @@ class DetailContentSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.edit_note,
                 color: AppTheme.primary,
                 size: 20,
               ),
-              const SizedBox(width: 8),
-              Text(
+              SizedBox(width: 8),
+              const Text(
                 '일기 내용',
                 style: TextStyle(
                   fontSize: 16,
@@ -43,7 +43,7 @@ class DetailContentSection extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             entry.content,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               height: 1.6,
               color: AppTheme.textPrimary,

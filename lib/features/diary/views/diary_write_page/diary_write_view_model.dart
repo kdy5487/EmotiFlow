@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/diary_entry.dart';
 import '../../domain/entities/emotion.dart';
@@ -481,7 +482,7 @@ class DiaryWriteViewModel extends StateNotifier<DiaryWriteState> {
     
     final isComplete = aiMessages > 0 && userMessages > 0 && isLastMessageFromUser;
     
-    print('AI 대화 완료 확인: AI=$aiMessages, 사용자=$userMessages, 마지막사용자메시지=$isLastMessageFromUser, 완료=$isComplete');
+    debugPrint('AI 대화 완료 확인: AI=$aiMessages, 사용자=$userMessages, 마지막사용자메시지=$isLastMessageFromUser, 완료=$isComplete');
     
     return isComplete;
   }
@@ -526,36 +527,36 @@ class DiaryWriteViewModel extends StateNotifier<DiaryWriteState> {
 
   /// 저장 가능한 상태인지 확인
   bool get canSaveEntry {
-    print('=== 저장 조건 확인 ===');
-    print('선택된 감정: ${state.selectedEmotions}');
-    print('AI 대화형 모드: ${state.isChatMode}');
-    print('제목: "${state.title.trim()}"');
-    print('내용: "${state.content.trim()}"');
-    print('채팅 히스토리: ${state.chatHistory.length}개');
+    debugPrint('=== 저장 조건 확인 ===');
+    debugPrint('선택된 감정: ${state.selectedEmotions}');
+    debugPrint('AI 대화형 모드: ${state.isChatMode}');
+    debugPrint('제목: "${state.title.trim()}"');
+    debugPrint('내용: "${state.content.trim()}"');
+    debugPrint('채팅 히스토리: ${state.chatHistory.length}개');
     
     // AI 대화형 모드인 경우 - 모든 조건 제거, 채팅만으로 저장 가능
     if (state.isChatMode) {
-      print('✅ AI 대화형 저장 가능 - 모든 조건 무시');
+      debugPrint('✅ AI 대화형 저장 가능 - 모든 조건 무시');
       return true;
     }
     
     // 자유형 모드인 경우
     // 감정이 선택되지 않았으면 저장 불가
     if (state.selectedEmotions.isEmpty) {
-      print('❌ 감정이 선택되지 않음');
+      debugPrint('❌ 감정이 선택되지 않음');
       return false;
     }
     
     if (state.title.trim().isEmpty) {
-      print('❌ 제목이 비어있음');
+      debugPrint('❌ 제목이 비어있음');
       return false;
     }
     if (state.content.trim().isEmpty) {
-      print('❌ 내용이 비어있음');
+      debugPrint('❌ 내용이 비어있음');
       return false;
     }
     
-    print('✅ 자유형 저장 가능');
+    debugPrint('✅ 자유형 저장 가능');
     return true;
   }
 

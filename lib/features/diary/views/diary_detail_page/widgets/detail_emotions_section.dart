@@ -22,14 +22,14 @@ class DetailEmotionsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.emoji_emotions,
                 color: AppTheme.primary,
                 size: 20,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 '오늘의 감정',
                 style: TextStyle(
@@ -41,7 +41,6 @@ class DetailEmotionsSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
           Wrap(
             spacing: 12,
             runSpacing: 12,
@@ -66,9 +65,9 @@ class DetailEmotionsSection extends StatelessWidget {
       '걱정': AppTheme.warning,
       '지루함': AppTheme.textTertiary,
     };
-    
+
     final color = emotionColors[emotion] ?? AppTheme.primary;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(

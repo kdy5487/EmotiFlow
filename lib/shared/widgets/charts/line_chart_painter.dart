@@ -50,7 +50,9 @@ class LineChartPainter extends CustomPainter {
     final points = <Offset>[];
     for (int i = 0; i < data.length; i++) {
       final x = padding + (i / (data.length - 1)) * chartWidth;
-      final y = padding + chartHeight - ((data[i] - minValue) / valueRange) * chartHeight;
+      final y = padding +
+          chartHeight -
+          ((data[i] - minValue) / valueRange) * chartHeight;
       points.add(Offset(x, y));
     }
 
@@ -79,15 +81,18 @@ class LineChartPainter extends CustomPainter {
     // 점 그리기
     for (int i = 0; i < points.length; i++) {
       canvas.drawCircle(points[i], 6, dotPaint);
-      canvas.drawCircle(points[i], 6, Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.fill);
+      canvas.drawCircle(
+          points[i],
+          6,
+          Paint()
+            ..color = Colors.white
+            ..style = PaintingStyle.fill);
       canvas.drawCircle(points[i], 4, dotPaint);
 
       // 값 표시
       textPainter.text = TextSpan(
         text: data[i].toStringAsFixed(1),
-        style: TextStyle(
+        style: const TextStyle(
           color: AppTheme.textPrimary,
           fontSize: 10,
           fontWeight: FontWeight.w600,
@@ -107,7 +112,7 @@ class LineChartPainter extends CustomPainter {
     for (int i = 0; i < labels.length && i < points.length; i++) {
       textPainter.text = TextSpan(
         text: labels[i],
-        style: TextStyle(
+        style: const TextStyle(
           color: AppTheme.textSecondary,
           fontSize: 11,
           fontWeight: FontWeight.w500,
@@ -140,7 +145,7 @@ class LineChartPainter extends CustomPainter {
       final value = maxValue - (i / 5) * valueRange;
       textPainter.text = TextSpan(
         text: value.toStringAsFixed(1),
-        style: TextStyle(
+        style: const TextStyle(
           color: AppTheme.textSecondary,
           fontSize: 9,
         ),

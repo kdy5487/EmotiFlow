@@ -34,22 +34,24 @@ class _EmotionSelectionPageState extends ConsumerState<EmotionSelectionPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
+    final theme = Theme.of(context);
+    
     return KeyboardDismissibleScaffold(
-      backgroundColor: const Color(0xFFFFFDF7),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           '감정 선택',
           style: TextStyle(
-            color: Color(0xFF0F172A),
+            color: theme.colorScheme.onSurface,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFFFFFDF7),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(
-          color: Color(0xFF0F172A),
+        iconTheme: IconThemeData(
+          color: theme.colorScheme.onSurface,
         ),
       ),
       body: SafeArea(
@@ -107,7 +109,7 @@ class _EmotionSelectionPageState extends ConsumerState<EmotionSelectionPage> {
                           '오늘의 감정을 선택해주세요',
                           style: AppTypography.headlineSmall.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppTheme.textPrimary,
+                            color: theme.colorScheme.onSurface,
                             fontSize: screenWidth * 0.05,
                           ),
                         ),
@@ -115,7 +117,7 @@ class _EmotionSelectionPageState extends ConsumerState<EmotionSelectionPage> {
                         Text(
                           '감정을 선택하면 그에 맞는 에모티가 함께 대화해요',
                           style: AppTypography.bodyMedium.copyWith(
-                            color: AppTheme.textSecondary,
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
                             fontSize: screenWidth * 0.035,
                           ),
                         ),
@@ -183,7 +185,7 @@ class _EmotionSelectionPageState extends ConsumerState<EmotionSelectionPage> {
                     vertical: 16,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.colorScheme.surface,
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.05),
@@ -200,7 +202,7 @@ class _EmotionSelectionPageState extends ConsumerState<EmotionSelectionPage> {
                       child: ElevatedButton(
                         onPressed: _startChat,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primary,
+                          backgroundColor: theme.colorScheme.primary,
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -248,6 +250,7 @@ class _EmotionSelectionPageState extends ConsumerState<EmotionSelectionPage> {
     required String characterAsset,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
     // 모든 이미지를 동일한 크기로 (제일 큰 이미지 기준)
     const double fixedSize = 75.0;
     const double borderRadius = 20.0;
@@ -268,13 +271,13 @@ class _EmotionSelectionPageState extends ConsumerState<EmotionSelectionPage> {
               borderRadius: BorderRadius.circular(borderRadius),
               color: Colors.transparent, // 배경 투명
               border: Border.all(
-                color: isSelected ? AppTheme.primary : Colors.transparent,
+                color: isSelected ? theme.colorScheme.primary : Colors.transparent,
                 width: isSelected ? borderWidth : 0,
               ),
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: AppTheme.primary.withOpacity(0.5),
+                        color: theme.colorScheme.primary.withOpacity(0.5),
                         blurRadius: 20,
                         spreadRadius: 4,
                       ),
@@ -299,10 +302,10 @@ class _EmotionSelectionPageState extends ConsumerState<EmotionSelectionPage> {
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      color: AppTheme.primary.withOpacity(0.1),
+                      color: theme.colorScheme.primaryContainer,
                       child: Icon(
                         Icons.psychology,
-                        color: AppTheme.primary,
+                        color: theme.colorScheme.primary,
                         size: 36,
                       ),
                     );
@@ -317,7 +320,9 @@ class _EmotionSelectionPageState extends ConsumerState<EmotionSelectionPage> {
             child: AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               style: AppTypography.bodySmall.copyWith(
-                color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
+                color: isSelected 
+                    ? theme.colorScheme.primary 
+                    : theme.colorScheme.onSurface.withOpacity(0.6),
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 fontSize: 11,
               ),
