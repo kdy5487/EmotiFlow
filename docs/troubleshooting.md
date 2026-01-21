@@ -1,6 +1,51 @@
-## 구글 로그인 트러블슈팅 (ApiException: 10)
+## 트러블슈팅 가이드
 
 이 문서는 개발하면서 발생한 트러블 슈팅 모음집입니다.
+
+---
+
+## 첫 로그인 시도 실패 (2026-01-21)
+
+### 1) 증상
+- 앱을 새로 설치하거나 로그아웃 후 첫 Google 로그인 시도가 실패
+- 두 번째 로그인 시도부터는 정상 작동
+- 특정 에러 메시지 없이 조용히 실패
+
+### 2) 원인
+`auth_service.dart`의 `signInWithGoogle()` 메서드에서 **무조건 `signOut()`을 먼저 호출**하는 로직
+
+```dart
+// ❌ 문제 코드
+Future<UserCredential?> signInWithGoogle() async {
+  await _googleSignIn.signOut();  // 세션이 없어도 무조건 호출
+  final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+  // ...
+}
+```
+
+- 첫 로그인: Google 세션이 없는데 `signOut()` 호출 → 내부 상태 혼란 → 실패
+- 두 번째 로그인: 첫 시도에서 생성된 세션 사용 → 성공
+
+### 3) 해결
+로그인 상태를 먼저 확인하고, **세션이 있을 때만 정리**
+
+```dart
+// ✅ 해결 코드
+Future<UserCredential?> signInWithGoogle() async {
+  final isSignedIn = await _googleSignIn.isSignedIn();
+  if (isSignedIn) {
+    await _googleSignIn.signOut();  // 조건부 실행
+  }
+  final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+  // ...
+}
+```
+
+### 4) 결과
+- 첫 로그인 시도부터 정상 작동 ✅
+- 불필요한 `signOut()` 호출 제거로 성능 개선 ✅
+
+---
 
 ## 구글 로그인 트러블슈팅 (ApiException: 10)
 ### 1) `PlatformException(sign_in_failed, ApiException: 10)` 오류 증상 (What)

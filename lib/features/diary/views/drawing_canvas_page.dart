@@ -1,11 +1,16 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:convert';
-import 'package:flutter/gestures.dart'; // ✅ PointerDeviceKind
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'constants/drawing_constants.dart';
+import 'widgets/color_palette_selector.dart';
+import 'widgets/brush_size_selector.dart';
+import 'widgets/sticker_palette.dart';
+import 'widgets/drawing_tool_bar.dart';
 
 /// 그림 그리기 페이지 (개선 버전)
 /// - 감정 스티커 추가
@@ -35,52 +40,6 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
 
   Offset? _shapeStart;
   DrawingElement? _activeElement;
-
-  // 색상 팔레트
-  final List<Color> _colorPalette = [
-    Colors.black,
-    Colors.red,
-    Colors.pink,
-    Colors.purple,
-    Colors.deepPurple,
-    Colors.indigo,
-    Colors.blue,
-    Colors.lightBlue,
-    Colors.cyan,
-    Colors.teal,
-    Colors.green,
-    Colors.lightGreen,
-    Colors.lime,
-    Colors.yellow,
-    Colors.amber,
-    Colors.orange,
-    Colors.deepOrange,
-    Colors.brown,
-    Colors.grey,
-    Colors.blueGrey,
-  ];
-
-  // 브러시 크기 옵션
-  final List<double> _brushSizes = [2.0, 4.0, 6.0, 8.0, 12.0, 16.0, 20.0, 24.0];
-
-  // 감정 스티커
-  final List<String> _emotionStickers = [
-    '😊',
-    '😢',
-    '😡',
-    '😱',
-    '😍',
-    '🤗',
-    '😴',
-    '🤔',
-    '😎',
-    '🥳',
-    '❤️',
-    '💔',
-    '⭐',
-    '✨',
-    '🌈',
-  ];
 
   @override
   void initState() {
@@ -335,7 +294,17 @@ class _DrawingCanvasPageState extends State<DrawingCanvasPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('그림 그리기'),
+          title: const Text(
+            '그림 그리기',
+            style: TextStyle(
+              color: Color(0xFF0F172A),
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          iconTheme: const IconThemeData(
+            color: Color(0xFF0F172A),
+          ),
           actions: [
             IconButton(
               onPressed: _elements.isEmpty ? null : _clearAll,

@@ -37,10 +37,20 @@ class _EmotionSelectionPageState extends ConsumerState<EmotionSelectionPage> {
     return KeyboardDismissibleScaffold(
       backgroundColor: const Color(0xFFFFFDF7),
       appBar: AppBar(
-        title: const Text('감정 선택'),
+        title: const Text(
+          '감정 선택',
+          style: TextStyle(
+            color: Color(0xFF0F172A),
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         centerTitle: true,
         backgroundColor: const Color(0xFFFFFDF7),
         elevation: 0,
+        iconTheme: const IconThemeData(
+          color: Color(0xFF0F172A),
+        ),
       ),
       body: SafeArea(
         child: LayoutBuilder(

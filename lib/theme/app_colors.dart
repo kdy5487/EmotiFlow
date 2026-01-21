@@ -44,9 +44,9 @@ class AppColors {
   static const Color surfaceSecondary = Color(0xFFF8FAFC);    // 보조 표면
   static const Color surfaceTertiary = Color(0xFFF1F5F9);    // 3차 표면
 
-  static const Color textPrimary = Color(0xFF1E293B);  // 슬레이트 - 가독성
-  static const Color textSecondary = Color(0xFF64748B); // 슬레이트 - 부가 정보
-  static const Color textTertiary = Color(0xFF94A3B8);  // 3차 텍스트
+  static const Color textPrimary = Color(0xFF0F172A);  // 진한 슬레이트 - 가독성 개선
+  static const Color textSecondary = Color(0xFF475569); // 슬레이트 - 부가 정보 (약간 진하게)
+  static const Color textTertiary = Color(0xFF64748B);  // 3차 텍스트
   static const Color textInverse = Color(0xFFFFFFFF);   // 반전 텍스트
 
   static const Color border = Color(0xFFE2E8F0);       // 테두리 기본

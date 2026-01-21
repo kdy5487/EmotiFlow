@@ -233,6 +233,9 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
         centerTitle: true,
         backgroundColor: backgroundColor,
         elevation: 0,
+        iconTheme: const IconThemeData(
+          color: Color(0xFF0F172A), // 아이콘 진하게
+        ),
         actions: [
           IconButton(
             onPressed: _startNewConversation,

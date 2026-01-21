@@ -47,10 +47,20 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
     return KeyboardDismissibleScaffold(
       backgroundColor: const Color(0xFFFFFDF7),
       appBar: AppBar(
-        title: const Text('일기 작성'),
+        title: const Text(
+          '일기 작성',
+          style: TextStyle(
+            color: Color(0xFF0F172A), // 진한 색상
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         centerTitle: true,
         backgroundColor: const Color(0xFFFFFDF7),
         elevation: 0,
+        iconTheme: const IconThemeData(
+          color: Color(0xFF0F172A), // 뒤로가기 버튼도 진하게
+        ),
         actions: [
           TextButton(
             onPressed: _saveDiary,
@@ -59,19 +69,23 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
+                color: Color(0xFF8B7FF6), // Primary 색상
               ),
             ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(
-          horizontal: screenWidth * 0.05,
-          vertical: 16,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            left: screenWidth * 0.05,
+            right: screenWidth * 0.05,
+            top: 16,
+            bottom: 32, // 하단 여유 공간 확보
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             // 1. 날짜 선택
             _buildDateSelector(),
             const SizedBox(height: 24),
@@ -110,6 +124,7 @@ class _DiaryWritePageState extends ConsumerState<DiaryWritePage> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
