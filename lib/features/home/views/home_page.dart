@@ -18,6 +18,7 @@ import '../widgets/greeting_header.dart';
 import '../widgets/recent_diaries_section.dart';
 import '../widgets/growth_visualization.dart';
 import '../widgets/daily_stamp_calendar.dart';
+import '../widgets/diary_overview_section.dart';
 import '../models/growth_status.dart';
 
 /// 음악 재생 파동 효과를 그리는 CustomPainter
@@ -267,29 +268,24 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
               const SizedBox(height: 20),
 
-              // 3. 7일 스탬프 달력
-              DailyStampCalendar(
-                stamps: _calculateGrowthStatus(ref).last7Days,
-                onTap: () => context.push('/diaries'), // 달력 페이지로 이동
-              ),
+              // 3. 일기 작성 버튼 (심플하게)
+              _buildSimpleWriteButton(context, ref),
               const SizedBox(height: 24),
 
-              // 4. CTA 버튼
-              _buildMainCTAButton(context, ref),
-              const SizedBox(height: 32),
-
-              // 5. 최근 일기 (간소화)
-              RecentDiariesSection(
+              // 4. 최근 7일 + 최근 일기 통합 섹션
+              DiaryOverviewSection(
+                growthStatus: _calculateGrowthStatus(ref),
                 recentDiaries:
                     ref.watch(diaryProvider).diaryEntries.take(3).toList(),
+                allDiaries: ref.watch(diaryProvider).diaryEntries,
               ),
               const SizedBox(height: 32),
 
-              // 6. 감정 트렌드 (간소화)
+              // 5. 감정 트렌드 (간소화)
               _buildSimpleEmotionTrendSection(context, ref),
               const SizedBox(height: 32),
 
-              // 7. 빠른 액션 (하단으로 이동, 축소)
+              // 6. 빠른 액션 (하단으로 이동, 축소)
               _buildCompactQuickActions(context, ref),
 
               const SizedBox(height: 100), // 하단 여유 공간
@@ -726,52 +722,84 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  /// 메인 CTA 버튼
-  Widget _buildMainCTAButton(BuildContext context, WidgetRef ref) {
-    final growthStatus = _calculateGrowthStatus(ref);
+  /// 심플한 일기 작성 버튼 (박스 안에)
+  Widget _buildSimpleWriteButton(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return GestureDetector(
-      onTap: () => _handleProtectedAction(
-          context, ref, () => _showDiaryWritingOptions(context, ref)),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              theme.colorScheme.primary,
-              theme.colorScheme.secondary,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: theme.colorScheme.primary.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.edit, color: Colors.white, size: 24),
-            const SizedBox(width: 12),
-            Text(
-              growthStatus.todayCompleted
-                  ? '오늘의 감정 확인하기'
-                  : '오늘의 감정 기록하기 🌱',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _handleProtectedAction(
+                  context, ref, () => context.push('/diaries/write')),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.edit, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      '자유 일기',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _handleProtectedAction(
+                  context, ref, () => context.push('/diaries/chat')),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.secondary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.chat, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'AI 채팅',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

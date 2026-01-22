@@ -69,7 +69,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     final ui = ref.watch(diaryListUiProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: DiaryListAppBar(
         searchController: _searchController,
         searchFocusNode: _searchFocusNode,

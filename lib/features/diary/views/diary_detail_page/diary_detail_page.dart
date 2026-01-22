@@ -91,7 +91,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
         }
 
         return Scaffold(
-          backgroundColor: AppTheme.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: DetailAppBar(
             diaryEntry: diaryEntry,
             onAnalysisTap: () => _showAIDetailedAnalysis(diaryEntry),

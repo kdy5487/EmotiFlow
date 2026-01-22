@@ -52,8 +52,14 @@ class GrowthVisualization extends StatelessWidget {
             _buildStreakInfo(theme),
             const SizedBox(height: 16),
 
-            // 오늘의 물주기 상태
-            _buildTodayStatus(theme, isDark),
+            // 안내 텍스트
+            Text(
+              '일기를 작성하면 씨앗이 자라요!',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                fontSize: 14,
+              ),
+            ),
             const SizedBox(height: 16),
 
             // 진행률 바
@@ -105,45 +111,6 @@ class GrowthVisualization extends StatelessWidget {
     );
   }
 
-  Widget _buildTodayStatus(ThemeData theme, bool isDark) {
-    final completed = status.todayCompleted;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: completed
-            ? const Color(0xFF4CAF50).withOpacity(0.1)
-            : (isDark ? Colors.grey[800] : Colors.grey[100]),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: completed
-              ? const Color(0xFF4CAF50)
-              : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
-          width: 2,
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            completed ? Icons.check_circle : Icons.circle_outlined,
-            color: completed ? const Color(0xFF4CAF50) : Colors.grey,
-            size: 24,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            completed ? '오늘의 물주기 완료!' : '오늘의 물주기가 필요해요',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: completed
-                  ? const Color(0xFF4CAF50)
-                  : (isDark ? Colors.grey[400] : Colors.grey[600]),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildProgressBar(ThemeData theme) {
     return Column(

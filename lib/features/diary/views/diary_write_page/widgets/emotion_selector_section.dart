@@ -87,9 +87,9 @@ class EmotionSelectorSection extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: screenWidth * 0.04,
-              childAspectRatio: itemWidth / (itemWidth + 10),
+              mainAxisSpacing: 18,
+              crossAxisSpacing: screenWidth * 0.05,
+              childAspectRatio: itemWidth / (itemWidth + 15),
             ),
             itemCount: emotions.length,
             itemBuilder: (context, index) {
