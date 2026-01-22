@@ -22,6 +22,9 @@ AI가 질문을 던지고 사용자가 응답하며 자연스럽게 일기를 �
 - 감정 기반 맞춤형 질문 생성
 - 실시간 대화형 인터페이스
 - 일기 자동 요약 및 저장
+- <img src="https://github.com/user-attachments/assets/c61b65d3-5d72-4112-9e3f-48379db26a65" width="300" alt="AI 감정 분석 화면" />
+<img src="https://github.com/user-attachments/assets/f398263d-58e6-4f38-8722-78b07f350223" width="300" alt="일기 상세 화면 1" />
+<img src="https://github.com/user-attachments/assets/bfdb2604-e14f-4295-a5df-dd80cdd86c35" width="300" alt="일기 상세 화면 2" />
 ![KakaoTalk_20260123_060902823_06](https://github.com/user-attachments/assets/0c7af225-8a93-4c2b-a5c0-a1e34dae900c)
 ![KakaoTalk_20260123_060902823_05](https://github.com/user-attachments/assets/5e5361bd-bd82-41ea-8b85-7d7beea465ba)
 ![KakaoTalk_20260123_060902823_04](https://github.com/user-attachments/assets/6f74b13f-59fe-4f28-b7a0-d0e22f122335)
