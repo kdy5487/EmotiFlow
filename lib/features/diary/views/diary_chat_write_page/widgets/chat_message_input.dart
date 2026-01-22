@@ -31,8 +31,16 @@ class ChatMessageInput extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: controller,
+                style: const TextStyle(
+                  color: AppColors.textPrimary, // 진한 색상
+                  fontSize: 15,
+                  fontWeight: FontWeight.w400,
+                ),
                 decoration: InputDecoration(
                   hintText: '내용을 입력하세요...',
+                  hintStyle: TextStyle(
+                    color: AppColors.textTertiary, // 힌트는 연하게
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(25),
                     borderSide: BorderSide.none,

@@ -83,8 +83,12 @@ class AuthService {
     try {
       print('🔍 Google 로그인 시작...');
 
-      // 기존 Google 로그인 상태 확인 및 정리
-      await _googleSignIn.signOut();
+      // 기존 Google 로그인 상태 확인
+      final isSignedIn = await _googleSignIn.isSignedIn();
+      if (isSignedIn) {
+        print('🔍 기존 Google 세션 정리 중...');
+        await _googleSignIn.signOut();
+      }
 
       // Google 로그인 진행
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();

@@ -5,12 +5,11 @@ import '../../providers/firestore_provider.dart';
 import '../../domain/entities/diary_entry.dart';
 import '../../../../theme/app_theme.dart';
 import 'widgets/detail_app_bar.dart';
-import 'widgets/detail_header_section.dart';
-import 'widgets/detail_emotions_section.dart';
+import 'widgets/detail_hero_section.dart';
 import 'widgets/detail_media_section.dart';
-import 'widgets/detail_content_section.dart';
 import 'widgets/detail_ai_advice_section.dart';
 import 'widgets/ai_analysis_dialog.dart';
+import '../../../../shared/constants/emotion_character_map.dart';
 
 /// 일기 상세 페이지
 class DiaryDetailPage extends ConsumerStatefulWidget {
@@ -91,32 +90,76 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
         }
 
         return Scaffold(
-          backgroundColor: AppTheme.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: DetailAppBar(
             diaryEntry: diaryEntry,
             onAnalysisTap: () => _showAIDetailedAnalysis(diaryEntry),
             onMoreTap: () => _showMoreOptions(diaryEntry),
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DetailHeaderSection(entry: diaryEntry),
-                const SizedBox(height: 16),
-                if (diaryEntry.emotions.isNotEmpty) ...[
-                  DetailEmotionsSection(entry: diaryEntry),
-                  const SizedBox(height: 24),
-                ],
-                if (diaryEntry.mediaFiles.isNotEmpty) ...[
-                  DetailMediaSection(entry: diaryEntry),
-                  const SizedBox(height: 24),
-                ],
-                DetailContentSection(entry: diaryEntry),
-                const SizedBox(height: 24),
-                DetailAISimpleAdvice(entry: diaryEntry),
-              ],
-            ),
+          body: Builder(
+            builder: (context) {
+              final primaryEmotion = diaryEntry.emotions.isNotEmpty 
+                  ? diaryEntry.emotions.first 
+                  : null;
+              final backgroundColor = primaryEmotion != null
+                  ? EmotionCharacterMap.getBackgroundColor(primaryEmotion)
+                  : 0xFFFFFDF7; // 기본 크림색
+              
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(backgroundColor).withOpacity(0.3),
+                      Color(backgroundColor).withOpacity(0.1),
+                      Theme.of(context).scaffoldBackgroundColor,
+                    ],
+                    stops: const [0.0, 0.3, 1.0],
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 상단 히어로 영역
+                      DetailHeroSection(entry: diaryEntry),
+                      const SizedBox(height: 24),
+                      // 제목 영역 (배경색 없이)
+                      if (diaryEntry.title.isNotEmpty) ...[
+                        Text(
+                          diaryEntry.title,
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF111827),
+                                fontSize: 22,
+                              ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                      // 본문 영역 (배경색 없이)
+                      Text(
+                        diaryEntry.content,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          height: 1.6,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // 이미지/그림 섹션
+                      if (diaryEntry.mediaFiles.isNotEmpty) ...[
+                        DetailMediaSection(entry: diaryEntry),
+                        const SizedBox(height: 24),
+                      ],
+                      // AI 조언 카드
+                      DetailAISimpleAdvice(entry: diaryEntry),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         );
       },
@@ -246,7 +289,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                         const Spacer(),
                         Text(
                           _formatTime(message.timestamp),
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 10, color: AppTheme.textTertiary),
                         ),
                       ],
@@ -254,8 +297,8 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                     const SizedBox(height: 8),
                     Text(
                       message.content,
-                      style:
-                          TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                      style: const TextStyle(
+                          fontSize: 14, color: AppTheme.textPrimary),
                     ),
                   ],
                 ),
@@ -277,11 +320,11 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(Icons.delete_forever, color: Colors.red),
-            const SizedBox(width: 8),
-            const Text('일기 삭제'),
+            Icon(Icons.delete_forever, color: Colors.red),
+            SizedBox(width: 8),
+            Text('일기 삭제'),
           ],
         ),
         content: Text(

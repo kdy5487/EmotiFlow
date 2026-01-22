@@ -39,13 +39,14 @@ class AppTheme {
   static const Color error = Color(0xFFEF4444);
   static const Color info = Color(0xFF3B82F6);
   
-  // Dark Theme Colors
-  static const Color darkBackground = Color(0xFF111827);
-  static const Color darkSurface = Color(0xFF1F2937);
-  static const Color darkTextPrimary = Color(0xFFF9FAFB);
-  static const Color darkTextSecondary = Color(0xFFD1D5DB);
-  static const Color darkBorder = Color(0xFF374151);
-  static const Color darkDivider = Color(0xFF374151);
+  // Dark Theme Colors (표준 다크모드 - 더 진하게)
+  static const Color darkBackground = Color(0xFF121212);
+  static const Color darkSurface = Color(0xFF1E1E1E);
+  static const Color darkSurfaceVariant = Color(0xFF2C2C2C);
+  static const Color darkTextPrimary = Color(0xFFE1E1E1);
+  static const Color darkTextSecondary = Color(0xFFB0B0B0);
+  static const Color darkBorder = Color(0xFF3A3A3A);
+  static const Color darkDivider = Color(0xFF2A2A2A);
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -149,10 +150,12 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      scaffoldBackgroundColor: darkBackground,
       colorScheme: const ColorScheme.dark(
         primary: primary,
         secondary: secondary,
         surface: darkSurface,
+        surfaceContainerHighest: darkSurfaceVariant,
         error: error,
         onPrimary: Colors.white,
         onSecondary: Colors.white,

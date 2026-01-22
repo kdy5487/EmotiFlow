@@ -17,7 +17,9 @@ class MainShell extends ConsumerWidget {
     final isLoggedIn = authState.user != null;
 
     return Scaffold(
-      body: navigationShell,
+      body: SafeArea(
+        child: navigationShell,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: navigationShell.currentIndex,

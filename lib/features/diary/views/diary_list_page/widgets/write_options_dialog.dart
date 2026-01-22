@@ -8,43 +8,71 @@ class WriteOptionsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '어떻게 작성할까요?',
-              style: AppTypography.titleLarge
-                  .copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-            _buildOption(
-              context,
-              icon: Icons.chat_bubble_outline,
-              title: 'AI와 대화하며 작성',
-              subtitle: '상담가와 대화하듯 편하게 작성해요',
-              color: AppColors.primary,
-              onTap: () {
-                context.pop();
-                context.push('/diaries/chat');
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildOption(
-              context,
-              icon: Icons.edit_outlined,
-              title: '직접 작성',
-              subtitle: '오늘의 감정과 일기를 직접 기록해요',
-              color: AppColors.secondary,
-              onTap: () {
-                context.pop();
-                context.push('/diaries/write');
-              },
-            ),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 드래그 핸들
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '어떻게 작성할까요?',
+                    style: AppTypography.titleLarge
+                        .copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => context.pop(),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _buildOption(
+                context,
+                icon: Icons.chat_bubble_outline,
+                title: 'AI와 대화하며 작성',
+                subtitle: '상담가와 대화하듯 편하게 작성해요',
+                color: AppColors.primary,
+                onTap: () {
+                  context.pop();
+                  context.push('/diaries/chat');
+                },
+              ),
+              const SizedBox(height: 16),
+              _buildOption(
+                context,
+                icon: Icons.edit_outlined,
+                title: '직접 작성',
+                subtitle: '오늘의 감정과 일기를 직접 기록해요',
+                color: AppColors.secondary,
+                onTap: () {
+                  context.pop();
+                  context.push('/diaries/write');
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );

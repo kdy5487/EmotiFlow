@@ -21,7 +21,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   final _nicknameController = TextEditingController();
   final _bioController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
-  
+
   String? _selectedImagePath;
   File? _selectedImageFile;
   DateTime? _selectedBirthDate;
@@ -57,7 +57,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileProvider);
     final authState = ref.watch(authProvider);
-    
+
     if (profileState.isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -106,15 +106,15 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               // 프로필 이미지
               _buildProfileImageSection(),
               const SizedBox(height: 24),
-              
+
               // 기본 정보
               _buildBasicInfoSection(authState.user),
               const SizedBox(height: 24),
-              
+
               // 자기소개
               _buildBioSection(),
               const SizedBox(height: 24),
-              
+
               // 저장 버튼
               SizedBox(
                 width: double.infinity,
@@ -133,7 +133,8 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : const Text(
@@ -158,7 +159,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // 섹션 제목
-        Row(
+        const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
@@ -166,10 +167,10 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               color: AppTheme.primary,
               size: 20,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               '프로필 이미지',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textPrimary,
@@ -178,7 +179,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           ],
         ),
         const SizedBox(height: 20),
-        
+
         // 프로필 이미지
         Center(
           child: GestureDetector(
@@ -190,10 +191,13 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                   backgroundColor: AppTheme.surface,
                   backgroundImage: _selectedImageFile != null
                       ? FileImage(_selectedImageFile!)
-                      : (_selectedImagePath != null && _selectedImagePath!.startsWith('http'))
+                      : (_selectedImagePath != null &&
+                              _selectedImagePath!.startsWith('http'))
                           ? NetworkImage(_selectedImagePath!)
                           : null,
-                  child: (_selectedImageFile == null && (_selectedImagePath == null || _selectedImagePath!.startsWith('http')))
+                  child: (_selectedImageFile == null &&
+                          (_selectedImagePath == null ||
+                              _selectedImagePath!.startsWith('http')))
                       ? const Icon(
                           Icons.person,
                           size: 60,
@@ -206,7 +210,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                   right: 0,
                   child: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppTheme.primary,
                       shape: BoxShape.circle,
                     ),
@@ -222,7 +226,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // 이미지 변경 버튼
         TextButton(
           onPressed: _showImagePickerDialog,
@@ -235,21 +239,21 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   /// 기본 정보 섹션
   Widget _buildBasicInfoSection(User? user) {
     final currentProfile = ref.read(profileProvider).profile;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
-            Icon(
+            const Icon(
               Icons.person_outline,
               color: AppTheme.primary,
               size: 20,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               '기본 정보',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textPrimary,
@@ -258,7 +262,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           ],
         ),
         const SizedBox(height: 16),
-        
+
         // 닉네임
         TextFormField(
           controller: _nicknameController,
@@ -284,11 +288,11 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           },
         ),
         const SizedBox(height: 16),
-        
+
         // 생년월일
         _buildBirthDateField(),
         const SizedBox(height: 16),
-        
+
         // 이메일 (읽기 전용)
         InkWell(
           onTap: null,
@@ -302,7 +306,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
             ),
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.email,
                   color: AppTheme.primary,
                   size: 20,
@@ -312,7 +316,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         '이메일',
                         style: TextStyle(
                           fontSize: 12,
@@ -322,7 +326,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                       const SizedBox(height: 4),
                       Text(
                         currentProfile?.email ?? user?.email ?? '이메일 없음',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppTheme.textPrimary,
                           fontSize: 16,
                         ),
@@ -343,15 +347,14 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           '생년월일',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 8),
-        
         InkWell(
           onTap: () => _showDatePicker(context),
           borderRadius: BorderRadius.circular(12),
@@ -363,7 +366,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
             ),
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.calendar_today,
                   color: AppTheme.primary,
                   size: 20,
@@ -381,7 +384,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                     ),
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.arrow_drop_down,
                   color: AppTheme.textTertiary,
                 ),
@@ -398,17 +401,17 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(
               Icons.edit_note,
               color: AppTheme.primary,
               size: 20,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               '자기소개',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textPrimary,
@@ -417,7 +420,6 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           ],
         ),
         const SizedBox(height: 16),
-        
         TextFormField(
           controller: _bioController,
           decoration: InputDecoration(
@@ -486,13 +488,13 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         maxHeight: 512,
         imageQuality: 80,
       );
-      
+
       if (image != null) {
         setState(() {
           _selectedImageFile = File(image.path);
           _selectedImagePath = image.path;
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('이미지가 선택되었습니다')),
         );
@@ -515,13 +517,13 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         maxHeight: 512,
         imageQuality: 80,
       );
-      
+
       if (image != null) {
         setState(() {
           _selectedImageFile = File(image.path);
           _selectedImagePath = image.path;
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('이미지가 촬영되었습니다')),
         );
@@ -539,7 +541,8 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   Future<void> _showDatePicker(BuildContext context) async {
     try {
       final currentDate = DateTime.now();
-      final initialDate = _selectedBirthDate ?? DateTime(currentDate.year - 20, 1, 1);
+      final initialDate =
+          _selectedBirthDate ?? DateTime(currentDate.year - 20, 1, 1);
       final firstDate = DateTime(currentDate.year - 100, 1, 1);
       final lastDate = currentDate;
 
@@ -552,7 +555,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         builder: (context, child) {
           return Theme(
             data: Theme.of(context).copyWith(
-              colorScheme: ColorScheme.light(
+              colorScheme: const ColorScheme.light(
                 primary: AppTheme.primary,
                 onPrimary: Colors.white,
                 surface: AppTheme.surface,
@@ -598,7 +601,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     try {
       final currentProfile = ref.read(profileProvider).profile;
       final authState = ref.read(authProvider);
-      
+
       if (currentProfile == null || authState.user == null) {
         throw Exception('사용자 정보를 찾을 수 없습니다');
       }
@@ -607,7 +610,9 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       String? finalImageUrl = _selectedImagePath;
       if (_selectedImageFile != null) {
         try {
-          final uploadedUrl = await ref.read(profileProvider.notifier).uploadProfileImage(_selectedImageFile!.path);
+          final uploadedUrl = await ref
+              .read(profileProvider.notifier)
+              .uploadProfileImage(_selectedImageFile!.path);
           if (uploadedUrl != null) {
             finalImageUrl = uploadedUrl;
           }
@@ -621,13 +626,17 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       final updatedProfile = currentProfile.copyWith(
         nickname: _nicknameController.text.trim(),
         birthDate: _selectedBirthDate,
-        bio: _bioController.text.trim().isEmpty ? null : _bioController.text.trim(),
+        bio: _bioController.text.trim().isEmpty
+            ? null
+            : _bioController.text.trim(),
         profileImageUrl: finalImageUrl,
         updatedAt: DateTime.now(),
       );
 
       // 프로필 저장
-      final success = await ref.read(profileProvider.notifier).updateProfile(updatedProfile);
+      final success = await ref
+          .read(profileProvider.notifier)
+          .updateProfile(updatedProfile);
 
       if (success) {
         if (mounted) {

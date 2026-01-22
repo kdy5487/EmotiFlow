@@ -12,7 +12,7 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    
+
     if (authState.isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -78,15 +78,15 @@ class ProfilePage extends ConsumerWidget {
             // 프로필 헤더
             _buildProfileHeader(authState.user!, ref),
             const SizedBox(height: 20),
-            
+
             // 계정 설정
             _buildAccountSettingsSection(context),
             const SizedBox(height: 20),
-            
+
             // 프로필 통계
             _buildProfileStats(),
             const SizedBox(height: 20),
-            
+
             // 감정 프로필
             _buildEmotionProfile(),
           ],
@@ -98,7 +98,7 @@ class ProfilePage extends ConsumerWidget {
   Widget _buildProfileHeader(User user, WidgetRef ref) {
     final profileState = ref.watch(profileProvider);
     final profile = profileState.profile;
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -119,11 +119,11 @@ class ProfilePage extends ConsumerWidget {
           CircleAvatar(
             radius: 40,
             backgroundColor: AppTheme.primary.withOpacity(0.1),
-            backgroundImage: profile?.profileImageUrl != null 
-                ? NetworkImage(profile!.profileImageUrl!) 
+            backgroundImage: profile?.profileImageUrl != null
+                ? NetworkImage(profile!.profileImageUrl!)
                 : (user.photoURL != null ? NetworkImage(user.photoURL!) : null),
             child: (profile?.profileImageUrl == null && user.photoURL == null)
-                ? Icon(
+                ? const Icon(
                     Icons.person,
                     size: 40,
                     color: AppTheme.primary,
@@ -131,7 +131,7 @@ class ProfilePage extends ConsumerWidget {
                 : null,
           ),
           const SizedBox(width: 16),
-          
+
           // 사용자 정보
           Expanded(
             child: Column(
@@ -149,7 +149,7 @@ class ProfilePage extends ConsumerWidget {
                 Flexible(
                   child: Text(
                     profile?.email ?? user.email ?? '이메일 없음',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
                       color: AppTheme.textSecondary,
                     ),
@@ -159,12 +159,13 @@ class ProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppTheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text(
+                  child: const Text(
                     '활성 사용자',
                     style: TextStyle(
                       fontSize: 12,
@@ -193,15 +194,15 @@ class ProfilePage extends ConsumerWidget {
           // 섹션 헤더
           Container(
             padding: const EdgeInsets.all(16),
-            child: Row(
+            child: const Row(
               children: [
                 Icon(
                   Icons.account_circle,
                   color: AppTheme.primary,
                   size: 20,
                 ),
-                const SizedBox(width: 12),
-                const Text(
+                SizedBox(width: 12),
+                Text(
                   '계정 설정',
                   style: TextStyle(
                     fontSize: 16,
@@ -212,10 +213,10 @@ class ProfilePage extends ConsumerWidget {
               ],
             ),
           ),
-          
+
           // 구분선
-          Divider(height: 1, color: AppTheme.divider),
-          
+          const Divider(height: 1, color: AppTheme.divider),
+
           // 설정 항목들
           _buildSettingItem(
             context: context,
@@ -258,12 +259,12 @@ class ProfilePage extends ConsumerWidget {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 12,
           color: AppTheme.textSecondary,
         ),
       ),
-      trailing: Icon(
+      trailing: const Icon(
         Icons.chevron_right,
         color: AppTheme.textTertiary,
         size: 16,
@@ -284,15 +285,15 @@ class ProfilePage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.analytics,
                 color: AppTheme.primary,
                 size: 20,
               ),
-              const SizedBox(width: 12),
-              const Text(
+              SizedBox(width: 12),
+              Text(
                 '활동 통계',
                 style: TextStyle(
                   fontSize: 16,
@@ -356,7 +357,7 @@ class ProfilePage extends ConsumerWidget {
         ),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 12,
             color: AppTheme.textSecondary,
           ),
@@ -376,15 +377,15 @@ class ProfilePage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.psychology,
                 color: AppTheme.primary,
                 size: 20,
               ),
-              const SizedBox(width: 12),
-              const Text(
+              SizedBox(width: 12),
+              Text(
                 '감정 프로필',
                 style: TextStyle(
                   fontSize: 16,
@@ -454,7 +455,7 @@ class ProfilePage extends ConsumerWidget {
         ),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 10,
             color: AppTheme.textSecondary,
           ),

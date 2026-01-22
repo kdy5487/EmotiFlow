@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:emoti_flow/theme/app_theme.dart';
 import '../diary_list_view_model.dart';
 
 class DiaryListAppBar extends ConsumerWidget implements PreferredSizeWidget {
@@ -26,113 +25,110 @@ class DiaryListAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final ui = ref.watch(diaryListUiProvider);
     final uiNotifier = ref.read(diaryListUiProvider.notifier);
 
-    return AppBar(
-      leading: ui.isDeleteMode
-          ? IconButton(
-              onPressed: uiNotifier.exitDeleteMode,
-              icon: const Icon(Icons.close),
-              tooltip: '삭제 모드 종료',
-            )
-          : null,
-      title: ui.isDeleteMode
-          ? Text(
-              '${ui.selectedEntryIds.length}개 선택',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            )
-          : const Text(
-              '일기 목록',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-      backgroundColor: AppTheme.primary,
-      foregroundColor: Colors.white,
-      elevation: 0,
-      actions: ui.isDeleteMode
-          ? [
-              IconButton(
-                onPressed: ui.selectedEntryIds.isEmpty ? null : onConfirmDelete,
-                icon: const Icon(Icons.delete_outline),
-                tooltip: '선택 삭제',
-              ),
-            ]
-          : [
-              IconButton(
-                onPressed: () {
-                  uiNotifier.toggleSearch();
-                  if (!ui.isSearchActive) {
-                    searchController.clear();
-                    onApplySearch();
-                  } else {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      searchFocusNode.requestFocus();
-                    });
-                  }
-                },
-                icon: Icon(
-                  ui.isSearchActive ? Icons.close : Icons.search,
+    final theme = Theme.of(context);
+
+    return PopScope(
+      canPop: !ui.isDeleteMode, // 삭제 모드에서는 뒤로가기 차단
+      onPopInvoked: (didPop) {
+        if (!didPop && ui.isDeleteMode) {
+          uiNotifier.exitDeleteMode(); // 삭제 모드 해제
+        }
+      },
+      child: AppBar(
+        leading: ui.isDeleteMode
+            ? IconButton(
+                onPressed: uiNotifier.exitDeleteMode,
+                icon: const Icon(Icons.arrow_back),
+                tooltip: '삭제 모드 종료',
+                color: theme.colorScheme.onSurface,
+              )
+            : null,
+        title: Text(
+          ui.isDeleteMode ? '${ui.selectedEntryIds.length}개 선택' : '일기 목록',
+          style: TextStyle(
+            color: theme.colorScheme.onSurface,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        iconTheme: IconThemeData(
+          color: theme.colorScheme.onSurface,
+        ),
+        actions: ui.isDeleteMode
+            ? [
+                // 삭제 모드: 작은 삭제 버튼 (우측 하단)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: IconButton(
+                    onPressed:
+                        ui.selectedEntryIds.isEmpty ? null : onConfirmDelete,
+                    icon: Icon(
+                      Icons.delete_outline,
+                      color: ui.selectedEntryIds.isEmpty
+                          ? Colors.grey[400]
+                          : const Color(0xFFDC2626), // 빨간색
+                      size: 22,
+                    ),
+                    tooltip: '선택 삭제',
+                  ),
                 ),
-                tooltip: ui.isSearchActive ? '검색 닫기' : '검색',
-              ),
-              IconButton(
-                onPressed: uiNotifier.toggleViewMode,
-                icon: Icon(
-                  ui.isGridView ? Icons.view_list : Icons.grid_view,
-                ),
-                tooltip: ui.isGridView ? '리스트뷰로 전환' : '그리드뷰로 전환',
-              ),
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                child: PopupMenuButton<String>(
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'filter':
-                        onShowFilter();
-                        break;
-                      case 'sort':
-                        onShowSort();
-                        break;
-                      case 'delete_mode':
-                        uiNotifier.enterDeleteMode();
-                        break;
+              ]
+            : [
+                IconButton(
+                  onPressed: () {
+                    uiNotifier.toggleSearch();
+                    if (!ui.isSearchActive) {
+                      searchController.clear();
+                      onApplySearch();
+                    } else {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        searchFocusNode.requestFocus();
+                      });
                     }
                   },
-                  icon: const Icon(Icons.more_vert),
+                  icon: Icon(
+                    ui.isSearchActive ? Icons.close : Icons.search,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  tooltip: ui.isSearchActive ? '검색 닫기' : '검색',
+                ),
+                // 설정 메뉴 (삭제 모드만 포함)
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'delete_mode') {
+                      uiNotifier.enterDeleteMode();
+                    }
+                  },
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: theme.colorScheme.onSurface,
+                  ),
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'filter',
-                      child: Row(
-                        children: [
-                          Icon(Icons.filter_list, size: 20, color: Colors.blue),
-                          SizedBox(width: 8),
-                          Text('필터'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'sort',
-                      child: Row(
-                        children: [
-                          Icon(Icons.sort, size: 20, color: Colors.orange),
-                          SizedBox(width: 8),
-                          Text('정렬'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete_mode',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline,
-                              size: 20, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('삭제 모드', style: TextStyle(color: Colors.red)),
+                          Icon(
+                            Icons.delete_outline,
+                            size: 20,
+                            color: const Color(0xFFDC2626), // 빨간색
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            '삭제 모드',
+                            style: TextStyle(color: Color(0xFFDC2626)),
+                          ),
                         ],
                       ),
                     ),
                   ],
                   tooltip: '설정',
                 ),
-              ),
-            ],
+              ],
+      ),
     );
   }
 

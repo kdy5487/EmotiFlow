@@ -12,7 +12,7 @@ class DiaryFAB extends StatelessWidget {
       onPressed: onPressed,
       backgroundColor: AppColors.primary,
       foregroundColor: Colors.white,
-      elevation: 4,
+      elevation: 6,
       child: const Icon(Icons.add),
     );
   }

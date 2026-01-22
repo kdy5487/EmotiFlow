@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:emoti_flow/theme/app_theme.dart';
 import 'package:emoti_flow/features/diary/domain/entities/diary_entry.dart';
 
 class DetailAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -16,20 +15,38 @@ class DetailAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return AppBar(
-      title: const Text('일기 상세'),
-      backgroundColor: AppTheme.primary,
-      foregroundColor: Colors.white,
+      title: Text(
+        '일기 상세',
+        style: TextStyle(
+          color: theme.colorScheme.onSurface,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      centerTitle: true,
+      backgroundColor: theme.scaffoldBackgroundColor,
       elevation: 0,
+      iconTheme: IconThemeData(
+        color: theme.colorScheme.onSurface,
+      ),
       actions: [
         IconButton(
           onPressed: onAnalysisTap,
-          icon: const Icon(Icons.psychology),
+          icon: Icon(
+            Icons.psychology,
+            color: theme.colorScheme.onSurface,
+          ),
           tooltip: 'AI 상세 분석',
         ),
         IconButton(
           onPressed: onMoreTap,
-          icon: const Icon(Icons.more_vert),
+          icon: Icon(
+            Icons.more_vert,
+            color: theme.colorScheme.onSurface,
+          ),
         ),
       ],
     );

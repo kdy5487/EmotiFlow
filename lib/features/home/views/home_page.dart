@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
+import 'package:emoti_flow/theme/theme_provider.dart';
 import 'package:emoti_flow/shared/widgets/cards/emoti_card.dart';
 import 'package:emoti_flow/features/music/providers/music_prompt_provider.dart';
 import 'package:emoti_flow/features/music/providers/music_provider.dart';
@@ -12,34 +13,41 @@ import 'package:emoti_flow/features/diary/domain/entities/diary_entry.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
+// 새로운 위젯 imports
+import '../widgets/greeting_header.dart';
+import '../widgets/growth_visualization.dart';
+import '../widgets/diary_overview_section.dart';
+import '../models/growth_status.dart';
+
 /// 음악 재생 파동 효과를 그리는 CustomPainter
 class MusicWavePainter extends CustomPainter {
   final double animationValue;
-  
+
   MusicWavePainter(this.animationValue);
-  
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = const Color(0xFF8B7FF6).withOpacity(0.3) // 테마 색상 사용
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
-    
+
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
-    
+
     // 파동 효과 그리기
     for (int i = 0; i < 3; i++) {
-      final waveRadius = radius * (0.3 + i * 0.2) * (0.5 + animationValue * 0.5);
+      final waveRadius =
+          radius * (0.3 + i * 0.2) * (0.5 + animationValue * 0.5);
       final opacity = (1.0 - animationValue) * (0.8 - i * 0.2);
-      
+
       if (opacity > 0) {
         paint.color = const Color(0xFF8B7FF6).withOpacity(opacity); // 테마 색상 사용
         canvas.drawCircle(center, waveRadius, paint);
       }
     }
   }
-  
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
@@ -55,11 +63,20 @@ class _HomePageState extends ConsumerState<HomePage> {
   // 성능 최적화: Future를 상태로 관리하여 빌드 시마다 생성되지 않도록 함
   Future<Map<String, dynamic>?>? _selectedCardFuture;
   Future<String?>? _adviceTextFuture;
-  
+
   @override
   void initState() {
     super.initState();
     _refreshAdvice();
+    // 홈 화면 진입 시 일기 데이터 자동 로드
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authState = ref.read(authProvider);
+      if (authState.user != null) {
+        ref
+            .read(diaryProvider.notifier)
+            .refreshDiaryEntries(authState.user!.uid);
+      }
+    });
   }
 
   void _refreshAdvice() {
@@ -67,6 +84,74 @@ class _HomePageState extends ConsumerState<HomePage> {
       _selectedCardFuture = _loadTodaySelectedCard();
       _adviceTextFuture = _loadTodayAdviceText();
     });
+  }
+
+  /// 오늘 작성한 일기 가져오기
+  List<DiaryEntry> _getTodayDiaries(WidgetRef ref) {
+    final diaries = ref.watch(diaryProvider).diaryEntries;
+    final today = DateTime.now();
+
+    return diaries
+        .where((diary) =>
+            diary.createdAt.year == today.year &&
+            diary.createdAt.month == today.month &&
+            diary.createdAt.day == today.day)
+        .toList();
+  }
+
+  /// 성장 상태 계산
+  GrowthStatus _calculateGrowthStatus(WidgetRef ref) {
+    final diaries = ref.watch(diaryProvider).diaryEntries;
+    final now = DateTime.now();
+    final todayDiaries = _getTodayDiaries(ref);
+
+    // 연속 일수 계산
+    int consecutiveDays = 0;
+    DateTime checkDate = now;
+
+    while (true) {
+      final hasDiary = diaries.any((diary) =>
+          diary.createdAt.year == checkDate.year &&
+          diary.createdAt.month == checkDate.month &&
+          diary.createdAt.day == checkDate.day);
+
+      if (hasDiary) {
+        consecutiveDays++;
+        checkDate = checkDate.subtract(const Duration(days: 1));
+      } else {
+        break;
+      }
+    }
+
+    // 최근 7일 스탬프 생성
+    final last7Days = <DailyStamp>[];
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final dayDiaries = diaries.where((diary) =>
+          diary.createdAt.year == date.year &&
+          diary.createdAt.month == date.month &&
+          diary.createdAt.day == date.day);
+
+      String? primaryEmotion;
+      if (dayDiaries.isNotEmpty) {
+        final firstDiary = dayDiaries.first;
+        primaryEmotion =
+            firstDiary.emotions.isNotEmpty ? firstDiary.emotions.first : null;
+      }
+
+      last7Days.add(DailyStamp(
+        date: date,
+        hasEntry: dayDiaries.isNotEmpty,
+        primaryEmotion: primaryEmotion,
+      ));
+    }
+
+    return GrowthStatus(
+      consecutiveDays: consecutiveDays,
+      totalDiaryCount: diaries.length,
+      todayCompleted: todayDiaries.isNotEmpty,
+      last7Days: last7Days,
+    );
   }
 
   @override
@@ -83,7 +168,8 @@ class _HomePageState extends ConsumerState<HomePage> {
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
-            builder: (_) => _musicPromptSheet(context, emotion: pending.emotion, intensity: pending.intensity),
+            builder: (_) => _musicPromptSheet(context,
+                emotion: pending.emotion, intensity: pending.intensity),
           );
           if (confirm == true) {
             await ref.read(musicProvider.notifier).loadRecommendations(
@@ -99,7 +185,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'EmotiFlow',
@@ -111,6 +197,28 @@ class _HomePageState extends ConsumerState<HomePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          // 다크모드 토글 (테스트용)
+          Consumer(
+            builder: (context, ref, _) {
+              final themeState = ref.watch(themeProvider);
+              final isDark = themeState.themeMode == ThemeMode.dark;
+
+              return IconButton(
+                icon: Icon(
+                  isDark ? Icons.light_mode : Icons.dark_mode,
+                  color: isDark
+                      ? Colors.amber
+                      : Theme.of(context).colorScheme.primary,
+                ),
+                onPressed: () {
+                  ref.read(themeProvider.notifier).setThemeMode(
+                        isDark ? ThemeMode.light : ThemeMode.dark,
+                      );
+                },
+                tooltip: isDark ? '라이트 모드' : '다크 모드',
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {
@@ -118,11 +226,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    title: Row(
+                    title: const Row(
                       children: [
-                        const Icon(Icons.construction, color: Colors.orange),
-                        const SizedBox(width: 8),
-                        const Text('알림'),
+                        Icon(Icons.construction, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text('알림'),
                       ],
                     ),
                     content: const Text(
@@ -147,29 +255,47 @@ class _HomePageState extends ConsumerState<HomePage> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 오늘의 감정 체크 카드
-            _buildEmotionCheckCard(context, ref),
-            const SizedBox(height: 24),
-            
-            // 빠른 액션 섹션
-            _buildQuickActionsSection(context, ref),
-            const SizedBox(height: 24),
-            
-            // 최근 일기 요약
-            _buildRecentDiariesSection(context, ref),
-            const SizedBox(height: 24),
-            
-            // 감정 트렌드 섹션
-            _buildSimpleEmotionTrendSection(context, ref),
-            const SizedBox(height: 24),
-            
-            // AI 일일 조언
-            _buildAIDailyTipSection(context, ref),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+
+              // 1. 인사말 헤더
+              GreetingHeader(
+                userName: ref.read(authProvider).user?.displayName ?? '사용자',
+              ),
+              const SizedBox(height: 24),
+
+              // 2. 🌱 감정 씨앗 성장 시각화 (메인!)
+              GrowthVisualization(
+                status: _calculateGrowthStatus(ref),
+                onTap: () => context.push('/ai'), // 통계 페이지로 이동
+                onWriteButtonTap: () => _handleProtectedAction(
+                    context, ref, () => _showDiaryWritingOptions(context, ref)),
+              ),
+              const SizedBox(height: 24),
+
+              // 4. 최근 7일 + 최근 일기 통합 섹션
+              DiaryOverviewSection(
+                growthStatus: _calculateGrowthStatus(ref),
+                recentDiaries:
+                    ref.watch(diaryProvider).diaryEntries.take(3).toList(),
+                allDiaries: ref.watch(diaryProvider).diaryEntries,
+              ),
+              const SizedBox(height: 32),
+
+              // 5. 감정 트렌드 (간소화)
+              _buildSimpleEmotionTrendSection(context, ref),
+              const SizedBox(height: 32),
+
+              // 6. 빠른 액션 (하단으로 이동, 축소)
+              _buildCompactQuickActions(context, ref),
+
+              const SizedBox(height: 100), // 하단 여유 공간
+            ],
+          ),
         ),
       ),
       bottomSheet: _buildMiniPlayer(context, ref),
@@ -177,7 +303,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   /// 간단한 음악 전환 프롬프트 시트
-  Widget _musicPromptSheet(BuildContext context, {required String emotion, required int intensity}) {
+  Widget _musicPromptSheet(BuildContext context,
+      {required String emotion, required int intensity}) {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -187,9 +314,12 @@ class _HomePageState extends ConsumerState<HomePage> {
           children: [
             Row(
               children: [
-                Icon(Icons.music_note, color: Theme.of(context).colorScheme.primary),
+                Icon(Icons.music_note,
+                    color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 8),
-                const Text('음악 전환', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                const Text('음악 전환',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
               ],
             ),
             const SizedBox(height: 8),
@@ -207,7 +337,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
-                    style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary, foregroundColor: Theme.of(context).colorScheme.onPrimary),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onPrimary),
                     child: const Text('바꾸기'),
                   ),
                 ),
@@ -222,12 +355,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget _buildMiniPlayer(BuildContext context, WidgetRef ref) {
     final music = ref.watch(musicProvider);
     final settings = ref.watch(settingsProvider).settings.musicSettings;
-    
+
     // 음악이 재생 중이 아니거나 홈 화면 미니 플레이어 표시가 비활성화된 경우 숨김
     if (music.nowPlaying == null || !settings.showHomeMiniPlayer) {
       return const SizedBox.shrink();
     }
-    
+
     return Container(
       height: 56,
       decoration: BoxDecoration(
@@ -237,7 +370,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
-                          Icon(Icons.music_note, color: Theme.of(context).colorScheme.primary),
+          Icon(Icons.music_note, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -270,15 +403,16 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget _buildEmotionCheckCard(BuildContext context, WidgetRef ref) {
     final String userName = ref.read(authProvider).user?.displayName ?? '사용자';
     final diaries = ref.watch(diaryProvider).diaryEntries;
-    
+
     // 오늘 작성한 일기들
     final today = DateTime.now();
-    final todayDiaries = diaries.where((diary) => 
-      diary.createdAt.year == today.year && 
-      diary.createdAt.month == today.month && 
-      diary.createdAt.day == today.day
-    ).toList();
-    
+    final todayDiaries = diaries
+        .where((diary) =>
+            diary.createdAt.year == today.year &&
+            diary.createdAt.month == today.month &&
+            diary.createdAt.day == today.day)
+        .toList();
+
     // 오늘 일기가 있으면 감정 상태 표시, 없으면 일기 작성 유도
     if (todayDiaries.isNotEmpty) {
       return _buildTodayEmotionSummary(context, ref, todayDiaries);
@@ -288,7 +422,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   /// 오늘 작성한 일기의 감정 요약
-  Widget _buildTodayEmotionSummary(BuildContext context, WidgetRef ref, List<DiaryEntry> todayDiaries) {
+  Widget _buildTodayEmotionSummary(
+      BuildContext context, WidgetRef ref, List<DiaryEntry> todayDiaries) {
     // 감정별 평균 강도 계산
     final emotionIntensities = <String, List<int>>{};
     for (final diary in todayDiaries) {
@@ -297,26 +432,25 @@ class _HomePageState extends ConsumerState<HomePage> {
         emotionIntensities.putIfAbsent(emotion, () => []).add(intensity);
       }
     }
-    
-    final averageEmotions = emotionIntensities.map((emotion, intensities) => 
-      MapEntry(emotion, intensities.reduce((a, b) => a + b) / intensities.length)
-    );
-    
+
+    final averageEmotions = emotionIntensities.map((emotion, intensities) =>
+        MapEntry(
+            emotion, intensities.reduce((a, b) => a + b) / intensities.length));
+
     // 가장 강한 감정 찾기
-    final dominantEmotion = averageEmotions.entries
-        .reduce((a, b) => a.value > b.value ? a : b);
-    
+    final dominantEmotion =
+        averageEmotions.entries.reduce((a, b) => a.value > b.value ? a : b);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '오늘의 감정',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 16),
-        
         EmotiCard(
           onTap: () => context.push('/diaries'),
           isClickable: true,
@@ -359,23 +493,31 @@ class _HomePageState extends ConsumerState<HomePage> {
                         children: [
                           Text(
                             '감정 요약',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             '${todayDiaries.length}개의 일기를 완성했어요',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                              fontSize: 13,
-                            ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.7),
+                                      fontSize: 13,
+                                    ),
                           ),
                         ],
                       ),
                     ),
-                    Icon(
+                    const Icon(
                       Icons.arrow_forward_ios,
                       color: AppTheme.textTertiary,
                       size: 16,
@@ -383,15 +525,20 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                
+
                 // 주요 감정 표시
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
+                    border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
@@ -423,7 +570,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   /// 일기 작성 유도 섹션
-  Widget _buildDiaryWritingPrompt(BuildContext context, WidgetRef ref, String userName) {
+  Widget _buildDiaryWritingPrompt(
+      BuildContext context, WidgetRef ref, String userName) {
     return EmotiCard(
       onTap: () => context.push('/diaries'),
       isClickable: true,
@@ -465,22 +613,28 @@ class _HomePageState extends ConsumerState<HomePage> {
                     children: [
                       Text(
                         '안녕하세요, $userName님!',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '오늘 하루는 어떠셨나요?',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                        ),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.7),
+                            ),
                       ),
                     ],
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.arrow_forward_ios,
                   color: AppTheme.textTertiary,
                   size: 16,
@@ -488,7 +642,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               ],
             ),
             const SizedBox(height: 20),
-            
+
             // 일기 작성 방법 선택
             Row(
               children: [
@@ -499,7 +653,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                     title: '자유 일기',
                     subtitle: '직접 작성하기',
                     color: AppTheme.success,
-                    onTap: () => _handleProtectedAction(context, ref, () => context.push('/diaries/write')),
+                    onTap: () => _handleProtectedAction(
+                        context, ref, () => context.push('/diaries/write')),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -510,7 +665,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                     title: 'AI 채팅 일기',
                     subtitle: 'AI와 대화하며',
                     color: AppTheme.info,
-                    onTap: () => _handleProtectedAction(context, ref, () => context.push('/diaries/chat')),
+                    onTap: () => _handleProtectedAction(
+                        context, ref, () => context.push('/diaries/chat')),
                   ),
                 ),
               ],
@@ -571,6 +727,175 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
+  /// 심플한 일기 작성 버튼 (박스 안에)
+  Widget _buildSimpleWriteButton(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _handleProtectedAction(
+                  context, ref, () => context.push('/diaries/write')),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.edit, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      '자유 일기',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _handleProtectedAction(
+                  context, ref, () => context.push('/diaries/chat')),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.secondary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.chat, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'AI 채팅',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 간소화된 빠른 액션 (하단 배치용)
+  Widget _buildCompactQuickActions(BuildContext context, WidgetRef ref) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '빠른 액션',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildCompactActionCard(
+                context,
+                icon: Icons.list,
+                title: '일기 목록',
+                onTap: () => _handleProtectedAction(
+                    context, ref, () => context.push('/diaries')),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildCompactActionCard(
+                context,
+                icon: Icons.music_note,
+                title: '음악',
+                onTap: () => _handleProtectedAction(
+                    context, ref, () => context.push('/music')),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildCompactActionCard(
+                context,
+                icon: Icons.psychology,
+                title: 'AI 분석',
+                onTap: () => _handleProtectedAction(
+                    context, ref, () => context.push('/ai')),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 간소화된 액션 카드
+  Widget _buildCompactActionCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: theme.colorScheme.onSurface.withOpacity(0.1),
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: theme.colorScheme.primary, size: 24),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: TextStyle(
+                color: theme.colorScheme.onSurface,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildQuickActionsSection(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -578,11 +903,11 @@ class _HomePageState extends ConsumerState<HomePage> {
         Text(
           '빠른 액션',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 16),
-        
+
         // 2x2 그리드 레이아웃
         Row(
           children: [
@@ -592,7 +917,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 icon: Icons.list,
                 title: '일기 목록',
                 color: AppTheme.primary,
-                onTap: () => _handleProtectedAction(context, ref, () => context.push('/diaries')),
+                onTap: () => _handleProtectedAction(
+                    context, ref, () => context.push('/diaries')),
               ),
             ),
             const SizedBox(width: 12),
@@ -602,7 +928,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 icon: Icons.edit,
                 title: '일기 작성',
                 color: AppTheme.success,
-                onTap: () => _handleProtectedAction(context, ref, () => _showDiaryWritingOptions(context, ref)),
+                onTap: () => _handleProtectedAction(
+                    context, ref, () => _showDiaryWritingOptions(context, ref)),
               ),
             ),
           ],
@@ -616,7 +943,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 icon: Icons.music_note,
                 title: '음악',
                 color: AppTheme.secondary,
-                onTap: () => _handleProtectedAction(context, ref, () => context.push('/music')),
+                onTap: () => _handleProtectedAction(
+                    context, ref, () => context.push('/music')),
               ),
             ),
             const SizedBox(width: 12),
@@ -626,7 +954,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 icon: Icons.psychology,
                 title: 'AI 분석',
                 color: AppTheme.info,
-                onTap: () => _handleProtectedAction(context, ref, () => context.push('/ai')),
+                onTap: () => _handleProtectedAction(
+                    context, ref, () => context.push('/ai')),
               ),
             ),
           ],
@@ -635,7 +964,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  void _handleProtectedAction(BuildContext context, WidgetRef ref, VoidCallback action) {
+  void _handleProtectedAction(
+      BuildContext context, WidgetRef ref, VoidCallback action) {
     final isLoggedIn = ref.read(authProvider).user != null;
     if (isLoggedIn) {
       action();
@@ -711,56 +1041,68 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _showDiaryWritingOptions(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      isScrollControlled: false,
+      backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '일기 작성 방법 선택',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: 32,
             ),
-            const SizedBox(height: 20),
-            
-            Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: _buildDiaryOptionCard(
-                    context,
-                    icon: Icons.edit,
-                    title: '자유 일기',
-                    subtitle: '직접 작성하기',
-                    color: AppTheme.success,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _handleProtectedAction(context, ref, () => context.push('/diaries/write'));
-                    },
-                  ),
+                Text(
+                  '일기 작성 방법 선택',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildDiaryOptionCard(
-                    context,
-                    icon: Icons.chat,
-                    title: 'AI 채팅 일기',
-                    subtitle: 'AI와 대화하며',
-                    color: AppTheme.info,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _handleProtectedAction(context, ref, () => context.push('/diaries/chat'));
-                    },
-                  ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDiaryOptionCard(
+                        context,
+                        icon: Icons.edit,
+                        title: '자유 일기',
+                        subtitle: '직접 작성하기',
+                        color: AppTheme.success,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _handleProtectedAction(context, ref,
+                              () => context.push('/diaries/write'));
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDiaryOptionCard(
+                        context,
+                        icon: Icons.chat,
+                        title: 'AI 채팅 일기',
+                        subtitle: 'AI와 대화하며',
+                        color: AppTheme.info,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _handleProtectedAction(context, ref,
+                              () => context.push('/diaries/chat'));
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-          ],
+          ),
         ),
       ),
     );
@@ -778,14 +1120,15 @@ class _HomePageState extends ConsumerState<HomePage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 100,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           color: color.withOpacity(0.1),
           border: Border.all(color: color.withOpacity(0.3)),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
@@ -801,8 +1144,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                 fontSize: 14,
               ),
               textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 4),
             Text(
               subtitle,
               style: TextStyle(
@@ -810,7 +1155,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 fontSize: 11,
               ),
               textAlign: TextAlign.center,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ],
@@ -822,18 +1167,17 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget _buildSimpleEmotionTrendSection(BuildContext context, WidgetRef ref) {
     final diaryState = ref.watch(diaryProvider);
     final entries = diaryState.diaryEntries;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '감정 트렌드',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 16),
-        
         EmotiCard(
           onTap: () => context.push('/ai'),
           isClickable: true,
@@ -869,22 +1213,26 @@ class _HomePageState extends ConsumerState<HomePage> {
                         children: [
                           Text(
                             'AI 감정 분석',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.info,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.info,
+                                ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             '감정 패턴을 분석해보세요',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textSecondary,
-                            ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppTheme.textSecondary,
+                                    ),
                           ),
                         ],
                       ),
                     ),
-                    Icon(
+                    const Icon(
                       Icons.arrow_forward_ios,
                       color: AppTheme.textTertiary,
                       size: 16,
@@ -892,7 +1240,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                
+
                 // 간략한 감정 트렌드 그래프
                 if (entries.isNotEmpty) ...[
                   Container(
@@ -906,7 +1254,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           '주간 감정 변화',
                           style: TextStyle(
                             color: AppTheme.info,
@@ -915,7 +1263,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        
+
                         // 간단한 막대 그래프
                         Expanded(
                           child: Row(
@@ -927,9 +1275,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // 감정 통계 요약
                   Row(
                     children: [
@@ -1003,18 +1351,20 @@ class _HomePageState extends ConsumerState<HomePage> {
       final entryDate = entry.createdAt;
       final daysDiff = entryDate.difference(weekStart).inDays;
       if (daysDiff >= 0 && daysDiff < 7) {
-        final intensity = entry.emotionIntensities.values.isNotEmpty 
-            ? entry.emotionIntensities.values.first.toDouble() 
+        final intensity = entry.emotionIntensities.values.isNotEmpty
+            ? entry.emotionIntensities.values.first.toDouble()
             : 5.0;
         weekData[daysDiff] = intensity;
       }
     }
 
-    return List.generate(7, (index) => _buildTrendBar(
-      labels[index], 
-      weekData[index] / 10.0, // 0.0 ~ 1.0 범위로 정규화
-      weekData[index] > 0 ? AppTheme.primary : AppTheme.textTertiary,
-    ));
+    return List.generate(
+        7,
+        (index) => _buildTrendBar(
+              labels[index],
+              weekData[index] / 10.0, // 0.0 ~ 1.0 범위로 정규화
+              weekData[index] > 0 ? AppTheme.primary : AppTheme.textTertiary,
+            ));
   }
 
   /// 트렌드 막대 그래프 바
@@ -1033,7 +1383,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             color: AppTheme.textSecondary,
             fontSize: 10,
             fontWeight: FontWeight.w500,
@@ -1044,7 +1394,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   /// 감정 통계 카드
-  Widget _buildEmotionStat(String title, String emotion, String score, Color color) {
+  Widget _buildEmotionStat(
+      String title, String emotion, String score, Color color) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1091,36 +1442,36 @@ class _HomePageState extends ConsumerState<HomePage> {
   /// 지배적인 감정 찾기
   String _getDominantEmotion(List<DiaryEntry> entries) {
     if (entries.isEmpty) return '평온';
-    
+
     final emotionCounts = <String, int>{};
     for (final entry in entries) {
       for (final emotion in entry.emotions) {
         emotionCounts[emotion] = (emotionCounts[emotion] ?? 0) + 1;
       }
     }
-    
+
     if (emotionCounts.isEmpty) return '평온';
-    
-    final dominant = emotionCounts.entries
-        .reduce((a, b) => a.value > b.value ? a : b);
-    
+
+    final dominant =
+        emotionCounts.entries.reduce((a, b) => a.value > b.value ? a : b);
+
     return dominant.key;
   }
 
   /// 평균 강도 계산
   double _calculateAverageIntensity(List<DiaryEntry> entries) {
     if (entries.isEmpty) return 5.0;
-    
+
     double totalIntensity = 0.0;
     int count = 0;
-    
+
     for (final entry in entries) {
       if (entry.emotionIntensities.isNotEmpty) {
         totalIntensity += entry.emotionIntensities.values.first.toDouble();
         count++;
       }
     }
-    
+
     return count > 0 ? totalIntensity / count : 5.0;
   }
 
@@ -1131,13 +1482,13 @@ class _HomePageState extends ConsumerState<HomePage> {
         Text(
           'AI 일일 조언',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 16),
-        
         EmotiCard(
-          onTap: () => _handleProtectedAction(context, ref, () => context.push('/ai')),
+          onTap: () =>
+              _handleProtectedAction(context, ref, () => context.push('/ai')),
           isClickable: true,
           child: Container(
             padding: const EdgeInsets.all(20),
@@ -1171,17 +1522,21 @@ class _HomePageState extends ConsumerState<HomePage> {
                         children: [
                           Text(
                             '오늘의 조언 카드',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.warning,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.warning,
+                                ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'AI가 맞춤형 조언을 제공해드려요',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textSecondary,
-                            ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppTheme.textSecondary,
+                                    ),
                           ),
                         ],
                       ),
@@ -1194,7 +1549,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // 성능 최적화: 로그인 상태에서만 표시
                 if (ref.watch(authProvider).user != null)
                   _buildAdviceContent(ref)
@@ -1224,7 +1579,8 @@ class _HomePageState extends ConsumerState<HomePage> {
               decoration: BoxDecoration(
                 color: (selectedCard['color'] as Color).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: (selectedCard['color'] as Color).withOpacity(0.3)),
+                border: Border.all(
+                    color: (selectedCard['color'] as Color).withOpacity(0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1310,14 +1666,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-
   /// 오늘 선택된 카드 불러오기
   Future<Map<String, dynamic>?> _loadTodaySelectedCard() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final today = DateTime.now().toIso8601String().split('T')[0];
       final lastSelectedDate = prefs.getString('last_advice_card_date');
-      
+
       if (lastSelectedDate == today) {
         final selectedCardId = prefs.getString('selected_advice_card_id');
         if (selectedCardId != null) {
@@ -1360,7 +1715,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               'color': Colors.teal,
             },
           ];
-          
+
           return defaultCards.firstWhere(
             (card) => card['id'] == selectedCardId,
             orElse: () => defaultCards.first,
@@ -1379,7 +1734,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       final prefs = await SharedPreferences.getInstance();
       final today = DateTime.now().toIso8601String().split('T')[0];
       final lastSelectedDate = prefs.getString('last_advice_card_date');
-      
+
       if (lastSelectedDate == today) {
         return prefs.getString('selected_advice_text');
       }
@@ -1392,7 +1747,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget _buildRecentDiariesSection(BuildContext context, WidgetRef ref) {
     final diariesState = ref.watch(diaryProvider);
     final diaries = diariesState.diaryEntries;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1402,21 +1757,22 @@ class _HomePageState extends ConsumerState<HomePage> {
             Text(
               '최근 일기',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
             // 일기 작성으로 가는 버튼 (2개 아이콘)
             Row(
               children: [
                 GestureDetector(
-                  onTap: () => _handleProtectedAction(context, ref, () => _showDiaryWritingOptions(context, ref)),
+                  onTap: () => _handleProtectedAction(context, ref,
+                      () => _showDiaryWritingOptions(context, ref)),
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: AppTheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.edit,
                       color: AppTheme.primary,
                       size: 20,
@@ -1432,7 +1788,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       color: AppTheme.secondary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.list,
                       color: AppTheme.secondary,
                       size: 20,
@@ -1444,9 +1800,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           ],
         ),
         const SizedBox(height: 16),
-        
+
         // 데이터 로딩 중이거나 비어있을 때
-        if (diaries.isEmpty) 
+        if (diaries.isEmpty)
           EmotiCard(
             onTap: () => context.push('/diaries'),
             isClickable: true,
@@ -1493,7 +1849,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   isClickable: true,
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
                     child: Row(
                       children: [
                         Container(
@@ -1503,7 +1860,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             color: AppTheme.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.emoji_emotions,
                             color: AppTheme.primary,
                             size: 18,
@@ -1516,23 +1873,29 @@ class _HomePageState extends ConsumerState<HomePage> {
                             children: [
                               Text(
                                 diary.title.isNotEmpty ? diary.title : '제목 없음',
-                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 _formatDate(diary.createdAt),
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppTheme.textSecondary,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: AppTheme.textSecondary,
+                                    ),
                               ),
                             ],
                           ),
                         ),
-                        Icon(
+                        const Icon(
                           Icons.arrow_forward_ios,
                           color: AppTheme.textTertiary,
                           size: 14,
@@ -1552,7 +1915,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date).inDays;
-    
+
     if (difference == 0) {
       return '오늘';
     } else if (difference == 1) {

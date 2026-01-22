@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:emoti_flow/routes/app_router.dart';
 import 'package:emoti_flow/theme/theme_provider.dart';
+import 'package:emoti_flow/theme/app_theme.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -40,17 +41,14 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeProvider).themeMode;
+    final themeState = ref.watch(themeProvider);
 
     return MaterialApp.router(
       title: 'Emoti Flow',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData.dark(useMaterial3: true),
-      themeMode: themeMode,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeState.themeMode,
       routerConfig: AppRouter.getRouter(ref),
     );
   }
