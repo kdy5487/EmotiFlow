@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/firestore_provider.dart';
 import '../../domain/entities/diary_entry.dart';
+import '../../domain/entities/chat_message.dart';
 import '../../../../theme/app_theme.dart';
 import 'widgets/detail_app_bar.dart';
 import 'widgets/detail_hero_section.dart';
@@ -111,11 +112,13 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
+                      Color(backgroundColor).withOpacity(0.5),
                       Color(backgroundColor).withOpacity(0.3),
-                      Color(backgroundColor).withOpacity(0.1),
-                      Theme.of(context).scaffoldBackgroundColor,
+                      Color(backgroundColor).withOpacity(0.15),
+                      Color(backgroundColor).withOpacity(0.08),
+                      Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
                     ],
-                    stops: const [0.0, 0.3, 1.0],
+                    stops: const [0.0, 0.15, 0.35, 0.6, 1.0],
                   ),
                 ),
                 child: SingleChildScrollView(
@@ -151,6 +154,12 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                       // 이미지/그림 섹션
                       if (diaryEntry.mediaFiles.isNotEmpty) ...[
                         DetailMediaSection(entry: diaryEntry),
+                        const SizedBox(height: 24),
+                      ],
+                      // AI 대화 내역 섹션 (AI 채팅 일기인 경우)
+                      if (diaryEntry.diaryType == DiaryType.aiChat &&
+                          diaryEntry.chatHistory.isNotEmpty) ...[
+                        _buildChatHistorySection(diaryEntry),
                         const SizedBox(height: 24),
                       ],
                       // AI 조언 카드
@@ -227,90 +236,262 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     context.push('/diaries/write', extra: entry);
   }
 
-  /// AI 대화 기록 표시
-  void _showAIChatHistory(DiaryEntry entry) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(entry.title.isNotEmpty ? entry.title : 'AI 대화 기록'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 400,
-          child: ListView.builder(
-            itemCount: entry.chatHistory.length,
-            itemBuilder: (context, index) {
-              final message = entry.chatHistory[index];
-              final isAI = message.isFromAI;
-
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isAI
-                      ? AppTheme.primary.withOpacity(0.1)
-                      : AppTheme.surface,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isAI
-                        ? AppTheme.primary.withOpacity(0.3)
-                        : AppTheme.border,
+  /// AI 대화 내역 섹션 빌드
+  Widget _buildChatHistorySection(DiaryEntry entry) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final primaryEmotion = entry.emotions.isNotEmpty 
+        ? entry.emotions.first 
+        : null;
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.chat_bubble_outline,
+                    color: colorScheme.primary,
+                    size: 20,
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(width: 12),
+                Text(
+                  'AI와의 대화',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => _showAIChatHistory(entry),
+                  child: Text(
+                    '전체 보기',
+                    style: TextStyle(color: colorScheme.primary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: entry.chatHistory.take(3).map((message) {
+                return _buildChatMessageItem(message, primaryEmotion);
+              }).toList(),
+            ),
+          ),
+          if (entry.chatHistory.length > 3)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Center(
+                child: TextButton(
+                  onPressed: () => _showAIChatHistory(entry),
+                  child: Text(
+                    '${entry.chatHistory.length - 3}개 더 보기',
+                    style: TextStyle(color: colorScheme.primary),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 채팅 메시지 아이템 빌드
+  Widget _buildChatMessageItem(ChatMessage message, String? emotion) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isAI = message.isFromAI;
+    final characterAsset = emotion != null
+        ? EmotionCharacterMap.getCharacterAsset(emotion)
+        : EmotionCharacterMap.getCharacterAsset(null);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment:
+            isAI ? MainAxisAlignment.start : MainAxisAlignment.end,
+        children: [
+          if (isAI) ...[
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  characterAsset,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: colorScheme.primary.withOpacity(0.1),
+                      child: Icon(
+                        Icons.psychology,
+                        color: colorScheme.primary,
+                        size: 20,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+          Flexible(
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.7,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isAI
+                    ? colorScheme.surfaceContainerHighest
+                    : colorScheme.primary,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(isAI ? 4 : 20),
+                  topRight: Radius.circular(isAI ? 20 : 4),
+                  bottomLeft: const Radius.circular(20),
+                  bottomRight: const Radius.circular(20),
+                ),
+              ),
+              child: Text(
+                message.content,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: isAI
+                      ? colorScheme.onSurface
+                      : Colors.white,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ),
+          if (!isAI) ...[
+            const SizedBox(width: 12),
+            CircleAvatar(
+              backgroundColor: colorScheme.secondary,
+              radius: 20,
+              child: const Icon(
+                Icons.person,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// AI 대화 기록 전체 보기 다이얼로그
+  void _showAIChatHistory(DiaryEntry entry) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final primaryEmotion = entry.emotions.isNotEmpty 
+        ? entry.emotions.first 
+        : null;
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 헤더
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      colorScheme.primary,
+                      colorScheme.primary.withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(28),
+                    topRight: Radius.circular(28),
+                  ),
+                ),
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color:
-                                isAI ? AppTheme.primary : AppTheme.textTertiary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isAI ? Icons.smart_toy : Icons.person,
-                            size: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          isAI ? 'AI' : '나',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isAI
-                                ? AppTheme.primary
-                                : AppTheme.textSecondary,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          _formatTime(message.timestamp),
-                          style: const TextStyle(
-                              fontSize: 10, color: AppTheme.textTertiary),
-                        ),
-                      ],
+                    const Icon(
+                      Icons.chat_bubble,
+                      color: Colors.white,
+                      size: 24,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      message.content,
-                      style: const TextStyle(
-                          fontSize: 14, color: AppTheme.textPrimary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        entry.title.isNotEmpty ? entry.title : 'AI와의 대화',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),
-              );
-            },
+              ),
+              // 대화 내역
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(20),
+                  itemCount: entry.chatHistory.length,
+                  itemBuilder: (context, index) {
+                    return _buildChatMessageItem(
+                      entry.chatHistory[index],
+                      primaryEmotion,
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('닫기')),
-        ],
       ),
     );
   }
@@ -394,7 +575,4 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
     );
   }
 
-  String _formatTime(DateTime time) {
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-  }
 }
