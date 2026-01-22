@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/providers/auth_provider.dart';
-import '../../../../shared/constants/emotion_character_map.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../theme/app_typography.dart';
 import '../../providers/diary_provider.dart';
 import '../../domain/entities/diary_entry.dart';
-import '../../domain/entities/emotion.dart';
 import 'diary_list_view_model.dart';
 
 import 'widgets/diary_search_section.dart';
@@ -104,6 +102,78 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
               },
               getFilterLabel: _getFilterLabel,
             ),
+          // 정렬 및 그리드/일반 보기 버튼 (앱바 아래)
+          if (!ui.isDeleteMode)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // 정렬 버튼 (왼쪽)
+                  IconButton(
+                    onPressed: _showSortDialog,
+                    icon: const Icon(Icons.sort),
+                    tooltip: '정렬',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.surface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outline
+                              .withOpacity(0.2),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // 그리드/일반 보기 버튼 (오른쪽)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withOpacity(0.2),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 일반 보기 (왼쪽)
+                        _buildViewModeButton(
+                          context,
+                          icon: Icons.view_list,
+                          isSelected: !ui.isGridView,
+                          onTap: () {
+                            if (ui.isGridView) {
+                              ref
+                                  .read(diaryListUiProvider.notifier)
+                                  .toggleViewMode();
+                            }
+                          },
+                        ),
+                        // 그리드 보기 (오른쪽)
+                        _buildViewModeButton(
+                          context,
+                          icon: Icons.grid_view,
+                          isSelected: ui.isGridView,
+                          onTap: () {
+                            if (!ui.isGridView) {
+                              ref
+                                  .read(diaryListUiProvider.notifier)
+                                  .toggleViewMode();
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
             child: ui.isGridView
                 ? _buildDiaryGrid(diaryState)
@@ -132,12 +202,12 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 
     return GridView.builder(
       controller: _listScrollController,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.8,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.65, // 세로 크기 더 줄임
       ),
       itemCount: entries.length,
       itemBuilder: (context, index) {
@@ -149,6 +219,12 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
           onTap: () => ui.isDeleteMode
               ? _toggleSelect(entry.id)
               : _navigateToDetail(entry),
+          onLongPress: () {
+            if (!ui.isDeleteMode) {
+              ref.read(diaryListUiProvider.notifier).enterDeleteMode();
+              _toggleSelect(entry.id);
+            }
+          },
           onToggleSelect: () => _toggleSelect(entry.id),
           formatDate: _formatDate,
           formatTime: _formatTime,
@@ -173,7 +249,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 
     return ListView.builder(
       controller: _listScrollController,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(20),
       itemCount: entries.length,
       itemBuilder: (context, index) {
         final entry = entries[index];
@@ -184,47 +260,16 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
           onTap: () => ui.isDeleteMode
               ? _toggleSelect(entry.id)
               : _navigateToDetail(entry),
-          headerEmotionIndicator: _buildEmotionIndicator(entry),
+          onLongPress: () {
+            if (!ui.isDeleteMode) {
+              ref.read(diaryListUiProvider.notifier).enterDeleteMode();
+              _toggleSelect(entry.id);
+            }
+          },
           formatDate: _formatDate,
           formatTime: _formatTime,
         );
       },
-    );
-  }
-
-  /// 감정 인디케이터 빌더 (리스트용) - 캐릭터 이미지 사용
-  Widget _buildEmotionIndicator(DiaryEntry entry) {
-    if (entry.emotions.isEmpty) return const SizedBox.shrink();
-    final emotionName = entry.emotions.first;
-    final characterAsset = EmotionCharacterMap.getCharacterAsset(emotionName);
-
-    return Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-          width: 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(5),
-        child: Image.asset(
-          characterAsset,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              child: Icon(
-                Icons.emoji_emotions,
-                size: 14,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            );
-          },
-        ),
-      ),
     );
   }
 
@@ -355,6 +400,8 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
       builder: (context) => const WriteOptionsDialog(),
     );
   }
@@ -384,4 +431,34 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 
   String _formatTime(DateTime time) =>
       '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+
+  /// 뷰 모드 버튼 빌더
+  Widget _buildViewModeButton(
+    BuildContext context, {
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? theme.colorScheme.primaryContainer
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: isSelected
+              ? theme.colorScheme.onPrimaryContainer
+              : theme.colorScheme.onSurface.withOpacity(0.6),
+        ),
+      ),
+    );
+  }
 }

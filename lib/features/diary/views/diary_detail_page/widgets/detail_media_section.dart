@@ -13,74 +13,79 @@ class DetailMediaSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.photo_library,
-                color: AppTheme.primary,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                '첨부된 미디어',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${entry.mediaFiles.length}개',
-                  style: const TextStyle(
-                    color: AppTheme.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.photo_library,
+              color: Color(0xFF111827),
+              size: 20,
             ),
+            const SizedBox(width: 8),
+            const Text(
+              '첨부된 미디어',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF111827),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B7CF6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '${entry.mediaFiles.length}개',
+                style: const TextStyle(
+                  color: Color(0xFF8B7CF6),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 140,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
             itemCount: entry.mediaFiles.length,
             itemBuilder: (context, index) {
               final file = entry.mediaFiles[index];
-              return GestureDetector(
-                onTap: () => _showFullScreenImage(context, file.url),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: _buildThumbnail(file.url),
+              return Container(
+                margin: EdgeInsets.only(
+                  right: index < entry.mediaFiles.length - 1 ? 12 : 0,
+                ),
+                child: GestureDetector(
+                  onTap: () => _showFullScreenImage(context, file.url),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      width: 140,
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: _buildThumbnail(file.url),
+                    ),
+                  ),
                 ),
               );
             },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

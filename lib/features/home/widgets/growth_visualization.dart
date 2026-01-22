@@ -186,7 +186,7 @@ class GrowthVisualization extends StatelessWidget {
   Color _getStageColor() {
     switch (status.currentLevel) {
       case 0:
-        return const Color(0xFF9E9E9E); // 회색
+        return const Color(0xFF8B7CF6); // 기본 보라색 (활성화된 색상)
       case 1:
         return const Color(0xFF8BC34A); // 연두
       case 2:
@@ -196,7 +196,7 @@ class GrowthVisualization extends StatelessWidget {
       case 4:
         return const Color(0xFFE91E63); // 분홍 (꽃)
       default:
-        return const Color(0xFF9E9E9E);
+        return const Color(0xFF8B7CF6); // 기본 보라색
     }
   }
 }

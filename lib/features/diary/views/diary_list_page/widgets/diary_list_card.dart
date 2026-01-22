@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../../shared/widgets/cards/emoti_card.dart';
-import '../../../../../theme/app_colors.dart';
+import '../../../../../shared/constants/emotion_character_map.dart';
 import '../../../../../theme/app_typography.dart';
 import '../../../domain/entities/diary_entry.dart';
 
@@ -9,7 +8,7 @@ class DiaryListCard extends StatelessWidget {
   final bool isSelected;
   final bool isDeleteMode;
   final VoidCallback onTap;
-  final Widget headerEmotionIndicator;
+  final VoidCallback onLongPress;
   final String Function(DateTime) formatDate;
   final String Function(DateTime) formatTime;
 
@@ -19,7 +18,7 @@ class DiaryListCard extends StatelessWidget {
     required this.isSelected,
     required this.isDeleteMode,
     required this.onTap,
-    required this.headerEmotionIndicator,
+    required this.onLongPress,
     required this.formatDate,
     required this.formatTime,
   });
@@ -27,198 +26,178 @@ class DiaryListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final primaryEmotion = entry.emotions.isNotEmpty ? entry.emotions.first : null;
+    final pointColor = EmotionCharacterMap.getPointColor(primaryEmotion);
+    final characterAsset = EmotionCharacterMap.getCharacterAsset(primaryEmotion);
     
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: theme.colorScheme.onSurface.withOpacity(0.1),
-            width: 1,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                pointColor.withOpacity(0.2),
+                Colors.white,
+              ],
+            ),
+            border: Border.all(
+              color: pointColor.withOpacity(0.3),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ),
-      ),
-      child: EmotiCard(
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
           child: Stack(
             children: [
               Padding(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(16),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 좌측: 감정 캐릭터 (48-56px)
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: theme.colorScheme.onSurface.withOpacity(0.1),
+                          width: 1,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: Image.asset(
+                          characterAsset,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: theme.colorScheme.primaryContainer,
+                              child: Icon(
+                                Icons.emoji_emotions,
+                                size: 28,
+                                color: theme.colorScheme.primary,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // 중앙: 제목/요약
                     Expanded(
-                      flex: 3,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // 우측 상단: 작성방식 태그
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (entry.title.isNotEmpty) ...[
                                       Text(
-                                        formatDate(entry.createdAt),
-                                        style: AppTypography.titleMedium.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textPrimary,
-                                          fontSize: 12,
+                                        entry.title,
+                                        style: AppTypography.titleLarge.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF111827),
+                                          fontSize: 16,
                                         ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(width: 8),
-                                      headerEmotionIndicator,
-                                      const SizedBox(width: 8),
+                                      const SizedBox(height: 6),
                                     ],
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    formatTime(entry.createdAt),
-                                    style: AppTypography.caption.copyWith(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 10,
+                                    Text(
+                                      entry.content,
+                                      style: AppTypography.bodyMedium.copyWith(
+                                        color: const Color(0xFF6B7280),
+                                        fontSize: 13,
+                                        height: 1.4,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // 작성방식 태그
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: entry.diaryType == DiaryType.aiChat 
+                                      ? const Color(0xFF8B7CF6).withOpacity(0.15)
+                                      : const Color(0xFF4CC9A6).withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  entry.diaryType == DiaryType.aiChat ? 'AI' : '자유',
+                                  style: TextStyle(
+                                    color: entry.diaryType == DiaryType.aiChat 
+                                        ? const Color(0xFF8B7CF6)
+                                        : const Color(0xFF4CC9A6),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 11,
                                   ),
-                                ],
+                                ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 6),
-                          if (entry.title.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 4, right: 8),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      entry.title,
-                                      style: AppTypography.titleLarge.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textPrimary,
-                                        fontSize: 14,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: entry.diaryType == DiaryType.aiChat 
-                                          ? AppColors.info.withOpacity(0.2)
-                                          : AppColors.success.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: entry.diaryType == DiaryType.aiChat 
-                                            ? AppColors.info
-                                            : AppColors.success,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      entry.diaryType == DiaryType.aiChat ? 'AI' : '자유',
-                                      style: AppTypography.caption.copyWith(
-                                        color: entry.diaryType == DiaryType.aiChat 
-                                            ? AppColors.info
-                                            : AppColors.success,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Text(
-                              entry.content,
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: AppColors.textSecondary,
-                                fontSize: 10,
-                              ),
-                              maxLines: 4,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 12),
+                          // 날짜 · 시간
                           Row(
                             children: [
-                              if (entry.tags.isNotEmpty) ...[
-                                Icon(Icons.label, size: 10, color: Colors.grey[600]),
-                                const SizedBox(width: 2),
-                                Expanded(
-                                  child: Text(
-                                    entry.tags.take(2).join(', '),
-                                    style: AppTypography.caption.copyWith(
-                                      color: Colors.grey[600],
-                                      fontSize: 9,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                              Text(
+                                formatDate(entry.createdAt),
+                                style: AppTypography.caption.copyWith(
+                                  color: const Color(0xFF6B7280),
+                                  fontSize: 12,
                                 ),
-                              ],
-                              const SizedBox(width: 6),
-                              if (entry.mediaCount > 0)
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.image, size: 10, color: Colors.grey[600]),
-                                    const SizedBox(width: 2),
-                                    Text(
-                                      '${entry.mediaCount}',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 9,
-                                      ),
-                                    ),
-                                  ],
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                '·',
+                                style: TextStyle(
+                                  color: Color(0xFF6B7280),
+                                  fontSize: 12,
                                 ),
-                              const SizedBox(width: 6),
-                              if (entry.aiAnalysis != null)
-                                const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.psychology, size: 10, color: AppColors.primary),
-                                    SizedBox(width: 2),
-                                    Text(
-                                      'AI',
-                                      style: TextStyle(
-                                        color: AppColors.primary,
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                formatTime(entry.createdAt),
+                                style: AppTypography.caption.copyWith(
+                                  color: const Color(0xFF6B7280),
+                                  fontSize: 12,
                                 ),
+                              ),
                             ],
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    if (entry.coverImageUrl != null || entry.firstLocalImagePath != null)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          width: 120,
-                          height: 140,
-                          color: Colors.grey[200],
-                          child: _buildOptimizedImage(entry),
-                        ),
-                      ),
                   ],
                 ),
               ),
               if (isDeleteMode)
                 Positioned(
-                  right: 8,
-                  top: 8,
+                  right: 16,
+                  top: 16,
                   child: Container(
                     width: 24,
                     height: 24,
@@ -242,23 +221,6 @@ class DiaryListCard extends StatelessWidget {
     );
   }
 
-  Widget _buildOptimizedImage(DiaryEntry entry) {
-    if (entry.coverImageUrl != null) {
-      return Image.network(
-        entry.coverImageUrl!,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.grey),
-      );
-    }
-    if (entry.firstLocalImagePath != null) {
-      return Image.asset(
-        entry.firstLocalImagePath!,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.grey),
-      );
-    }
-    return const SizedBox.shrink();
-  }
 }
 
 

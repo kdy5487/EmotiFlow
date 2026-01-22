@@ -8,7 +8,8 @@ class EmotionCharacterMap {
   EmotionCharacterMap._();
 
   /// 대표 캐릭터 (감정 선택 전 기본 캐릭터)
-  static const String defaultCharacter = 'assets/images/characters/Emoti_logo_big.png';
+  static const String defaultCharacter =
+      'assets/images/characters/Emoti_logo_big.png';
 
   /// 감정별 캐릭터 이미지 매핑
   ///
@@ -45,6 +46,29 @@ class EmotionCharacterMap {
     '놀람': 0xFFFFF9E6, // 밝은 노란색 배경
     '혼란': 0xFFF0E6FF, // 연한 보라 배경
   };
+
+  /// 감정별 포인트 컬러 (일기 목록 카드 그라데이션용)
+  static const Map<String, Color> emotionPointColors = {
+    '설렘': Color(0xFFFFD6C9),
+    '기쁨': Color(0xFFFFE8A3),
+    '평온': Color(0xFFCFF5E7),
+    '슬픔': Color(0xFFDCE9FF),
+    '분노': Color(0xFFE7D9FF),
+    '감사': Color(0xFFE6F9FF),
+    '걱정': Color(0xFFFFF0E6),
+    '지루함': Color(0xFFF0F0F0),
+    '놀람': Color(0xFFFFF9E6),
+    '혼란': Color(0xFFF0E6FF),
+  };
+
+  /// 감정에 해당하는 포인트 컬러 가져오기
+  static Color getPointColor(String? emotion) {
+    if (emotion == null || emotion.isEmpty) {
+      return const Color(0xFFF0F0F0);
+    }
+    final emotionKorean = emotionIdToKorean[emotion] ?? emotion;
+    return emotionPointColors[emotionKorean] ?? const Color(0xFFF0F0F0);
+  }
 
   /// 영문 emotion ID를 한글로 변환
   static const Map<String, String> emotionIdToKorean = {

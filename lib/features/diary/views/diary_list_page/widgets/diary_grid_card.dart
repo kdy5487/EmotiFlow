@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../../shared/constants/emotion_character_map.dart';
-import '../../../../../theme/app_colors.dart';
 import '../../../../../theme/app_typography.dart';
 import '../../../domain/entities/diary_entry.dart';
 
@@ -9,6 +8,7 @@ class DiaryGridCard extends StatelessWidget {
   final bool isSelected;
   final bool isDeleteMode;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
   final VoidCallback onToggleSelect;
   final String Function(DateTime) formatDate;
   final String Function(DateTime) formatTime;
@@ -19,6 +19,7 @@ class DiaryGridCard extends StatelessWidget {
     required this.isSelected,
     required this.isDeleteMode,
     required this.onTap,
+    required this.onLongPress,
     required this.onToggleSelect,
     required this.formatDate,
     required this.formatTime,
@@ -26,200 +27,119 @@ class DiaryGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final primaryEmotion = entry.emotions.isNotEmpty ? entry.emotions.first : null;
+    final pointColor = EmotionCharacterMap.getPointColor(primaryEmotion);
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 20), // 간격 증가
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        onLongPress: onLongPress,
+        borderRadius: BorderRadius.circular(24),
         child: Container(
           decoration: BoxDecoration(
-            color: isSelected 
-                ? Colors.red.withOpacity(0.05) 
-                : theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                pointColor.withOpacity(0.2),
+                Colors.white,
+              ],
+            ),
             border: Border.all(
-              color: theme.colorScheme.onSurface.withOpacity(0.1),
-              width: 1,
+              color: pointColor.withOpacity(0.3),
+              width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              formatDate(entry.createdAt),
-                              style: AppTypography.caption.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                                fontSize: 11,
-                              ),
-                            ),
-                            Text(
-                              formatTime(entry.createdAt),
-                              style: AppTypography.caption.copyWith(
-                                color: AppColors.textSecondary,
-                                fontSize: 9,
-                              ),
-                            ),
-                          ],
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 첫 번째 줄: 제목
+                    if (entry.title.isNotEmpty)
+                      Text(
+                        entry.title,
+                        style: AppTypography.titleMedium.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF111827),
+                          fontSize: 14,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                       ),
-                      if (entry.emotions.isNotEmpty)
-                        Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                              width: 1,
-                            ),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(5),
-                            child: Image.asset(
-                              EmotionCharacterMap.getCharacterAsset(entry.emotions.first),
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: Theme.of(context).colorScheme.primaryContainer,
-                                  child: Icon(
-                                    Icons.emoji_emotions,
-                                    size: 16,
-                                    color: Theme.of(context).colorScheme.primary,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
+                    if (entry.title.isNotEmpty) const SizedBox(height: 12),
+                    // 두 번째 줄: 내용 (3줄로 확장)
+                    Expanded(
+                      child: Text(
+                        entry.content,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: const Color(0xFF6B7280),
+                          fontSize: 12,
+                          height: 1.4,
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (entry.title.isNotEmpty) ...[
-                    Text(
-                      entry.title,
-                      style: AppTypography.titleMedium.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                        fontSize: 13,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
+                    // 세 번째 줄: 날짜 (박스 맨 밑)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(
+                        '${formatDate(entry.createdAt)} · ${formatTime(entry.createdAt)}',
+                        style: AppTypography.caption.copyWith(
+                          color: const Color(0xFF6B7280),
+                          fontSize: 11,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   ],
-                  Expanded(
-                    child: Text(
-                      entry.content,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                        height: 1.3,
-                      ),
-                      maxLines: 6,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      if (entry.tags.isNotEmpty)
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              entry.tags.first,
-                              style: const TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                      const SizedBox(width: 8),
-                      if (entry.mediaCount > 0)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.image, size: 12, color: Colors.grey[600]),
-                            const SizedBox(width: 2),
-                            Text(
-                              '${entry.mediaCount}',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 9,
-                              ),
-                            ),
-                          ],
-                        ),
-                      const SizedBox(width: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          entry.diaryType == DiaryType.aiChat ? 'AI' : '자유형',
-                          style: const TextStyle(fontSize: 9, color: Colors.grey),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            if (isDeleteMode)
-              Positioned(
-                right: 8,
-                top: 8,
-                child: GestureDetector(
-                  onTap: onToggleSelect,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected ? Colors.red : Colors.grey[400]!,
-                        width: 2,
-                      ),
-                      color: isSelected ? Colors.red : Colors.white,
-                    ),
-                    child: isSelected
-                        ? const Icon(Icons.check, size: 14, color: Colors.white)
-                        : null,
-                  ),
                 ),
               ),
-          ],
-        ),
+              // 삭제 모드 체크박스
+              if (isDeleteMode)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: GestureDetector(
+                    onTap: onToggleSelect,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected 
+                              ? const Color(0xFFB91C1C) // 더 부드러운 빨간색
+                              : Colors.grey[400]!,
+                          width: 2,
+                        ),
+                        color: isSelected 
+                            ? const Color(0xFFDC2626).withOpacity(0.9) // 약간 투명한 빨간색
+                            : Colors.white,
+                      ),
+                      child: isSelected
+                          ? const Icon(Icons.check, size: 14, color: Colors.white)
+                          : null,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

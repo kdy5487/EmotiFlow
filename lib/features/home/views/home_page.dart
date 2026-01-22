@@ -68,6 +68,15 @@ class _HomePageState extends ConsumerState<HomePage> {
   void initState() {
     super.initState();
     _refreshAdvice();
+    // 홈 화면 진입 시 일기 데이터 자동 로드
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authState = ref.read(authProvider);
+      if (authState.user != null) {
+        ref
+            .read(diaryProvider.notifier)
+            .refreshDiaryEntries(authState.user!.uid);
+      }
+    });
   }
 
   void _refreshAdvice() {

@@ -12,178 +12,355 @@ class AIDetailedAnalysisDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Row(
-        children: [
-          const Icon(Icons.psychology, color: AppTheme.primary),
-          const SizedBox(width: 8),
-          const Text('AI 상세 분석'),
-          const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
+    final theme = Theme.of(context);
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
       ),
-      content: SizedBox(
-        width: double.maxFinite,
-        height: MediaQuery.of(context).size.height * 0.7,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildDiarySummary(entry),
-              const SizedBox(height: 20),
-              _buildWeeklyAdvice(entry),
-              const SizedBox(height: 20),
-              _buildMonthlyAdvice(entry),
-              const SizedBox(height: 20),
-              _buildTodayAdviceCardSection(context, entry),
-            ],
-          ),
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 헤더
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.psychology,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'AI 상세 분석',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ],
+              ),
+            ),
+            // 내용
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDiarySummary(entry, theme),
+                    const SizedBox(height: 16),
+                    _buildWeeklyAdvice(entry, theme),
+                    const SizedBox(height: 16),
+                    _buildMonthlyAdvice(entry, theme),
+                    const SizedBox(height: 16),
+                    _buildTodayAdviceCardSection(context, entry, theme),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('닫기'),
-        ),
-      ],
     );
   }
 
-  Widget _buildDiarySummary(DiaryEntry entry) {
+  Widget _buildDiarySummary(DiaryEntry entry, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.primary.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.primary.withOpacity(0.1),
+            Colors.white,
+          ],
+        ),
+        border: Border.all(
+          color: theme.colorScheme.primary.withOpacity(0.2),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.summarize, color: AppTheme.primary),
-              SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.summarize,
+                  color: theme.colorScheme.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
               Text(
                 '일기 요약',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.primary,
+                  color: theme.colorScheme.primary,
                   fontSize: 16,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Text(
             entry.title.isNotEmpty ? entry.title : '제목 없음',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: theme.colorScheme.onSurface,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
-            entry.content.length > 100
-                ? '${entry.content.substring(0, 100)}...'
+            entry.content.length > 150
+                ? '${entry.content.substring(0, 150)}...'
                 : entry.content,
-            style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
+            style: TextStyle(
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              height: 1.6,
+              fontSize: 14,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildWeeklyAdvice(DiaryEntry entry) {
+  Widget _buildWeeklyAdvice(DiaryEntry entry, ThemeData theme) {
     final emotion = entry.emotions.isNotEmpty ? entry.emotions.first : '평온';
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.secondary.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.secondary.withOpacity(0.2)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.secondary.withOpacity(0.1),
+            Colors.white,
+          ],
+        ),
+        border: Border.all(
+          color: AppTheme.secondary.withOpacity(0.2),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.calendar_today, color: AppTheme.secondary),
-              SizedBox(width: 8),
-              Text(
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.calendar_today,
+                  color: AppTheme.secondary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
                 '주간 조언',
                 style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.secondary,
-                    fontSize: 16),
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.secondary,
+                  fontSize: 16,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(_generateWeeklyAdvice(emotion),
-              style: const TextStyle(color: AppTheme.textPrimary, height: 1.5)),
+          const SizedBox(height: 16),
+          Text(
+            _generateWeeklyAdvice(emotion),
+            style: TextStyle(
+              color: theme.colorScheme.onSurface.withOpacity(0.8),
+              height: 1.6,
+              fontSize: 14,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMonthlyAdvice(DiaryEntry entry) {
+  Widget _buildMonthlyAdvice(DiaryEntry entry, ThemeData theme) {
     final emotion = entry.emotions.isNotEmpty ? entry.emotions.first : '평온';
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.warning.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.warning.withOpacity(0.2)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.warning.withOpacity(0.1),
+            Colors.white,
+          ],
+        ),
+        border: Border.all(
+          color: AppTheme.warning.withOpacity(0.2),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.calendar_month, color: AppTheme.warning),
-              SizedBox(width: 8),
-              Text(
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.warning.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.calendar_month,
+                  color: AppTheme.warning,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
                 '월간 조언',
                 style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.warning,
-                    fontSize: 16),
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.warning,
+                  fontSize: 16,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(_generateMonthlyAdvice(emotion),
-              style: const TextStyle(color: AppTheme.textPrimary, height: 1.5)),
+          const SizedBox(height: 16),
+          Text(
+            _generateMonthlyAdvice(emotion),
+            style: TextStyle(
+              color: theme.colorScheme.onSurface.withOpacity(0.8),
+              height: 1.6,
+              fontSize: 14,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTodayAdviceCardSection(BuildContext context, DiaryEntry entry) {
+  Widget _buildTodayAdviceCardSection(
+      BuildContext context, DiaryEntry entry, ThemeData theme) {
     final emotion = entry.emotions.isNotEmpty ? entry.emotions.first : '평온';
     final adviceCards = _generateAdviceCards(emotion);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.info.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.info.withOpacity(0.2)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.info.withOpacity(0.1),
+            Colors.white,
+          ],
+        ),
+        border: Border.all(
+          color: AppTheme.info.withOpacity(0.2),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.card_giftcard, color: AppTheme.info),
-              SizedBox(width: 8),
-              Text(
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.info.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.card_giftcard,
+                  color: AppTheme.info,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
                 '오늘의 조언 카드',
                 style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.info,
-                    fontSize: 16),
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.info,
+                  fontSize: 16,
+                ),
               ),
             ],
           ),
@@ -198,24 +375,45 @@ class AIDetailedAnalysisDialog extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () => _showAdviceCardDetail(context, card),
                     child: Container(
-                      height: 100,
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: card['color'].withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            card['color'].withOpacity(0.15),
+                            card['color'].withOpacity(0.05),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color: card['color'].withOpacity(0.3), width: 2),
+                          color: card['color'].withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: card['color'].withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(card['icon'], size: 24, color: card['color']),
+                          Icon(card['icon'], size: 28, color: card['color']),
                           const SizedBox(height: 8),
-                          Text(card['title'],
-                              style: TextStyle(
-                                  color: card['color'],
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 10),
-                              textAlign: TextAlign.center),
+                          Text(
+                            card['title'],
+                            style: TextStyle(
+                              color: card['color'],
+                              fontWeight: FontWeight.w600,
+                              fontSize: 11,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ],
                       ),
                     ),
@@ -273,21 +471,101 @@ class AIDetailedAnalysisDialog extends StatelessWidget {
   }
 
   void _showAdviceCardDetail(BuildContext context, Map<String, dynamic> card) {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(card['icon'], color: card['color']),
-            const SizedBox(width: 8),
-            Text(card['title']),
-          ],
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
         ),
-        content: Text(card['advice']),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context), child: const Text('확인'))
-        ],
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                card['color'].withOpacity(0.1),
+                Colors.white,
+              ],
+            ),
+            border: Border.all(
+              color: card['color'].withOpacity(0.3),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: card['color'].withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      card['icon'],
+                      color: card['color'],
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      card['title'],
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                card['advice'],
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface.withOpacity(0.8),
+                  fontSize: 15,
+                  height: 1.6,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: card['color'],
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('확인'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
