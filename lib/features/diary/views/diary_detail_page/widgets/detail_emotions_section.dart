@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
+import 'package:emoti_flow/shared/constants/emotion_character_map.dart';
 import 'package:emoti_flow/features/diary/domain/entities/diary_entry.dart';
 
 class DetailEmotionsSection extends StatelessWidget {
@@ -46,7 +47,7 @@ class DetailEmotionsSection extends StatelessWidget {
             runSpacing: 12,
             children: entry.emotions.map((emotion) {
               final intensity = entry.emotionIntensities[emotion] ?? 5;
-              return _buildEmotionChip(emotion, intensity);
+              return _buildEmotionChip(context, emotion, intensity);
             }).toList(),
           ),
         ],
@@ -54,7 +55,7 @@ class DetailEmotionsSection extends StatelessWidget {
     );
   }
 
-  Widget _buildEmotionChip(String emotion, int intensity) {
+  Widget _buildEmotionChip(BuildContext context, String emotion, int intensity) {
     final emotionColors = {
       '기쁨': AppTheme.success,
       '감사': AppTheme.success,
@@ -67,9 +68,10 @@ class DetailEmotionsSection extends StatelessWidget {
     };
 
     final color = emotionColors[emotion] ?? AppTheme.primary;
+    final characterAsset = EmotionCharacterMap.getCharacterAsset(emotion);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
@@ -78,6 +80,36 @@ class DetailEmotionsSection extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 캐릭터 이미지
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: color.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(7),
+              child: Image.asset(
+                characterAsset,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: color.withOpacity(0.1),
+                    child: Icon(
+                      Icons.emoji_emotions,
+                      size: 18,
+                      color: color,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
           Text(
             emotion,
             style: TextStyle(

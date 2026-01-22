@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../../shared/constants/emotion_character_map.dart';
 import '../../../../../theme/app_colors.dart';
 import '../../../../../theme/app_typography.dart';
 import '../../../domain/entities/diary_entry.dart';
-import '../../../domain/entities/emotion.dart';
 
 class DiaryGridCard extends StatelessWidget {
   final DiaryEntry entry;
@@ -26,21 +26,31 @@ class DiaryGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.red.withOpacity(0.05) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+    final theme = Theme.of(context);
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected 
+                ? Colors.red.withOpacity(0.05) 
+                : theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.colorScheme.onSurface.withOpacity(0.1),
+              width: 1,
             ),
-          ],
-        ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
         child: Stack(
           children: [
             Padding(
@@ -74,14 +84,31 @@ class DiaryGridCard extends StatelessWidget {
                       ),
                       if (entry.emotions.isNotEmpty)
                         Container(
-                          padding: const EdgeInsets.all(4),
+                          width: 28,
+                          height: 28,
                           decoration: BoxDecoration(
-                            color: Emotion.findByName(entry.emotions.first)?.color.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                              width: 1,
+                            ),
                           ),
-                          child: Text(
-                            Emotion.findByName(entry.emotions.first)?.emoji ?? '😊',
-                            style: const TextStyle(fontSize: 16),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(5),
+                            child: Image.asset(
+                              EmotionCharacterMap.getCharacterAsset(entry.emotions.first),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Theme.of(context).colorScheme.primaryContainer,
+                                  child: Icon(
+                                    Icons.emoji_emotions,
+                                    size: 16,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                     ],
@@ -192,6 +219,7 @@ class DiaryGridCard extends StatelessWidget {
                 ),
               ),
           ],
+        ),
         ),
       ),
     );

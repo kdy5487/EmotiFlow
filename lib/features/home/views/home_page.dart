@@ -15,9 +15,7 @@ import 'dart:async';
 
 // 새로운 위젯 imports
 import '../widgets/greeting_header.dart';
-import '../widgets/recent_diaries_section.dart';
 import '../widgets/growth_visualization.dart';
-import '../widgets/daily_stamp_calendar.dart';
 import '../widgets/diary_overview_section.dart';
 import '../models/growth_status.dart';
 
@@ -265,11 +263,9 @@ class _HomePageState extends ConsumerState<HomePage> {
               GrowthVisualization(
                 status: _calculateGrowthStatus(ref),
                 onTap: () => context.push('/ai'), // 통계 페이지로 이동
+                onWriteButtonTap: () => _handleProtectedAction(
+                    context, ref, () => _showDiaryWritingOptions(context, ref)),
               ),
-              const SizedBox(height: 20),
-
-              // 3. 일기 작성 버튼 (심플하게)
-              _buildSimpleWriteButton(context, ref),
               const SizedBox(height: 24),
 
               // 4. 최근 7일 + 최근 일기 통합 섹션
@@ -1036,57 +1032,68 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _showDiaryWritingOptions(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      isScrollControlled: false,
+      backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '일기 작성 방법 선택',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: 32,
             ),
-            const SizedBox(height: 20),
-            Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: _buildDiaryOptionCard(
-                    context,
-                    icon: Icons.edit,
-                    title: '자유 일기',
-                    subtitle: '직접 작성하기',
-                    color: AppTheme.success,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _handleProtectedAction(
-                          context, ref, () => context.push('/diaries/write'));
-                    },
-                  ),
+                Text(
+                  '일기 작성 방법 선택',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildDiaryOptionCard(
-                    context,
-                    icon: Icons.chat,
-                    title: 'AI 채팅 일기',
-                    subtitle: 'AI와 대화하며',
-                    color: AppTheme.info,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _handleProtectedAction(
-                          context, ref, () => context.push('/diaries/chat'));
-                    },
-                  ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDiaryOptionCard(
+                        context,
+                        icon: Icons.edit,
+                        title: '자유 일기',
+                        subtitle: '직접 작성하기',
+                        color: AppTheme.success,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _handleProtectedAction(context, ref,
+                              () => context.push('/diaries/write'));
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDiaryOptionCard(
+                        context,
+                        icon: Icons.chat,
+                        title: 'AI 채팅 일기',
+                        subtitle: 'AI와 대화하며',
+                        color: AppTheme.info,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _handleProtectedAction(context, ref,
+                              () => context.push('/diaries/chat'));
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-          ],
+          ),
         ),
       ),
     );
@@ -1104,14 +1111,15 @@ class _HomePageState extends ConsumerState<HomePage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 100,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           color: color.withOpacity(0.1),
           border: Border.all(color: color.withOpacity(0.3)),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
@@ -1127,8 +1135,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                 fontSize: 14,
               ),
               textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 4),
             Text(
               subtitle,
               style: TextStyle(
@@ -1136,7 +1146,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 fontSize: 11,
               ),
               textAlign: TextAlign.center,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ],

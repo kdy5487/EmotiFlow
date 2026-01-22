@@ -21,13 +21,27 @@ class EmotionSelectorSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
     final emotions = [
       ...EmotionCharacterMap.availableEmotions,
       null, // "선택 없음" 옵션
     ];
 
-    // 그리드 아이템 크기 계산
-    final itemWidth = (screenWidth - (screenWidth * 0.1) - (screenWidth * 0.09)) / 4;
+    // 반응형 그리드 아이템 크기 계산 (화면 크기에 따라 조정)
+    final horizontalPadding = screenWidth * 0.1; // 좌우 패딩
+    final totalSpacing = screenWidth * 0.09; // 가로 간격 합계
+    final itemWidth = (screenWidth - horizontalPadding - totalSpacing) / 4;
+    
+    // 화면 높이에 따라 간격 조정 (작은 화면에서는 간격 줄임)
+    final rows = (emotions.length / 4).ceil();
+    final itemHeight = itemWidth + 25; // 이미지(60) + 텍스트(20) + 여유(5)
+    final totalItemHeight = rows * itemHeight;
+    final availableHeight = screenHeight * 0.3; // 예상 사용 가능 높이
+    
+    // 반응형 간격 계산
+    final adaptiveSpacing = availableHeight < totalItemHeight 
+        ? 8.0  // 작은 화면: 간격 최소화
+        : 14.0; // 큰 화면: 넉넉한 간격
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -87,9 +101,9 @@ class EmotionSelectorSection extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
-              mainAxisSpacing: 18,
+              mainAxisSpacing: adaptiveSpacing, // 반응형 간격
               crossAxisSpacing: screenWidth * 0.05,
-              childAspectRatio: itemWidth / (itemWidth + 15),
+              childAspectRatio: itemWidth / (itemWidth + 25), // 텍스트 공간 넉넉하게 확보
             ),
             itemCount: emotions.length,
             itemBuilder: (context, index) {
@@ -161,6 +175,7 @@ class EmotionSelectorSection extends StatelessWidget {
               );
             },
           ),
+          SizedBox(height: adaptiveSpacing + 5), // 하단 여유 공간 (간격 + 추가 여유)
           if (selectedEmotions.isNotEmpty) ...[
             const SizedBox(height: 24),
             Text(

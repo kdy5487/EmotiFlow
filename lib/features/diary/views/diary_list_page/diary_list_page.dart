@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../shared/constants/emotion_character_map.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../theme/app_typography.dart';
 import '../../providers/diary_provider.dart';
@@ -191,38 +192,38 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     );
   }
 
-  /// 감정 인디케이터 빌더 (리스트용)
+  /// 감정 인디케이터 빌더 (리스트용) - 캐릭터 이미지 사용
   Widget _buildEmotionIndicator(DiaryEntry entry) {
     if (entry.emotions.isEmpty) return const SizedBox.shrink();
     final emotionName = entry.emotions.first;
-    final emotion = Emotion.findByName(emotionName);
+    final characterAsset = EmotionCharacterMap.getCharacterAsset(emotionName);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      width: 24,
+      height: 24,
       decoration: BoxDecoration(
-        color: (emotion?.color ?? AppTheme.primary).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: (emotion?.color ?? AppTheme.primary).withOpacity(0.3),
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+          width: 1,
         ),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            emotion?.emoji ?? '😊',
-            style: const TextStyle(fontSize: 12),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            emotionName,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: emotion?.color ?? AppTheme.primary,
-            ),
-          ),
-        ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(5),
+        child: Image.asset(
+          characterAsset,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: Icon(
+                Icons.emoji_emotions,
+                size: 14,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            );
+          },
+        ),
       ),
     );
   }

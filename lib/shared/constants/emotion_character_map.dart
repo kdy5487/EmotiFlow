@@ -8,7 +8,7 @@ class EmotionCharacterMap {
   EmotionCharacterMap._();
 
   /// 대표 캐릭터 (감정 선택 전 기본 캐릭터)
-  static const String defaultCharacter = 'assets/images/characters/Emoti2.png';
+  static const String defaultCharacter = 'assets/images/characters/Emoti_logo_big.png';
 
   /// 감정별 캐릭터 이미지 매핑
   ///

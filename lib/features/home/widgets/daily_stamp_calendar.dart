@@ -58,7 +58,8 @@ class DailyStampCalendar extends StatelessWidget {
             // 스탬프 그리드
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: stamps.map((stamp) => _buildStampItem(stamp, theme)).toList(),
+              children:
+                  stamps.map((stamp) => _buildStampItem(stamp, theme)).toList(),
             ),
           ],
         ),
@@ -118,4 +119,3 @@ class DailyStampCalendar extends StatelessWidget {
     );
   }
 }
-

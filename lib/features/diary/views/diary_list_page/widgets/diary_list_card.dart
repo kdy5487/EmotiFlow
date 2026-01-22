@@ -26,8 +26,18 @@ class DiaryListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Container(
-      margin: const EdgeInsets.only(bottom: 1),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: theme.colorScheme.onSurface.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+      ),
       child: EmotiCard(
         child: InkWell(
           onTap: onTap,

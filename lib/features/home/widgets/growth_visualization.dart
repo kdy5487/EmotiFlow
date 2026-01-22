@@ -5,11 +5,13 @@ import '../models/growth_status.dart';
 class GrowthVisualization extends StatelessWidget {
   final GrowthStatus status;
   final VoidCallback? onTap;
+  final VoidCallback? onWriteButtonTap;
 
   const GrowthVisualization({
     super.key,
     required this.status,
     this.onTap,
+    this.onWriteButtonTap,
   });
 
   @override
@@ -64,6 +66,12 @@ class GrowthVisualization extends StatelessWidget {
 
             // 진행률 바
             if (status.currentLevel < 4) _buildProgressBar(theme),
+
+            // 일기 작성 버튼 (진행률 바 바로 아래)
+            if (onWriteButtonTap != null) ...[
+              const SizedBox(height: 16),
+              _buildWriteButton(theme),
+            ],
           ],
         ),
       ),
@@ -111,7 +119,6 @@ class GrowthVisualization extends StatelessWidget {
     );
   }
 
-
   Widget _buildProgressBar(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,6 +155,34 @@ class GrowthVisualization extends StatelessWidget {
     );
   }
 
+  Widget _buildWriteButton(ThemeData theme) {
+    return GestureDetector(
+      onTap: onWriteButtonTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: _getStageColor(),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.edit, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              '오늘의 일기 작성하기',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Color _getStageColor() {
     switch (status.currentLevel) {
       case 0:
@@ -165,4 +200,3 @@ class GrowthVisualization extends StatelessWidget {
     }
   }
 }
-

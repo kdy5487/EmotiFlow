@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:emoti_flow/theme/app_theme.dart';
 import '../diary_list_view_model.dart';
 
 class DiaryListAppBar extends ConsumerWidget implements PreferredSizeWidget {
@@ -26,31 +25,39 @@ class DiaryListAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final ui = ref.watch(diaryListUiProvider);
     final uiNotifier = ref.read(diaryListUiProvider.notifier);
 
+    final theme = Theme.of(context);
+
     return AppBar(
       leading: ui.isDeleteMode
           ? IconButton(
               onPressed: uiNotifier.exitDeleteMode,
               icon: const Icon(Icons.close),
               tooltip: '삭제 모드 종료',
+              color: theme.colorScheme.onSurface,
             )
           : null,
-      title: ui.isDeleteMode
-          ? Text(
-              '${ui.selectedEntryIds.length}개 선택',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            )
-          : const Text(
-              '일기 목록',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-      backgroundColor: AppTheme.primary,
-      foregroundColor: Colors.white,
+      title: Text(
+        ui.isDeleteMode ? '${ui.selectedEntryIds.length}개 선택' : '일기 목록',
+        style: TextStyle(
+          color: theme.colorScheme.onSurface,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      centerTitle: true,
+      backgroundColor: theme.scaffoldBackgroundColor,
       elevation: 0,
+      iconTheme: IconThemeData(
+        color: theme.colorScheme.onSurface,
+      ),
       actions: ui.isDeleteMode
           ? [
               IconButton(
                 onPressed: ui.selectedEntryIds.isEmpty ? null : onConfirmDelete,
-                icon: const Icon(Icons.delete_outline),
+                icon: Icon(
+                  Icons.delete_outline,
+                  color: theme.colorScheme.onSurface,
+                ),
                 tooltip: '선택 삭제',
               ),
             ]
@@ -69,6 +76,7 @@ class DiaryListAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 },
                 icon: Icon(
                   ui.isSearchActive ? Icons.close : Icons.search,
+                  color: theme.colorScheme.onSurface,
                 ),
                 tooltip: ui.isSearchActive ? '검색 닫기' : '검색',
               ),
@@ -76,6 +84,7 @@ class DiaryListAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 onPressed: uiNotifier.toggleViewMode,
                 icon: Icon(
                   ui.isGridView ? Icons.view_list : Icons.grid_view,
+                  color: theme.colorScheme.onSurface,
                 ),
                 tooltip: ui.isGridView ? '리스트뷰로 전환' : '그리드뷰로 전환',
               ),
@@ -95,7 +104,10 @@ class DiaryListAppBar extends ConsumerWidget implements PreferredSizeWidget {
                         break;
                     }
                   },
-                  icon: const Icon(Icons.more_vert),
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: theme.colorScheme.onSurface,
+                  ),
                   itemBuilder: (context) => [
                     const PopupMenuItem(
                       value: 'filter',
