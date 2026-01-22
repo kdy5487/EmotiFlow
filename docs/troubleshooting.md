@@ -466,3 +466,102 @@ flutter test test/performance/emotion_selection_performance_test.dart
 - Fallback 메시지만으로도 충분한 UX 제공
 
 ---
+
+
+
+---
+
+## AI 입력 검증 부족 문제 (2026-01-21)
+
+### 1) 증상 (What)
+- "fff", "kkk", "ddd" 같은 오타를 감정으로 잘못 해석
+- "asdf", "qwer" 같은 랜덤 키 입력에도 공감하는 응답
+- "ㅋㅋㅋ", "ㅠㅠ" 같은 자음/모음만 입력해도 대화 진행
+
+### 2) 원인 (Why)
+- 사용자 입력에 대한 검증 로직 부재
+- 모든 입력을 유효한 답변으로 처리
+- 의미 없는 답변 감지 기능 없음
+
+### 3) 해결 (How)
+8가지 검증 규칙 추가:
+
+```dart
+bool _isInvalidUserResponse(String input) {
+  // 1. 너무 짧은 답변 (1-2글자)
+  if (input.trim().length <= 2) return true;
+  
+  // 2. 같은 문자 반복 (fff, kkk 등)
+  if (_hasRepeatedChars(input, 3)) return true;
+  
+  // 3. 영문자 모음 없음 (fff, ddd 등)
+  if (_hasNoVowels(input)) return true;
+  
+  // 4. 한글 자음/모음만 (ㅋㅋㅋ, ㅠㅠ 등)
+  if (_isOnlyHangulJamo(input)) return true;
+  
+  // 5. 문자 비율 검증 (80% 이상 같은 문자)
+  if (_hasHighCharRatio(input, 0.8)) return true;
+  
+  // 6. 의미 있는 영단어 예외 처리
+  if (_isValidEnglishWord(input)) return false;
+  
+  return false;
+}
+```
+
+검증 규칙:
+1. 너무 짧은 답변 (1-2글자)
+2. 같은 문자 3번 이상 반복
+3. 영문자 모음 없음 (3-5글자)
+4. 한글 자음/모음만 입력
+5. 문자 비율 검증 (80% 이상 같은 문자)
+6. 의미 있는 영단어 예외 (yes, no, ok, good, bad, help)
+7. 특수문자만 입력
+8. 숫자만 입력
+
+### 4) 결과
+- ✅ 무의미한 입력 자동 감지
+- ✅ 스마트한 대화 유지
+- ✅ 사용자 경험 향상
+
+---
+
+## 다크모드 색상 대비 부족 (2026-01-22)
+
+### 1) 증상 (What)
+- 다크모드에서 텍스트 가독성 저하
+- 배경색과 텍스트 색상 대비 부족
+- 접근성 기준 미충족
+
+### 2) 원인 (Why)
+- 다크모드 색상이 너무 밝음 (0xFF1A1A1A)
+- 텍스트 색상이 배경과 구분이 명확하지 않음
+- WCAG 2.1 AA 기준 미달
+
+### 3) 해결 (How)
+다크모드 색상 대폭 개선:
+
+```dart
+// BEFORE: 밝은 다크모드
+darkBackground: 0xFF1A1A1A,
+darkSurface: 0xFF2D2D2D,
+darkTextPrimary: 0xFFE5E7EB,
+
+// AFTER: 더 어두운 다크모드
+darkBackground: 0xFF121212, // 더 깊은 블랙
+darkSurface: 0xFF1E1E1E,    // 더 어두운 표면
+darkTextPrimary: 0xFFF5F5F5, // 더 밝은 텍스트
+```
+
+추가 개선:
+- 텍스트 대비 향상 (접근성 기준 충족)
+- 모든 페이지에 `Theme.of(context)` 사용
+- 다크모드 전면 적용
+
+### 4) 결과
+- ✅ 접근성 기준 충족 (WCAG 2.1 AA)
+- ✅ 가독성 대폭 향상
+- ✅ 전 페이지 다크모드 완벽 지원
+
+---

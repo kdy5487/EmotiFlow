@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/providers/auth_provider.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../theme/app_typography.dart';
 import '../../providers/diary_provider.dart';
 import '../../domain/entities/diary_entry.dart';
 import 'diary_list_view_model.dart';
@@ -296,71 +294,167 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
   }
 
   void _showSortDialog() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.sort, color: AppTheme.primary),
-            SizedBox(width: 8),
-            Text('정렬 기준', style: TextStyle(fontWeight: FontWeight.w600)),
-          ],
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildSortOptionDialog(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.sort,
+                    color: colorScheme.primary,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '정렬 기준',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _buildSortOption(
+                context: context,
                 title: '최신순',
                 subtitle: '최근 작성된 순서대로',
                 value: 'date',
-                icon: Icons.schedule),
-            _buildSortOptionDialog(
+                icon: Icons.schedule,
+              ),
+              const SizedBox(height: 12),
+              _buildSortOption(
+                context: context,
                 title: '오래된순',
                 subtitle: '오래된 순서대로',
                 value: 'dateOldest',
-                icon: Icons.history),
-            _buildSortOptionDialog(
+                icon: Icons.history,
+              ),
+              const SizedBox(height: 12),
+              _buildSortOption(
+                context: context,
                 title: '감정순',
                 subtitle: '감정 강도 순서대로',
                 value: 'emotion',
-                icon: Icons.emoji_emotions),
-          ],
+                icon: Icons.emoji_emotions,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      '닫기',
+                      style: TextStyle(color: colorScheme.onSurface),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('닫기')),
-        ],
       ),
     );
   }
 
-  Widget _buildSortOptionDialog(
-      {required String title,
-      required String subtitle,
-      required String value,
-      required IconData icon}) {
+  Widget _buildSortOption({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required String value,
+    required IconData icon,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final ui = ref.watch(diaryListUiProvider);
     final isSelected = ui.currentSortBy == value;
-    return ListTile(
-      leading:
-          Icon(icon, color: isSelected ? AppTheme.primary : Colors.grey[600]),
-      title: Text(title,
-          style: TextStyle(
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              color: isSelected ? AppTheme.primary : AppTheme.textPrimary)),
-      subtitle: Text(subtitle,
-          style:
-              AppTypography.bodySmall.copyWith(color: AppTheme.textSecondary)),
-      trailing: isSelected
-          ? const Icon(Icons.check_circle, color: AppTheme.primary)
-          : null,
+
+    return InkWell(
       onTap: () {
         ref.read(diaryListUiProvider.notifier).setSortBy(value);
         _applySearchAndFilter();
         Navigator.of(context).pop();
       },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? colorScheme.primary.withOpacity(0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? colorScheme.primary
+                : colorScheme.outline.withOpacity(0.2),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? colorScheme.primary.withOpacity(0.2)
+                    : colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: isSelected
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: isSelected
+                          ? colorScheme.primary
+                          : colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(
+                Icons.check_circle,
+                color: colorScheme.primary,
+                size: 24,
+              ),
+          ],
+        ),
+      ),
     );
   }
 

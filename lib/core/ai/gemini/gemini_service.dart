@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../../../features/diary/domain/entities/diary_entry.dart';
 
 /// Gemini AI 연동 서비스
 class GeminiService {
@@ -341,6 +342,183 @@ $emotionDescription
     return await _callGeminiWithFallbackModels(prompt);
   }
 
+  /// 일기 요약 생성 (상세 분석용)
+  Future<String> generateDetailedDiarySummary(DiaryEntry entry) async {
+    if (!_hasKey) {
+      return _getFallbackDetailedSummary(entry);
+    }
+
+    try {
+      final emotionInfo = entry.emotions.isNotEmpty
+          ? entry.emotions.map((e) {
+              final intensity = entry.emotionIntensities[e] ?? 5;
+              return '$e (강도: $intensity/10)';
+            }).join(', ')
+          : '감정 없음';
+
+      final prompt = '''
+당신은 전문적인 심리 상담가이자 일기 분석 전문가입니다. 다음 일기를 깊이 있게 분석하여 정확하고 의미 있는 요약을 작성해주세요.
+
+**일기 정보:**
+- 제목: ${entry.title.isNotEmpty ? entry.title : '제목 없음'}
+- 내용: ${entry.content}
+- 감정: $emotionInfo
+- 작성일: ${entry.createdAt.toString().substring(0, 10)}
+${entry.diaryType == DiaryType.aiChat && entry.chatHistory.isNotEmpty ? '- 대화 내역: ${entry.chatHistory.length}개의 메시지가 있었습니다.\n' : ''}
+
+**요약 작성 원칙:**
+
+1. **핵심 내용 정확히 파악**
+   - 일기에서 언급된 구체적인 사건, 상황, 사람, 장소를 정확히 파악
+   - 작성자가 느낀 감정의 변화와 그 원인을 이해
+   - 일기에서 드러난 작성자의 생각, 고민, 관점을 파악
+
+2. **구조화된 요약 작성**
+   - **첫 문장**: 일기의 핵심 주제를 한 문장으로 명확히 제시
+     예: "오늘은 [주요 사건]으로 인해 [주요 감정]을 느꼈다."
+   - **두 번째 문단 (2-3문장)**: 주요 사건과 감정을 구체적으로 설명
+     - 언제, 어디서, 무엇이 일어났는지
+     - 그로 인해 어떤 감정을 느꼈는지
+     - 감정의 강도와 변화 과정
+   - **세 번째 문단 (1-2문장)**: 일기에서 드러난 생각이나 느낌
+     - 작성자의 관점이나 태도
+     - 일기를 통해 표현하고 싶었던 핵심 메시지
+
+3. **감정 반영**
+   - 감정과 강도를 요약에 자연스럽게 포함
+   - 감정의 변화 과정이 있다면 그 흐름을 설명
+   - 복합적인 감정이라면 각 감정의 관계를 설명
+
+4. **톤과 스타일**
+   - 객관적이면서도 공감적인 톤
+   - 사실을 바탕으로 하되, 작성자의 감정을 이해하는 방식
+   - 과장 없이 정확하게, 하지만 따뜻하게
+
+5. **길이와 구조**
+   - 총 4-6문장으로 간결하게
+   - 각 문장은 명확하고 구체적
+   - 불필요한 수식어나 장식적 표현 지양
+
+**금지사항 (반드시 지켜주세요):**
+- ❌ 과장된 표현 사용 금지 ("엄청난", "대단한", "놀라운" 등)
+- ❌ 일기에 없는 내용 추가 금지 (추측이나 일반화 금지)
+- ❌ 일반적인 조언이나 격려 문구 포함 금지 (요약만 작성)
+- ❌ "~한 것 같다", "~할 수도 있다" 같은 추측 표현 금지
+- ❌ 시적이거나 문학적인 표현 지양 ("아릿한", "포근한" 등)
+
+**출력 형식:**
+요약만 작성하세요. 제목이나 라벨 없이 바로 요약 내용만 출력해주세요.
+
+한국어로 작성해주세요.
+''';
+
+      final response = await _callGeminiAPI(prompt);
+      return response ?? _getFallbackDetailedSummary(entry);
+    } catch (e) {
+      print('일기 요약 생성 실패: $e');
+      return _getFallbackDetailedSummary(entry);
+    }
+  }
+
+  /// 일기 상세 조언 생성 (상세 분석용)
+  Future<String> generateDetailedAdvice(DiaryEntry entry) async {
+    if (!_hasKey) {
+      return _getFallbackDetailedAdvice(entry);
+    }
+
+    try {
+      final primaryEmotion =
+          entry.emotions.isNotEmpty ? entry.emotions.first : '평온';
+      final emotionIntensity = entry.emotionIntensities[primaryEmotion] ?? 5;
+      final allEmotions = entry.emotions.isNotEmpty
+          ? entry.emotions.map((e) {
+              final intensity = entry.emotionIntensities[e] ?? 5;
+              return '$e (강도: $intensity/10)';
+            }).join(', ')
+          : '감정 없음';
+
+      final prompt = '''
+당신은 전문적인 심리 상담가이자 감정 코치입니다. 다음 일기를 깊이 있게 분석하여 구체적이고 실용적인 조언을 제공해주세요.
+
+**일기 정보:**
+- 제목: ${entry.title.isNotEmpty ? entry.title : '제목 없음'}
+- 내용: ${entry.content}
+- 주요 감정: $primaryEmotion (강도: $emotionIntensity/10)
+${entry.emotions.length > 1 ? '- 전체 감정: $allEmotions\n' : ''}
+- 작성일: ${entry.createdAt.toString().substring(0, 10)}
+${entry.diaryType == DiaryType.aiChat && entry.chatHistory.isNotEmpty ? '- 대화 맥락: AI와 나눈 대화를 통해 작성된 일기입니다.\n' : ''}
+
+**조언 작성 원칙:**
+
+1. **깊이 있는 맥락 이해**
+   - 일기의 내용을 단순히 읽는 것이 아니라, 작성자의 상황과 감정을 깊이 이해
+   - 감정의 원인과 배경을 파악
+   - 작성자가 표현하지 못한 부분까지 고려하여 종합적으로 분석
+
+2. **구체적이고 실행 가능한 조언**
+   - 추상적인 조언("긍정적으로 생각하세요") 지양
+   - 구체적인 행동 제안 포함 ("오늘 저녁에 10분간 산책을 해보세요")
+   - 실현 가능한 단계별 제안
+   - 일기 내용과 직접적으로 연관된 조언
+
+3. **감정에 맞는 톤과 접근**
+   - **긍정적 감정 (기쁨, 사랑, 설렘 등)**: 
+     * 축하와 함께 이 감정을 더 오래 유지하거나 깊게 경험할 수 있는 방법 제시
+     * 긍정적 경험을 성장의 기회로 활용하는 방법
+   - **부정적 감정 (슬픔, 분노, 걱정 등)**:
+     * 먼저 공감과 이해를 표현
+     * 감정을 건강하게 처리하는 방법 제시
+     * 구체적인 해결책이나 대처 방안 제시
+     * 필요시 전문가 상담 권유 (심각한 경우)
+   - **중립적 감정 (평온, 지루함 등)**:
+     * 현재 상태를 인정하면서도 성장 기회 제시
+     * 새로운 경험이나 도전을 제안
+
+4. **구조화된 조언 작성**
+   - **첫 문단 (2-3문장)**: 일기 내용에 대한 공감과 이해
+     * 작성자가 경험한 상황과 감정을 정확히 파악했음을 보여줌
+     * "~하신 것 같습니다", "~하셨군요" 같은 공감 표현
+   - **두 번째 문단 (2-3문장)**: 구체적인 조언 1-2가지
+     * 일기 내용과 직접 연관된 실용적인 조언
+     * 구체적인 행동 제안 포함
+     * 예: "이런 상황에서는 ~하는 것이 도움이 될 수 있습니다"
+   - **세 번째 문단 (1-2문장)**: 장기적인 관점에서의 제안
+     * 단기적 해결책을 넘어서는 성장 방향 제시
+     * 감정 관리나 자기 이해를 위한 장기적 관점
+
+5. **길이와 깊이**
+   - 총 5-8문장으로 충분히 상세하게
+   - 각 문장은 의미 있고 구체적
+   - 표면적인 조언이 아닌 깊이 있는 인사이트 제공
+
+**금지사항 (반드시 지켜주세요):**
+- ❌ 일반적인 격려 문구만 나열 금지 ("힘내세요", "좋아질 거예요" 등)
+- ❌ 일기 내용과 무관한 일반적인 조언 금지
+- ❌ 과도하게 긍정적이거나 부정적인 톤 금지 (현실적이고 균형잡힌 접근)
+- ❌ 추상적이고 실행 불가능한 조언 금지
+- ❌ 일기에 없는 내용을 가정한 조언 금지
+- ❌ 의학적 진단이나 처방 금지 (전문가 상담 권유는 가능)
+
+**조언 스타일:**
+- 따뜻하고 공감적이면서도 현실적
+- 전문적이지만 친근하고 이해하기 쉬운 톤
+- 구체적인 행동 제안과 실용적인 해결책 포함
+- 작성자의 상황에 맞춘 맞춤형 조언
+
+**출력 형식:**
+조언만 작성하세요. 제목이나 라벨 없이 바로 조언 내용만 출력해주세요.
+
+한국어로 작성해주세요.
+''';
+
+      final response = await _callGeminiAPI(prompt);
+      return response ?? _getFallbackDetailedAdvice(entry);
+    } catch (e) {
+      print('상세 조언 생성 실패: $e');
+      return _getFallbackDetailedAdvice(entry);
+    }
+  }
+
   /// 일기 완성 및 요약 생성
   Future<String> generateDiarySummary(
       List<String> conversationHistory, String selectedEmotion) async {
@@ -652,5 +830,90 @@ ${isShortConversation ? '- 짧은 대화 → 4-6문장 (간결하게)\n- 무리�
 
   String _getFallbackSummary(List<String> conversationHistory, String emotion) {
     return '오늘 하루도 수고하셨습니다. 다양한 경험과 감정을 느끼며 하루를 보내셨군요. 대화를 통해 하루를 정리하는 시간을 가질 수 있어서 좋았습니다. 일기를 통해 하루를 정리하고, 내일은 더 나은 하루가 되길 바랍니다.';
+  }
+
+  String _getFallbackDetailedSummary(DiaryEntry entry) {
+    final emotion = entry.emotions.isNotEmpty ? entry.emotions.first : '평온';
+    return '${entry.title.isNotEmpty ? entry.title : '이 일기'}는 $emotion 감정을 담고 있습니다. ${entry.content.length > 100 ? entry.content.substring(0, 100) + '...' : entry.content}';
+  }
+
+  String _getFallbackDetailedAdvice(DiaryEntry entry) {
+    final emotion = entry.emotions.isNotEmpty ? entry.emotions.first : '평온';
+    switch (emotion) {
+      case '기쁨':
+        return '오늘 기쁜 하루를 보내셨군요. 이런 긍정적인 감정을 오래 유지하기 위해 감사한 일들을 더 기록해보세요. 주변 사람들과 기쁨을 나누는 것도 좋은 방법입니다.';
+      case '슬픔':
+        return '힘든 시간을 보내고 계시는군요. 자신에게 친절하게 대하고 충분한 휴식을 취하세요. 감정을 인정하고 받아들이는 것도 중요합니다. 시간이 지나면 조금씩 나아질 거예요.';
+      case '분노':
+        return '화가 나는 일이 있었나요? 깊은 호흡을 통해 감정을 진정시키고, 산책이나 운동으로 스트레스를 해소해보세요. 상황을 객관적으로 바라보는 것도 도움이 될 수 있습니다.';
+      default:
+        return '오늘 하루를 기록해주셔서 감사합니다. 일기를 통해 자신의 감정을 정리하고 돌아보는 시간을 가지는 것은 매우 소중한 일입니다. 앞으로도 꾸준히 기록하며 자신을 이해하는 시간을 가져보세요.';
+    }
+  }
+
+  /// 간단한 AI 조언 생성 (일기 상세 페이지용)
+  Future<String> generateSimpleAdvice(DiaryEntry entry) async {
+    if (!_hasKey) {
+      return _getFallbackSimpleAdvice(entry);
+    }
+
+    try {
+      final primaryEmotion =
+          entry.emotions.isNotEmpty ? entry.emotions.first : '평온';
+      final emotionIntensity = entry.emotionIntensities[primaryEmotion] ?? 5;
+
+      final prompt = '''
+다음 일기를 바탕으로 간단하고 따뜻한 조언을 한 문장으로 제공해주세요.
+
+**일기 정보:**
+- 내용: ${entry.content.length > 200 ? entry.content.substring(0, 200) + '...' : entry.content}
+- 주요 감정: $primaryEmotion (강도: $emotionIntensity/10)
+
+**조언 작성 규칙:**
+1. **간결함**: 한 문장으로 핵심만 전달 (최대 2문장)
+2. **공감적**: 작성자의 감정을 이해하고 공감하는 톤
+3. **실용적**: 구체적이고 실행 가능한 작은 제안 포함
+4. **긍정적이지만 현실적**: 과도한 격려보다는 따뜻하고 현실적인 조언
+
+**금지사항:**
+- 일반적인 격려 문구만 사용 금지
+- 일기 내용과 무관한 조언 금지
+- 과도하게 긴 문장 금지
+
+**예시:**
+- "오늘 기쁜 하루를 보내셨군요. 이런 긍정적인 감정을 오래 유지하기 위해 감사한 일들을 더 기록해보세요."
+- "힘든 시간을 보내고 계시는군요. 자신에게 친절하게 대하고 충분한 휴식을 취하세요."
+
+한국어로 한 문장으로 작성해주세요.
+''';
+
+      final response = await _callGeminiAPI(prompt);
+      return response ?? _getFallbackSimpleAdvice(entry);
+    } catch (e) {
+      print('간단 조언 생성 실패: $e');
+      return _getFallbackSimpleAdvice(entry);
+    }
+  }
+
+  String _getFallbackSimpleAdvice(DiaryEntry entry) {
+    final emotion = entry.emotions.isNotEmpty ? entry.emotions.first : '평온';
+    switch (emotion) {
+      case '기쁨':
+        return '정말 기쁜 하루였네요! 이런 긍정적인 감정을 오래 유지하기 위해 감사한 일들을 더 기록해보세요.';
+      case '사랑':
+        return '사랑이 가득한 하루였군요. 주변 사람들에게 더 많은 관심과 사랑을 나누어보세요.';
+      case '평온':
+        return '차분하고 평온한 마음으로 하루를 마무리했네요. 이 평온함을 기록하고 감사해보세요.';
+      case '슬픔':
+        return '힘든 시간을 보내고 계시는군요. 자신에게 친절하게 대하고 충분한 휴식을 취하세요.';
+      case '분노':
+        return '화가 나는 일이 있었나요? 깊은 호흡을 통해 감정을 진정시키고, 산책이나 운동으로 스트레스를 해소해보세요.';
+      case '걱정':
+        return '불안하고 걱정되는 마음이 드시나요? 현재에 집중하는 명상이나 요가를 시도해보세요.';
+      case '놀람':
+        return '예상치 못한 일이 있었나요? 새로운 경험을 긍정적으로 받아들이고 성장의 기회로 삼아보세요.';
+      default:
+        return '오늘 하루도 수고하셨습니다. 내일은 더 좋은 하루가 될 거예요!';
+    }
   }
 }
