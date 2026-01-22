@@ -1,4 +1,4 @@
-![KakaoTalk_20260123_060902823](https://github.com/user-attachments/assets/b1ad353a-78d4-4a8b-a0af-bbdae7f788bc)# EmotiFlow 🌱
+# EmotiFlow 🌱
 
 > AI와 함께 감정을 기록하고 성장하는 일기 앱
 
@@ -22,12 +22,9 @@ AI가 질문을 던지고 사용자가 응답하며 자연스럽게 일기를 �
 - 감정 기반 맞춤형 질문 생성
 - 실시간 대화형 인터페이스
 - 일기 자동 요약 및 저장
-- <img src="https://github.com/user-attachments/assets/c61b65d3-5d72-4112-9e3f-48379db26a65" width="300" alt="AI 감정 분석 화면" />
+<img src="https://github.com/user-attachments/assets/c61b65d3-5d72-4112-9e3f-48379db26a65" width="300" alt="AI 감정 분석 화면" />
 <img src="https://github.com/user-attachments/assets/f398263d-58e6-4f38-8722-78b07f350223" width="300" alt="일기 상세 화면 1" />
 <img src="https://github.com/user-attachments/assets/bfdb2604-e14f-4295-a5df-dd80cdd86c35" width="300" alt="일기 상세 화면 2" />
-![KakaoTalk_20260123_060902823_06](https://github.com/user-attachments/assets/0c7af225-8a93-4c2b-a5c0-a1e34dae900c)
-![KakaoTalk_20260123_060902823_05](https://github.com/user-attachments/assets/5e5361bd-bd82-41ea-8b85-7d7beea465ba)
-![KakaoTalk_20260123_060902823_04](https://github.com/user-attachments/assets/6f74b13f-59fe-4f28-b7a0-d0e22f122335)
 
 ### 2. 자유형 일기 작성 ✍️
 텍스트·이미지를 자유롭게 기록하는 기본 일기 작성 기능
@@ -41,7 +38,7 @@ Firestore 실시간 동기화 기반 검색 / 필터 / 정렬
 - 실시간 검색 기능
 - 고급 필터링 및 정렬
 - 일괄 삭제 모드
-![KakaoTalk_20260123_060902823_01](https://github.com/user-attachments/assets/28bab6e5-2635-4167-aeb7-c9b077618410)
+<img src="https://github.com/user-attachments/assets/28bab6e5-2635-4167-aeb7-c9b077618410" width="300" alt="일기 목록 화면" />
 
 ### 4. AI 감정 분석 및 조언 🤖
 작성된 일기를 분석해 감정 요약과 조언 제공
@@ -49,9 +46,9 @@ Firestore 실시간 동기화 기반 검색 / 필터 / 정렬
 - 개인화된 조언 생성
 - 감정 트렌드 차트 시각화 (주간/월간)
 - 상세 분석 및 조언 다이얼로그
-![KakaoTalk_20260123_060902823_03](https://github.com/user-attachments/assets/c61b65d3-5d72-4112-9e3f-48379db26a65)
-![KakaoTalk_20260123_060902823_02](https://github.com/user-attachments/assets/f398263d-58e6-4f38-8722-78b07f350223)
-![KakaoTalk_20260123_060902823](https://github.com/user-attachments/assets/bfdb2604-e14f-4295-a5df-dd80cdd86c35)
+<img src="https://github.com/user-attachments/assets/c61b65d3-5d72-4112-9e3f-48379db26a65" width="300" alt="AI 감정 분석 화면" />
+<img src="https://github.com/user-attachments/assets/f398263d-58e6-4f38-8722-78b07f350223" width="300" alt="일기 상세 화면 1" />
+<img src="https://github.com/user-attachments/assets/bfdb2604-e14f-4295-a5df-dd80cdd86c35" width="300" alt="일기 상세 화면 2" />
 
 
 ### 5. 홈 대시보드 🏠
@@ -60,11 +57,10 @@ Firestore 실시간 동기화 기반 검색 / 필터 / 정렬
 - 최근 7일 감정 캘린더
 - 최근 작성 일기 미리보기
 - 빠른 일기 작성 버튼
-![KakaoTalk_20260123_060902823_09](https://github.com/user-attachments/assets/cd0d676a-5c89-4dfc-928f-629c418f3208)
-![KakaoTalk_20260123_060902823_08](https://github.com/user-attachments/assets/73f74ed5-622c-4860-a369-71717dfbdfd1)
-![KakaoTalk_20260123_060902823_07](https://github.com/user-attachments/assets/4fe2c316-832b-4f8e-939f-77df5febb9fa)
-![홈 화면 (라이트 모드)](docs/images/home_light.png)
-![홈 화면 (다크 모드)](docs/images/home_dark.png)
+
+<img src="https://github.com/user-attachments/assets/cd0d676a-5c89-4dfc-928f-629c418f3208" width="300" alt="홈 화면 1" />
+<img src="https://github.com/user-attachments/assets/73f74ed5-622c-4860-a369-71717dfbdfd1" width="300" alt="홈 화면 2" />
+<img src="https://github.com/user-attachments/assets/4fe2c316-832b-4f8e-939f-77df5febb9fa" width="300" alt="홈 화면 3" />
 
 ### 6. 다크 / 라이트 테마 🌓
 Material 3 기반 시스템 테마 연동
