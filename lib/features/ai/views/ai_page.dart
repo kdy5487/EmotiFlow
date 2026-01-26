@@ -25,7 +25,6 @@ class _AIPageState extends ConsumerState<AIPage> {
   String? _cachedMonthlyAnalysis;
   String? _cachedWeeklyAdvice; // 주간 조언 캐싱
   String? _cachedMonthlyAdvice; // 월간 조언 캐싱
-  String? _selectedTab = 'analysis'; // 'analysis' or 'feedback'
   final ScrollController _scrollController = ScrollController();
 
   final List<Map<String, dynamic>> _adviceCards = [
@@ -82,8 +81,10 @@ class _AIPageState extends ConsumerState<AIPage> {
 
   @override
   void dispose() {
-    // Provider에서 제거하기 전에 null로 설정
-    ref.read(scrollControllerProvider(2).notifier).setController(ScrollController());
+    // Provider에서 제거
+    if (mounted) {
+      ref.read(scrollControllerProvider(2).notifier).setController(ScrollController());
+    }
     _scrollController.dispose();
     super.dispose();
   }
@@ -162,15 +163,19 @@ class _AIPageState extends ConsumerState<AIPage> {
         ),
         body: Builder(
           builder: (context) {
-            // ScrollController를 Provider에 등록
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              ref.read(scrollControllerProvider(2).notifier).setController(_scrollController);
-            });
+            // ScrollController를 Provider에 등록 (한 번만)
+            if (mounted) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && _scrollController.hasClients) {
+                  ref.read(scrollControllerProvider(2).notifier).setController(_scrollController);
+                }
+              });
+            }
             
             return ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 16), // 가로 여백 더 줄임
+                  horizontal: 8, vertical: 16),
               itemCount: 2,
               itemBuilder: (context, index) {
                 switch (index) {
@@ -335,7 +340,13 @@ class _AIPageState extends ConsumerState<AIPage> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () => setState(() => _selectedPeriod = 'weekly'),
+                      onTap: () {
+                        setState(() {
+                          _selectedPeriod = 'weekly';
+                        });
+                        _loadCachedAnalysis();
+                        _loadCachedAdvice();
+                      },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
@@ -358,7 +369,13 @@ class _AIPageState extends ConsumerState<AIPage> {
                     ),
                     const SizedBox(width: 8),
                     GestureDetector(
-                      onTap: () => setState(() => _selectedPeriod = 'monthly'),
+                      onTap: () {
+                        setState(() {
+                          _selectedPeriod = 'monthly';
+                        });
+                        _loadCachedAnalysis();
+                        _loadCachedAdvice();
+                      },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
@@ -699,11 +716,25 @@ class _AIPageState extends ConsumerState<AIPage> {
         return '${entry.createdAt.toString().substring(0, 10)}: [감정: $emotions] ${entry.content.length > 100 ? entry.content.substring(0, 100) + '...' : entry.content}';
       }).join('\n\n');
 
-      final prompt = '''이번 주(최근 7일) 일기 감정 분석:
+      // 그래프 결과 가져오기
+      final emotionData = _getEmotionRelativeData(weeklyEntries, isWeekly: true);
+      final graphSummary = emotionData.entries
+          .map((e) => '${e.key}: ${e.value.toStringAsFixed(1)}점')
+          .join(', ');
+      
+      final prompt = '''이번 주(최근 7일) 일기 AI 분석:
 
 $diaryContents
 
-주요 감정과 변화 추이를 5-7문장으로 분석. 구체적 수치와 날짜 포함. 한국어로 작성.''';
+감정 상대 수치: $graphSummary
+
+**분석 요청:**
+1. 감정 패턴 분석 (3-4문장): 주요 감정과 변화 추이를 구체적 수치와 날짜를 포함하여 분석
+2. 감정 강도 분석 (2-3문장): 감정 강도의 변화 패턴과 특징 분석
+3. 인사이트 및 조언 (2-3문장): 감정 패턴을 바탕으로 한 구체적이고 실행 가능한 조언
+4. 개선 방안 (3-5가지): 실행 가능한 구체적 개선 방안 제시
+
+한국어로 작성. AI 분석 비중을 높여서 작성.''';
 
       // GeminiService의 analyzeEmotionAndComfort를 사용하여 분석 생성
       final geminiService = GeminiService.instance;
@@ -772,11 +803,26 @@ $diaryContents
         return '${entry.createdAt.toString().substring(0, 10)}: [감정: $emotions, 강도: $intensity/10] ${entry.content.length > 80 ? entry.content.substring(0, 80) + '...' : entry.content}';
       }).join('\n\n');
 
-      final prompt = '''이번 달(최근 30일) 일기 감정 분석:
+      // 그래프 결과 가져오기
+      final emotionData = _getEmotionRelativeData(monthlyEntries, isWeekly: false);
+      final graphSummary = emotionData.entries
+          .map((e) => '${e.key}: ${e.value.toStringAsFixed(1)}점')
+          .join(', ');
+      
+      final prompt = '''이번 달(최근 30일) 일기 AI 분석:
 
 $diaryContents
 
-주요 감정과 변화 추이를 6-8문장으로 분석. 구체적 수치와 주차 포함. 한국어로 작성.''';
+감정 상대 수치: $graphSummary
+
+**분석 요청:**
+1. 월간 감정 패턴 분석 (4-5문장): 주요 감정과 변화 추이를 구체적 수치와 주차를 포함하여 분석
+2. 주간별 변화 분석 (2-3문장): 4주 동안 감정이 어떻게 변화했는지 분석
+3. 감정 안정성 분석 (2-3문장): 감정 안정성과 트렌드 분석
+4. 인사이트 및 조언 (2-3문장): 감정 패턴을 바탕으로 한 구체적이고 실행 가능한 조언
+5. 개선 방안 (3-5가지): 실행 가능한 구체적 개선 방안 제시
+
+한국어로 작성. AI 분석 비중을 높여서 작성.''';
 
       final geminiService = GeminiService.instance;
       final dominantEmotion = _getDominantEmotion(monthlyEntries);
@@ -1746,7 +1792,7 @@ $diaryContents
     });
   }
 
-  // AI 분석 결과 및 피드백 섹션 (탭으로 분리)
+  // AI 분석 결과 섹션 (통합)
   Widget _buildAnalysisAndFeedbackSection(List<DiaryEntry> entries) {
     final now = DateTime.now();
     final weekAgo = now.subtract(const Duration(days: 7));
@@ -1759,7 +1805,6 @@ $diaryContents
         ? _cachedWeeklyAnalysis != null 
         : _cachedMonthlyAnalysis != null;
     
-    // 새로고침 버튼 활성화 조건
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1770,70 +1815,30 @@ $diaryContents
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 탭 선택
+          // 헤더와 새로고침 버튼
           Row(
             children: [
               Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => _selectedTab = 'analysis'),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: _selectedTab == 'analysis'
-                          ? AppTheme.info
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'AI 분석 결과',
-                      textAlign: TextAlign.center,
+                child: Row(
+                  children: [
+                    const Icon(Icons.psychology, color: AppTheme.info, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'AI 분석',
                       style: AppTypography.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: _selectedTab == 'analysis'
-                            ? Colors.white
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: AppTheme.info,
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => _selectedTab = 'feedback'),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: _selectedTab == 'feedback'
-                          ? AppTheme.warning
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${_selectedPeriod == 'weekly' ? '주간' : '월간'} 피드백',
-                      textAlign: TextAlign.center,
-                      style: AppTypography.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: _selectedTab == 'feedback'
-                            ? Colors.white
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // 새로고침 버튼
-          FutureBuilder<bool>(
-            future: _shouldEnableRefreshAsync(entries),
-            builder: (context, snapshot) {
-              final canRefresh = snapshot.data ?? false || !hasAnalysis;
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  IconButton(
+              // 새로고침 버튼
+              FutureBuilder<bool>(
+                future: _shouldEnableRefreshAsync(entries),
+                builder: (context, snapshot) {
+                  final canRefresh = snapshot.data ?? false || !hasAnalysis;
+                  return IconButton(
                     icon: const Icon(Icons.refresh),
                     onPressed: canRefresh
                         ? () => _refreshAnalysis(entries)
@@ -1842,17 +1847,15 @@ $diaryContents
                     color: canRefresh
                         ? AppTheme.primary
                         : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3),
-                  ),
-                ],
-              );
-            },
+                    iconSize: 20,
+                  );
+                },
+              ),
+            ],
           ),
           const SizedBox(height: 12),
-          // 탭 내용
-          if (_selectedTab == 'analysis')
-            _buildAnalysisContent(entries, hasEntries, hasAnalysis)
-          else
-            _buildFeedbackContent(entries, hasEntries),
+          // 분석 내용
+          _buildAnalysisContent(entries, hasEntries, hasAnalysis),
         ],
       ),
     );
@@ -1939,63 +1942,6 @@ $diaryContents
     );
   }
 
-  // 피드백 내용 표시
-  Widget _buildFeedbackContent(List<DiaryEntry> entries, bool hasEntries) {
-    if (!hasEntries) {
-      return Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            const Icon(Icons.edit_note, size: 48, color: AppTheme.textSecondary),
-            const SizedBox(height: 16),
-            Text(
-              '${_selectedPeriod == 'weekly' ? '이번 주' : '이번 달'} 일기 기록이 없습니다.',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppTheme.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '일기를 작성하면 피드백을 받을 수 있습니다.',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppTheme.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.3,
-      ),
-      child: SingleChildScrollView(
-        child: FutureBuilder<String>(
-          future: _selectedPeriod == 'weekly'
-              ? _getFeedbackText(entries)
-              : _getFeedbackText(entries),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: CircularProgressIndicator(),
-                ),
-              );
-            }
-            return Text(
-              snapshot.data ?? '피드백을 불러올 수 없습니다.',
-              style: AppTypography.bodySmall.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                height: 1.5,
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
 
   // 새로고침 버튼 활성화 여부 확인 (비동기)
   Future<bool> _shouldEnableRefreshAsync(List<DiaryEntry> entries) async {
@@ -2010,7 +1956,10 @@ $diaryContents
         ? _cachedWeeklyAnalysis != null 
         : _cachedMonthlyAnalysis != null;
     
+    // 일기 없음 → 비활성화
     if (!hasEntries) return false;
+    
+    // 분석 없음 → 활성화 (일기 작성 유도)
     if (!hasAnalysis) return true;
     
     // 마지막 일기 작성 시간 확인
@@ -2031,9 +1980,10 @@ $diaryContents
     
     try {
       final lastAnalysisTime = DateTime.parse(lastAnalysisTimeStr);
+      // 일기를 추가로 작성한 경우에만 활성화
       return latestEntry.createdAt.isAfter(lastAnalysisTime);
     } catch (e) {
-      return true;
+      return false; // 에러 시 비활성화
     }
   }
 
@@ -2077,69 +2027,22 @@ $diaryContents
     
     await prefs.setString(timeKey, now.toIso8601String());
     
-    // 분석 및 피드백 재생성
+    // 분석 재생성 (통합)
     if (_selectedPeriod == 'weekly') {
       final analysis = await _generateWeeklyAnalysisText(entries);
-      final feedback = await _generateWeeklyAdviceText(entries);
       final weekKey = _getCurrentWeekRange();
       await prefs.setString('weekly_analysis_$weekKey', analysis);
-      await prefs.setString('weekly_feedback_$weekKey', feedback);
       setState(() {
         _cachedWeeklyAnalysis = analysis;
-        _cachedWeeklyAdvice = feedback;
       });
     } else {
       final analysis = await _generateMonthlyAnalysisText(entries);
-      final feedback = await _generateMonthlyAdviceText(entries);
       final monthKey = '${now.year}-${now.month}';
       await prefs.setString('monthly_analysis_$monthKey', analysis);
-      await prefs.setString('monthly_feedback_$monthKey', feedback);
       setState(() {
         _cachedMonthlyAnalysis = analysis;
-        _cachedMonthlyAdvice = feedback;
       });
     }
   }
 
-  // 피드백 텍스트 가져오기
-  Future<String> _getFeedbackText(List<DiaryEntry> entries) async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    if (_selectedPeriod == 'weekly') {
-      if (_cachedWeeklyAdvice != null) {
-        return _cachedWeeklyAdvice!;
-      }
-      
-      // SharedPreferences에서 캐시 확인
-      final weekKey = _getCurrentWeekRange();
-      final cached = prefs.getString('weekly_feedback_$weekKey');
-      if (cached != null) {
-        setState(() {
-          _cachedWeeklyAdvice = cached;
-        });
-        return cached;
-      }
-      
-      // 캐시가 없으면 생성하지 않고 안내 메시지 반환
-      return '피드백이 없습니다. 새로고침 버튼을 눌러 피드백을 받으세요.';
-    } else {
-      if (_cachedMonthlyAdvice != null) {
-        return _cachedMonthlyAdvice!;
-      }
-      
-      // SharedPreferences에서 캐시 확인
-      final now = DateTime.now();
-      final monthKey = '${now.year}-${now.month}';
-      final cached = prefs.getString('monthly_feedback_$monthKey');
-      if (cached != null) {
-        setState(() {
-          _cachedMonthlyAdvice = cached;
-        });
-        return cached;
-      }
-      
-      // 캐시가 없으면 생성하지 않고 안내 메시지 반환
-      return '피드백이 없습니다. 새로고침 버튼을 눌러 피드백을 받으세요.';
-    }
-  }
 }

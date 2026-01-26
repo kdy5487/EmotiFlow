@@ -35,7 +35,7 @@ class DotChartPainter extends CustomPainter {
     final sortedEmotions = emotionData.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    final dotSize = 12.0;
+    final dotSize = 8.0;
     final spacing = chartWidth / (sortedEmotions.length + 1);
 
     for (int i = 0; i < sortedEmotions.length; i++) {

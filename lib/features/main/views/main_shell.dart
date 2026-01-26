@@ -17,10 +17,18 @@ class MainShell extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final isLoggedIn = authState.user != null;
 
-    return Scaffold(
-      body: SafeArea(
-        child: navigationShell,
-      ),
+    return PopScope(
+      canPop: navigationShell.currentIndex == 0, // 홈이면 뒤로가기 허용
+      onPopInvoked: (didPop) {
+        if (!didPop && navigationShell.currentIndex != 0) {
+          // 홈이 아니면 홈으로 이동
+          navigationShell.goBranch(0);
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: navigationShell,
+        ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: navigationShell.currentIndex,
@@ -64,6 +72,7 @@ class MainShell extends ConsumerWidget {
             label: 'MY',
           ),
         ],
+      ),
       ),
     );
   }

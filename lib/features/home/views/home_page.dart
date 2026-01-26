@@ -299,10 +299,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
               // 5. 감정 트렌드 (간소화)
               _buildSimpleEmotionTrendSection(context, ref),
-              const SizedBox(height: 32),
-
-              // 6. 빠른 액션 (하단으로 이동, 축소)
-              _buildCompactQuickActions(context, ref),
 
               const SizedBox(height: 100), // 하단 여유 공간
             ],
