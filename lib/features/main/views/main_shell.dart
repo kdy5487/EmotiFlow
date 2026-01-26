@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:emoti_flow/core/providers/auth_provider.dart';
+import 'package:emoti_flow/core/providers/scroll_provider.dart';
 
 class MainShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
@@ -24,10 +25,16 @@ class MainShell extends ConsumerWidget {
         type: BottomNavigationBarType.fixed,
         currentIndex: navigationShell.currentIndex,
         onTap: (index) {
-          // 일기, AI, 커뮤니티 탭 클릭 시 로그인 여부 확인
+          // 일기, AI, MY 탭 클릭 시 로그인 여부 확인
           if (index != 0 && !isLoggedIn) {
             _showLoginRequiredDialog(context);
             return;
+          }
+          
+          // 같은 탭을 클릭하면 맨 위로 스크롤
+          if (index == navigationShell.currentIndex) {
+            final scrollNotifier = ref.read(scrollControllerProvider(index).notifier);
+            scrollNotifier.scrollToTop();
           }
           
           navigationShell.goBranch(
@@ -52,9 +59,9 @@ class MainShell extends ConsumerWidget {
             label: 'AI',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.people_outlined),
-            activeIcon: Icon(Icons.people),
-            label: '커뮤니티',
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'MY',
           ),
         ],
       ),

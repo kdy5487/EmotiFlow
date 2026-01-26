@@ -97,7 +97,8 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
             onAnalysisTap: () => _showAIDetailedAnalysis(diaryEntry),
             onMoreTap: () => _showMoreOptions(diaryEntry),
           ),
-          body: Builder(
+          body: SafeArea(
+            child: Builder(
             builder: (context) {
               final primaryEmotion = diaryEntry.emotions.isNotEmpty 
                   ? diaryEntry.emotions.first 
@@ -106,18 +107,27 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                   ? EmotionCharacterMap.getBackgroundColor(primaryEmotion)
                   : 0xFFFFFDF7; // 기본 크림색
               
+              final isDark = Theme.of(context).brightness == Brightness.dark;
               return Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Color(backgroundColor).withOpacity(0.5),
-                      Color(backgroundColor).withOpacity(0.3),
-                      Color(backgroundColor).withOpacity(0.15),
-                      Color(backgroundColor).withOpacity(0.08),
-                      Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
-                    ],
+                    colors: isDark
+                        ? [
+                            Color(backgroundColor).withOpacity(0.2),
+                            Color(backgroundColor).withOpacity(0.1),
+                            Color(backgroundColor).withOpacity(0.05),
+                            Theme.of(context).scaffoldBackgroundColor,
+                            Theme.of(context).scaffoldBackgroundColor,
+                          ]
+                        : [
+                            Color(backgroundColor).withOpacity(0.5),
+                            Color(backgroundColor).withOpacity(0.3),
+                            Color(backgroundColor).withOpacity(0.15),
+                            Color(backgroundColor).withOpacity(0.08),
+                            Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
+                          ],
                     stops: const [0.0, 0.15, 0.35, 0.6, 1.0],
                   ),
                 ),
@@ -135,7 +145,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                           diaryEntry.title,
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF111827),
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 22,
                               ),
                         ),
@@ -144,10 +154,10 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                       // 본문 영역 (배경색 없이)
                       Text(
                         diaryEntry.content,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           height: 1.6,
-                          color: Color(0xFF111827),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -169,6 +179,7 @@ class _DiaryDetailPageState extends ConsumerState<DiaryDetailPage> {
                 ),
               );
             },
+            ),
           ),
         );
       },

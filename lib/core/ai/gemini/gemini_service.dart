@@ -350,10 +350,7 @@ $emotionDescription
 
     try {
       final emotionInfo = entry.emotions.isNotEmpty
-          ? entry.emotions.map((e) {
-              final intensity = entry.emotionIntensities[e] ?? 5;
-              return '$e (강도: $intensity/10)';
-            }).join(', ')
+          ? entry.emotions.join(', ')
           : '감정 없음';
 
       final prompt = '''
@@ -431,10 +428,7 @@ ${entry.diaryType == DiaryType.aiChat && entry.chatHistory.isNotEmpty ? '- 대�
           entry.emotions.isNotEmpty ? entry.emotions.first : '평온';
       final emotionIntensity = entry.emotionIntensities[primaryEmotion] ?? 5;
       final allEmotions = entry.emotions.isNotEmpty
-          ? entry.emotions.map((e) {
-              final intensity = entry.emotionIntensities[e] ?? 5;
-              return '$e (강도: $intensity/10)';
-            }).join(', ')
+          ? entry.emotions.join(', ')
           : '감정 없음';
 
       final prompt = '''
@@ -443,8 +437,8 @@ ${entry.diaryType == DiaryType.aiChat && entry.chatHistory.isNotEmpty ? '- 대�
 **일기 정보:**
 - 제목: ${entry.title.isNotEmpty ? entry.title : '제목 없음'}
 - 내용: ${entry.content}
-- 주요 감정: $primaryEmotion (강도: $emotionIntensity/10)
-${entry.emotions.length > 1 ? '- 전체 감정: $allEmotions\n' : ''}
+- 주요 감정: $primaryEmotion
+${entry.emotions.length > 1 ? '- 전체 감정: ${entry.emotions.join(', ')}\n' : ''}
 - 작성일: ${entry.createdAt.toString().substring(0, 10)}
 ${entry.diaryType == DiaryType.aiChat && entry.chatHistory.isNotEmpty ? '- 대화 맥락: AI와 나눈 대화를 통해 작성된 일기입니다.\n' : ''}
 
@@ -867,7 +861,7 @@ ${isShortConversation ? '- 짧은 대화 → 4-6문장 (간결하게)\n- 무리�
 
 **일기 정보:**
 - 내용: ${entry.content.length > 200 ? entry.content.substring(0, 200) + '...' : entry.content}
-- 주요 감정: $primaryEmotion (강도: $emotionIntensity/10)
+- 주요 감정: $primaryEmotion
 
 **조언 작성 규칙:**
 1. **간결함**: 한 문장으로 핵심만 전달 (최대 2문장)

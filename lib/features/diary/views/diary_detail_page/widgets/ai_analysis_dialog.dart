@@ -28,22 +28,23 @@ class _AIDetailedAnalysisDialogState extends ConsumerState<AIDetailedAnalysisDia
   }
 
   Future<void> _loadAnalysis() async {
-    setState(() => _isLoading = true);
-    try {
-      final summary = await GeminiService.instance.generateDetailedDiarySummary(widget.entry);
-      final advice = await GeminiService.instance.generateDetailedAdvice(widget.entry);
-      if (mounted) {
-        setState(() {
-          _diarySummary = summary;
-          _detailedAdvice = advice;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('AI 분석 로드 실패: $e');
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+    // aiAnalysis에 이미 분석 결과가 있으면 사용 (재시도 방지)
+    if (widget.entry.aiAnalysis != null) {
+      setState(() {
+        _diarySummary = widget.entry.aiAnalysis!.summary;
+        _detailedAdvice = widget.entry.aiAnalysis!.advice;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    // 분석 결과가 없으면 표시만 (생성하지 않음)
+    if (mounted) {
+      setState(() {
+        _diarySummary = 'AI 분석 결과가 아직 생성되지 않았습니다.';
+        _detailedAdvice = '일기를 작성할 때 AI 분석이 자동으로 생성됩니다.';
+        _isLoading = false;
+      });
     }
   }
 

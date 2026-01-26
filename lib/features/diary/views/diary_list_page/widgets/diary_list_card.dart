@@ -37,14 +37,14 @@ class DiaryListCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
                 pointColor.withOpacity(0.2),
-                Colors.white,
+                Theme.of(context).colorScheme.surface,
               ],
             ),
             border: Border.all(
@@ -115,7 +115,7 @@ class DiaryListCard extends StatelessWidget {
                                         entry.title,
                                         style: AppTypography.titleLarge.copyWith(
                                           fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF111827),
+                                          color: Theme.of(context).colorScheme.onSurface,
                                           fontSize: 16,
                                         ),
                                         maxLines: 1,
@@ -126,7 +126,7 @@ class DiaryListCard extends StatelessWidget {
                                     Text(
                                       entry.content,
                                       style: AppTypography.bodyMedium.copyWith(
-                                        color: const Color(0xFF6B7280),
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                         fontSize: 13,
                                         height: 1.4,
                                       ),
@@ -166,15 +166,15 @@ class DiaryListCard extends StatelessWidget {
                               Text(
                                 formatDate(entry.createdAt),
                                 style: AppTypography.caption.copyWith(
-                                  color: const Color(0xFF6B7280),
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontSize: 12,
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              const Text(
+                              Text(
                                 '·',
                                 style: TextStyle(
-                                  color: Color(0xFF6B7280),
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontSize: 12,
                                 ),
                               ),
@@ -182,7 +182,7 @@ class DiaryListCard extends StatelessWidget {
                               Text(
                                 formatTime(entry.createdAt),
                                 style: AppTypography.caption.copyWith(
-                                  color: const Color(0xFF6B7280),
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontSize: 12,
                                 ),
                               ),

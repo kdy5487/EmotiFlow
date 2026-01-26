@@ -6,12 +6,14 @@ class BarChartPainter extends CustomPainter {
   final List<String> labels;
   final Color primaryColor;
   final double maxValue;
+  final bool isDark;
 
   BarChartPainter({
     required this.data,
     required this.labels,
     required this.primaryColor,
     this.maxValue = 10.0,
+    this.isDark = false,
   });
 
   @override
@@ -68,8 +70,8 @@ class BarChartPainter extends CustomPainter {
       // 값 표시 (막대 위에)
       textPainter.text = TextSpan(
         text: data[i].toStringAsFixed(1),
-        style: const TextStyle(
-          color: AppTheme.textPrimary,
+        style: TextStyle(
+          color: isDark ? Colors.white : AppTheme.textPrimary,
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
@@ -87,8 +89,8 @@ class BarChartPainter extends CustomPainter {
       if (i < labels.length) {
         textPainter.text = TextSpan(
           text: labels[i],
-          style: const TextStyle(
-            color: AppTheme.textSecondary,
+          style: TextStyle(
+            color: isDark ? Colors.white70 : AppTheme.textSecondary,
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -111,7 +113,9 @@ class BarChartPainter extends CustomPainter {
   void _drawGrid(Canvas canvas, Size size, double padding, double bottomPadding,
       double chartHeight) {
     final gridPaint = Paint()
-      ..color = AppTheme.border.withOpacity(0.3)
+      ..color = isDark 
+          ? Colors.white.withOpacity(0.1)
+          : AppTheme.border.withOpacity(0.3)
       ..strokeWidth = 1;
 
     // 수평 그리드 라인 (Y축 기준선)
@@ -138,8 +142,8 @@ class BarChartPainter extends CustomPainter {
 
       textPainter.text = TextSpan(
         text: value.toStringAsFixed(1),
-        style: const TextStyle(
-          color: AppTheme.textSecondary,
+        style: TextStyle(
+          color: isDark ? Colors.white70 : AppTheme.textSecondary,
           fontSize: 10,
           fontWeight: FontWeight.w500,
         ),

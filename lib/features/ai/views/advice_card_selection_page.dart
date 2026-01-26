@@ -105,13 +105,47 @@ class _AdviceCardSelectionPageState
 
   /// 카드 선택 및 AI 조언 생성
   Future<void> _selectCard(Map<String, dynamic> card) async {
+    // 오늘 일기 작성 여부 확인
+    final diaryState = ref.read(diaryProvider);
+    final entries = diaryState.diaryEntries;
+    final today = DateTime.now();
+    final todayEntries = entries.where((entry) {
+      final entryDate = entry.createdAt;
+      return entryDate.year == today.year &&
+          entryDate.month == today.month &&
+          entryDate.day == today.day;
+    }).toList();
+
+    if (todayEntries.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('오늘의 조언 카드를 받으려면 먼저 일기를 작성해주세요.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // 오늘 이미 카드를 선택했는지 확인
+    final prefs = await SharedPreferences.getInstance();
+    final todayStr = today.toIso8601String().split('T')[0];
+    final lastSelectedDate = prefs.getString('last_advice_card_date');
+    
+    if (lastSelectedDate == todayStr && _selectedCard != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('오늘은 이미 조언 카드를 선택하셨습니다. 내일 다시 시도해주세요.'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final diaryState = ref.read(diaryProvider);
-      final entries = diaryState.diaryEntries;
       final dominantEmotion = _getDominantEmotion(entries.take(5).toList());
 
       // AI 조언 생성

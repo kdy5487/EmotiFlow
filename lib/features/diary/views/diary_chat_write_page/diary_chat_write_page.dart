@@ -6,6 +6,7 @@ import '../../../../shared/constants/emotion_character_map.dart';
 import '../../../../shared/widgets/keyboard_dismissible_scaffold.dart';
 import '../../domain/entities/diary_entry.dart';
 import '../../domain/entities/chat_message.dart';
+import '../../domain/entities/ai_analysis.dart';
 import '../diary_write_page/diary_write_view_model.dart';
 import '../../providers/diary_provider.dart';
 import 'widgets/chat_message_bubble.dart';
@@ -173,6 +174,36 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
 
   Future<void> _saveDiary(String content) async {
     final auth = ref.read(authProvider);
+    
+    // AI 조언 및 상세 분석 생성
+    final geminiService = GeminiService.instance;
+    final tempEntry = DiaryEntry(
+      id: '',
+      userId: auth.user?.uid ?? 'unknown',
+      title: content.length > 20 ? '${content.substring(0, 20)}...' : content,
+      content: content,
+      emotions: _selectedEmotion != null ? [_selectedEmotion!] : [],
+      emotionIntensities: _selectedEmotion != null ? {_selectedEmotion!: 8} : {},
+      createdAt: DateTime.now(),
+      diaryType: DiaryType.aiChat,
+      chatHistory: ref.read(diaryWriteProvider).chatHistory,
+    );
+    
+    final detailedAdvice = await geminiService.generateDetailedAdvice(tempEntry);
+    final detailedSummary = await geminiService.generateDetailedDiarySummary(tempEntry);
+    
+    // AIAnalysis 생성
+    final aiAnalysis = AIAnalysis(
+      id: 'analysis_${DateTime.now().millisecondsSinceEpoch}',
+      summary: detailedSummary,
+      keywords: [],
+      emotionScores: {},
+      advice: detailedAdvice,
+      actionItems: [],
+      moodTrend: '',
+      analyzedAt: DateTime.now(),
+    );
+    
     final entry = DiaryEntry(
       id: 'chat_${DateTime.now().millisecondsSinceEpoch}',
       userId: auth.user?.uid ?? 'unknown',
@@ -183,6 +214,8 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
           _selectedEmotion != null ? {_selectedEmotion!: 8} : {},
       createdAt: DateTime.now(),
       diaryType: DiaryType.aiChat,
+      chatHistory: ref.read(diaryWriteProvider).chatHistory,
+      aiAnalysis: aiAnalysis,
     );
     await ref.read(diaryProvider.notifier).createDiaryEntry(entry);
   }
