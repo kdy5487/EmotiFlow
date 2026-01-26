@@ -12,6 +12,9 @@ import 'package:emoti_flow/features/diary/views/drawing_canvas_page/drawing_canv
 import 'package:emoti_flow/features/settings/views/settings_page.dart';
 import 'package:emoti_flow/features/main/views/main_shell.dart';
 import 'package:emoti_flow/features/ai/views/ai_page.dart';
+import 'package:emoti_flow/features/ai/views/advice_card_selection_page.dart';
+import 'package:emoti_flow/features/my/views/my_page.dart';
+import 'package:emoti_flow/features/my/views/profile_edit_page.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -23,7 +26,9 @@ class AppRoutes {
   static const String diaryDrawing = '/diaries/drawing-canvas';
   static const String settings = '/settings';
   static const String ai = '/ai';
-  static const String community = '/community';
+  static const String adviceCards = '/ai/advice-cards';
+  static const String myPage = '/my';
+  static const String profileEdit = '/profile/edit';
 }
 
 class AppRouter {
@@ -83,10 +88,8 @@ class AppRouter {
             StatefulShellBranch(
               routes: [
                 GoRoute(
-                  path: AppRoutes.community,
-                  builder: (context, state) => const Scaffold(
-                    body: Center(child: Text('커뮤니티 페이지 (준비 중)')),
-                  ),
+                  path: AppRoutes.myPage,
+                  builder: (context, state) => const MyPage(),
                 ),
               ],
             ),
@@ -119,6 +122,24 @@ class AppRouter {
           path: AppRoutes.settings,
           parentNavigatorKey: _rootNavigatorKey,
           builder: (context, state) => const SettingsPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.adviceCards,
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) => const AdviceCardSelectionPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.profileEdit,
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            return ProfileEditPage(
+              nickname: extra?['nickname'] as String?,
+              bio: extra?['bio'] as String?,
+              profileImageUrl: extra?['profileImageUrl'] as String?,
+              selectedCharacter: extra?['selectedCharacter'] as String?,
+            );
+          },
         ),
       ],
     );

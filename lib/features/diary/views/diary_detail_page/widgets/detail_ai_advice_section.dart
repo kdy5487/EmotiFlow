@@ -17,7 +17,7 @@ class DetailAISimpleAdvice extends ConsumerStatefulWidget {
 
 class _DetailAISimpleAdviceState extends ConsumerState<DetailAISimpleAdvice> {
   String? _advice;
-  bool _isLoading = true;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -26,23 +26,20 @@ class _DetailAISimpleAdviceState extends ConsumerState<DetailAISimpleAdvice> {
   }
 
   Future<void> _loadAdvice() async {
-    try {
-      final advice = await GeminiService.instance.generateSimpleAdvice(widget.entry);
-      if (mounted) {
-        setState(() {
-          _advice = advice;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('간단 조언 로드 실패: $e');
-      if (mounted) {
-        setState(() {
-          _advice = _getFallbackAdvice();
-          _isLoading = false;
-        });
-      }
+    // aiAnalysis에 이미 조언이 있으면 사용, 없으면 생성하지 않음
+    if (widget.entry.aiAnalysis != null && widget.entry.aiAnalysis!.advice.isNotEmpty) {
+      setState(() {
+        _advice = widget.entry.aiAnalysis!.advice;
+        _isLoading = false;
+      });
+      return;
     }
+
+    // 조언이 없으면 fallback 조언만 표시 (새로 생성하지 않음)
+    setState(() {
+      _advice = _getFallbackAdvice();
+      _isLoading = false;
+    });
   }
 
   String _getFallbackAdvice() {

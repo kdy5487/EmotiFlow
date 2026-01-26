@@ -5,6 +5,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../providers/diary_provider.dart';
 import '../../domain/entities/diary_entry.dart';
 import 'diary_list_view_model.dart';
+import '../../../../core/providers/scroll_provider.dart';
 
 import 'widgets/diary_search_section.dart';
 import 'widgets/diary_filter_tags_bar.dart';
@@ -50,6 +51,11 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
         ref.read(diaryProvider.notifier).loadMore();
       }
     });
+    
+    // ScrollController를 Provider에 등록
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(scrollControllerProvider(1).notifier).setController(_listScrollController);
+    });
   }
 
   @override
@@ -65,7 +71,14 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     final diaryState = ref.watch(diaryProvider);
     final ui = ref.watch(diaryListUiProvider);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (!didPop) {
+          context.go('/');
+        }
+      },
+      child: Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: DiaryListAppBar(
         searchController: _searchController,
@@ -181,6 +194,7 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
       ),
       floatingActionButton:
           DiaryFAB(onPressed: () => _showWriteOptionsDialog(context)),
+      ),
     );
   }
 

@@ -10,6 +10,7 @@ import 'package:emoti_flow/features/music/providers/music_provider.dart';
 import 'package:emoti_flow/features/settings/providers/settings_provider.dart';
 import 'package:emoti_flow/features/diary/providers/diary_provider.dart';
 import 'package:emoti_flow/features/diary/domain/entities/diary_entry.dart';
+import 'package:emoti_flow/core/providers/scroll_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
@@ -63,6 +64,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   // 성능 최적화: Future를 상태로 관리하여 빌드 시마다 생성되지 않도록 함
   Future<Map<String, dynamic>?>? _selectedCardFuture;
   Future<String?>? _adviceTextFuture;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -76,7 +78,15 @@ class _HomePageState extends ConsumerState<HomePage> {
             .read(diaryProvider.notifier)
             .refreshDiaryEntries(authState.user!.uid);
       }
+      // ScrollController를 Provider에 등록
+      ref.read(scrollControllerProvider(0).notifier).setController(_scrollController);
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _refreshAdvice() {
@@ -255,6 +265,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         ],
       ),
       body: SingleChildScrollView(
+        controller: _scrollController,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
@@ -288,10 +299,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
               // 5. 감정 트렌드 (간소화)
               _buildSimpleEmotionTrendSection(context, ref),
-              const SizedBox(height: 32),
-
-              // 6. 빠른 액션 (하단으로 이동, 축소)
-              _buildCompactQuickActions(context, ref),
 
               const SizedBox(height: 100), // 하단 여유 공간
             ],

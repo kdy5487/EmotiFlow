@@ -28,11 +28,17 @@ class DetailHeroSection extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            pointColor.withOpacity(0.4),
-            pointColor.withOpacity(0.1),
-            Colors.white,
-          ],
+          colors: Theme.of(context).brightness == Brightness.dark
+              ? [
+                  pointColor.withOpacity(0.2),
+                  pointColor.withOpacity(0.1),
+                  Theme.of(context).colorScheme.surface,
+                ]
+              : [
+                  pointColor.withOpacity(0.4),
+                  pointColor.withOpacity(0.1),
+                  Colors.white,
+                ],
         ),
         boxShadow: [
           BoxShadow(
@@ -123,24 +129,32 @@ class DetailHeroSection extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1F2937), // 진한 회색으로 배경과 구별
-                        shadows: [
-                          Shadow(
-                            color: Colors.white.withOpacity(0.8),
-                            offset: const Offset(0, 1),
-                            blurRadius: 3,
-                          ),
-                        ],
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Theme.of(context).colorScheme.onSurface
+                            : const Color(0xFF1F2937),
+                        shadows: Theme.of(context).brightness == Brightness.dark
+                            ? []
+                            : [
+                                Shadow(
+                                  color: Colors.white.withOpacity(0.8),
+                                  offset: const Offset(0, 1),
+                                  blurRadius: 3,
+                                ),
+                              ],
                       ),
                     ),
                     const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1F2937), // 진한 회색 배경
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Theme.of(context).colorScheme.primary
+                            : const Color(0xFF1F2937),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.primaryContainer
+                              : Colors.white.withOpacity(0.3),
                           width: 1,
                         ),
                         boxShadow: [
@@ -153,7 +167,7 @@ class DetailHeroSection extends StatelessWidget {
                       ),
                       child: Text(
                         '$intensity',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
@@ -169,38 +183,38 @@ class DetailHeroSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.calendar_today,
                 size: 14,
-                color: Color(0xFF6B7280),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 6),
               Text(
                 _formatDate(entry.createdAt),
-                style: const TextStyle(
-                  color: Color(0xFF6B7280),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 14,
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 '·',
                 style: TextStyle(
-                  color: Color(0xFF6B7280),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 14,
                 ),
               ),
               const SizedBox(width: 12),
-              const Icon(
+              Icon(
                 Icons.access_time,
                 size: 14,
-                color: Color(0xFF6B7280),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 6),
               Text(
                 _formatTime(entry.createdAt),
-                style: const TextStyle(
-                  color: Color(0xFF6B7280),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 14,
                 ),
               ),

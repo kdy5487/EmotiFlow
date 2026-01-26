@@ -97,6 +97,7 @@ class DiaryListAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 ),
                 // 설정 메뉴 (삭제 모드만 포함)
                 PopupMenuButton<String>(
+                  key: ValueKey(ui.isDeleteMode), // 상태 변경 시 메뉴 닫기
                   onSelected: (value) {
                     if (value == 'delete_mode') {
                       uiNotifier.enterDeleteMode();

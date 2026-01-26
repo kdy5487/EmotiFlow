@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:emoti_flow/theme/app_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:emoti_flow/features/diary/domain/entities/diary_entry.dart';
 import 'package:emoti_flow/core/ai/gemini/gemini_service.dart';
 
@@ -20,6 +20,7 @@ class _AIDetailedAnalysisDialogState extends ConsumerState<AIDetailedAnalysisDia
   String? _diarySummary;
   String? _detailedAdvice;
   bool _isLoading = true;
+  bool _hasGenerated = false;
 
   @override
   void initState() {
@@ -28,21 +29,71 @@ class _AIDetailedAnalysisDialogState extends ConsumerState<AIDetailedAnalysisDia
   }
 
   Future<void> _loadAnalysis() async {
-    setState(() => _isLoading = true);
-    try {
-      final summary = await GeminiService.instance.generateDetailedDiarySummary(widget.entry);
-      final advice = await GeminiService.instance.generateDetailedAdvice(widget.entry);
+    // aiAnalysis에 이미 분석 결과가 있으면 사용 (재시도 방지)
+    if (widget.entry.aiAnalysis != null) {
+      setState(() {
+        _diarySummary = widget.entry.aiAnalysis!.summary;
+        _detailedAdvice = widget.entry.aiAnalysis!.advice;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    // 분석 결과가 없고, 최초 1회만 생성
+    final prefs = await SharedPreferences.getInstance();
+    final generatedKey = 'ai_analysis_generated_${widget.entry.id}';
+    final hasGenerated = prefs.getBool(generatedKey) ?? false;
+
+    if (!hasGenerated && !_hasGenerated) {
+      // 최초 1회 생성
+      _hasGenerated = true;
+      await prefs.setBool(generatedKey, true);
+      
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        final geminiService = GeminiService.instance;
+        final summary = await geminiService.generateDetailedDiarySummary(widget.entry);
+        final advice = await geminiService.generateDetailedAdvice(widget.entry);
+        
+        if (mounted) {
+          setState(() {
+            _diarySummary = summary;
+            _detailedAdvice = advice;
+            _isLoading = false;
+          });
+          
+          // 알림 표시
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('AI 분석이 생성되었습니다.'),
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        print('AI 분석 생성 실패: $e');
+        if (mounted) {
+          setState(() {
+            _diarySummary = 'AI 분석 생성에 실패했습니다.';
+            _detailedAdvice = '다시 시도해주세요.';
+            _isLoading = false;
+          });
+        }
+      }
+    } else {
+      // 이미 생성했거나 생성 불가
       if (mounted) {
         setState(() {
-          _diarySummary = summary;
-          _detailedAdvice = advice;
+          _diarySummary = 'AI 분석 결과가 아직 생성되지 않았습니다.';
+          _detailedAdvice = '일기를 작성할 때 AI 분석이 자동으로 생성됩니다.';
           _isLoading = false;
         });
-      }
-    } catch (e) {
-      print('AI 분석 로드 실패: $e');
-      if (mounted) {
-        setState(() => _isLoading = false);
       }
     }
   }

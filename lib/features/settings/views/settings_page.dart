@@ -52,8 +52,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           '설정',
@@ -68,161 +70,32 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline),
-            onPressed: () {
-              // 도움말 페이지로 이동
-            },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 계정 설정
-            _buildExpandableSection(
-              key: 'account',
-              title: '계정',
-              emoji: '👤',
-              children: [
-                _buildSettingItem(
-                  icon: Icons.edit,
-                  title: '프로필 편집',
-                  subtitle: '닉네임, 자기소개, 프로필 이미지',
-                  onTap: () => context.push('/profile/edit'),
-                ),
-                _buildSettingItem(
-                  icon: Icons.settings,
-                  title: '계정 설정',
-                  subtitle: '이메일, 비밀번호 변경',
-                  onTap: () => context.push('/settings/account'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
             // 앱 설정
             _buildExpandableSection(
               key: 'app',
               title: '앱 설정',
               emoji: '⚙️',
+              isDark: isDark,
               children: [
-                _buildSettingItem(
-                  icon: Icons.notifications,
-                  title: '알림 설정',
-                  subtitle: '푸시 알림 및 이메일 설정 (추후 개발 예정)',
-                  onTap: () => _showComingSoonDialog('알림 설정'),
-                ),
                 _buildSettingItem(
                   icon: Icons.music_note,
                   title: '음악 설정',
                   subtitle: '감정 기반 음악, 자동재생, 볼륨, 툴팁 노출',
                   onTap: () => context.push('/music'),
+                  isDark: isDark,
                 ),
                 _buildSettingItem(
                   icon: Icons.dark_mode,
                   title: '테마 설정',
                   subtitle: '라이트/다크 모드 및 컬러',
                   onTap: () => context.push('/settings/theme'),
-                ),
-                _buildSettingItem(
-                  icon: Icons.language,
-                  title: '언어 설정',
-                  subtitle: '앱 언어 및 지역 설정 (추후 개발 예정)',
-                  onTap: () => _showComingSoonDialog('언어 설정'),
-                ),
-                _buildSettingItem(
-                  icon: Icons.text_fields,
-                  title: '폰트 설정',
-                  subtitle: '폰트 크기 및 스타일 (추후 개발 예정)',
-                  onTap: () => _showComingSoonDialog('폰트 설정'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // 개인정보 설정
-            _buildExpandableSection(
-              key: 'privacy',
-              title: '개인정보',
-              emoji: '🔒',
-              children: [
-                _buildSettingItem(
-                  icon: Icons.security,
-                  title: '보안 설정',
-                  subtitle: '계정 보안 및 인증 (추후 개발 예정)',
-                  onTap: () => _showComingSoonDialog('보안 설정'),
-                ),
-                _buildSettingItem(
-                  icon: Icons.visibility,
-                  title: '프라이버시 설정',
-                  subtitle: '데이터 공개 범위 설정 (추후 개발 예정)',
-                  onTap: () => _showComingSoonDialog('프라이버시 설정'),
-                ),
-                _buildSettingItem(
-                  icon: Icons.data_usage,
-                  title: '데이터 공유 설정',
-                  subtitle: '분석 데이터 수집 설정 (추후 개발 예정)',
-                  onTap: () => _showComingSoonDialog('데이터 공유 설정'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // 데이터 관리
-            _buildExpandableSection(
-              key: 'data',
-              title: '데이터 관리',
-              emoji: '💾',
-              children: [
-                _buildSettingItem(
-                  icon: Icons.backup,
-                  title: '데이터 백업',
-                  subtitle: '클라우드에 데이터 백업 (추후 개발 예정)',
-                  onTap: () => _showComingSoonDialog('데이터 백업'),
-                ),
-                _buildSettingItem(
-                  icon: Icons.restore,
-                  title: '데이터 복원',
-                  subtitle: '백업에서 데이터 복원 (추후 개발 예정)',
-                  onTap: () => _showComingSoonDialog('데이터 복원'),
-                ),
-                _buildSettingItem(
-                  icon: Icons.delete_forever,
-                  title: '데이터 삭제',
-                  subtitle: '선택한 데이터 삭제 (추후 개발 예정)',
-                  onTap: () => _showComingSoonDialog('데이터 삭제'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // 지원 및 정보
-            _buildExpandableSection(
-              key: 'support',
-              title: '지원 및 정보',
-              emoji: 'ℹ️',
-              children: [
-                _buildSettingItem(
-                  icon: Icons.help,
-                  title: '도움말',
-                  subtitle: '앱 사용법 및 FAQ (추후 개발 예정)',
-                  onTap: () => _showComingSoonDialog('도움말'),
-                ),
-                _buildSettingItem(
-                  icon: Icons.feedback,
-                  title: '피드백 보내기',
-                  subtitle: '의견 및 버그 신고 (추후 개발 예정)',
-                  onTap: () => _showComingSoonDialog('피드백 보내기'),
-                ),
-                _buildSettingItem(
-                  icon: Icons.info,
-                  title: '앱 정보',
-                  subtitle: '버전 및 라이선스 정보 (추후 개발 예정)',
-                  onTap: () => _showComingSoonDialog('앱 정보'),
+                  isDark: isDark,
                 ),
               ],
             ),
@@ -233,6 +106,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               key: 'danger',
               title: '위험한 작업',
               emoji: '⚠️',
+              isDark: isDark,
               children: [
                 _buildSettingItem(
                   icon: Icons.logout,
@@ -240,6 +114,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   subtitle: '현재 계정에서 로그아웃',
                   onTap: () => _showLogoutDialog(),
                   isDanger: true,
+                  isDark: isDark,
                 ),
                 _buildSettingItem(
                   icon: Icons.delete_forever,
@@ -247,6 +122,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   subtitle: '계정 및 모든 데이터 영구 삭제',
                   onTap: () => _showDeleteAccountDialog(),
                   isDanger: true,
+                  isDark: isDark,
                 ),
               ],
             ),
@@ -261,14 +137,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     required String title,
     required String emoji,
     required List<Widget> children,
+    required bool isDark,
   }) {
     final isExpanded = _expandedSections[key] ?? false;
 
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -302,19 +181,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   Expanded(
                     child: Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
                   AnimatedRotation(
                     turns: isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(
+                    child: Icon(
                       Icons.keyboard_arrow_down,
-                      color: AppTheme.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       size: 24,
                     ),
                   ),
@@ -325,9 +204,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
           // 구분선
           if (isExpanded)
-            const Divider(
+            Divider(
               height: 1,
-              color: AppTheme.divider,
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
               indent: 20,
               endIndent: 20,
             ),
@@ -350,31 +229,32 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    required bool isDark,
     bool isDanger = false,
   }) {
     return ListTile(
       leading: Icon(
         icon,
-        color: isDanger ? AppTheme.error : AppTheme.primary,
+        color: isDanger ? AppTheme.error : Theme.of(context).colorScheme.primary,
         size: 20,
       ),
       title: Text(
         title,
         style: TextStyle(
-          color: isDanger ? AppTheme.error : AppTheme.textPrimary,
+          color: isDanger ? AppTheme.error : Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w500,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(
-          color: AppTheme.textSecondary,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontSize: 12,
         ),
       ),
-      trailing: const Icon(
+      trailing: Icon(
         Icons.chevron_right,
-        color: AppTheme.textTertiary,
+        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
         size: 20,
       ),
       onTap: onTap,
