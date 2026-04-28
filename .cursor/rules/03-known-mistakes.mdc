@@ -126,3 +126,11 @@ return data;
 1. `android/build.gradle` subprojects에 `ext.flutter = [compileSdkVersion:35, ...]` 추가
 2. `android/app/build.gradle` `minSdk = 23`으로 상향 (record_android 1.5.x 요구)
 3. `record 5.x`로 다운그레이드 금지 — record_linux 버전 불일치 Dart 컴파일 오류 추가 발생
+
+---
+
+## [M-013] PowerShell `Set-Content`로 Dart 파일 수정 시 한글 인코딩 파괴
+**증상**: Dart 파일 내 한글이 `?????`처럼 깨져 앱 UI에 `??? ? ??`로 표시됨  
+**원인**: PowerShell `(Get-Content) -replace ... | Set-Content` 명령이 파일을 ANSI(CP949)로 재저장 → Flutter/Dart가 UTF-8로 읽으면서 한글이 모두 `?`로 변환  
+**해결**: 파일 수정 시 반드시 **StrReplace 도구** 또는 **Write 도구**만 사용. 편집 후 Read 도구로 한글 출력 확인 필수  
+**추가 버그**: `_loadInitialPromptAsync`처럼 API 응답을 받고 화면에 반영하지 않으면 fallback 메시지가 계속 표시됨 → API 응답 후 반드시 ViewModel 업데이트 호출

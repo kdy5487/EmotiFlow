@@ -620,3 +620,68 @@ defaultConfig {
 - ✅ minSdk 23 → Android 6.0+ 기기 지원 (점유율 영향 < 0.5%)
 
 ---
+
+## T-013 — AI 채팅 일기 첫 메시지가 `??? ? ??`로 깨지는 현상 (2026-04-29)
+
+### 1) 증상
+- AI 대화형 일기 페이지 진입 시 AI의 첫 메시지가 `?????! ?? ??? ??????` 같은 깨진 문자로 표시됨
+- 사용자가 메시지를 입력해도 이미 깨진 상태로 대화가 시작됨
+
+### 2) 원인 (두 가지 복합)
+
+**원인 1 — 파일 인코딩 오류:**
+`diary_chat_write_page.dart`가 과거 PowerShell `(Get-Content) | Set-Content` 명령으로 처리되면서 파일이 ANSI(EUC-KR) 인코딩으로 저장됨. 이후 Flutter/Dart가 UTF-8로 읽으면서 한글이 모두 `?`로 깨짐.
+
+```
+# 이런 명령이 파일 인코딩을 파괴함
+(Get-Content file.dart) -replace "A", "B" | Set-Content file.dart  ← ❌
+```
+
+**원인 2 — API 응답을 화면에 반영하지 않음:**
+`_loadInitialPromptAsync` 메서드가 Gemini API 응답(`initialPrompt`)을 받아도 `print()`만 하고 **채팅창을 업데이트하지 않음**. 결과적으로 깨진 fallback 메시지가 그대로 표시됨.
+
+```dart
+// ❌ 문제 코드 — API 응답이 화면에 반영되지 않음
+void _loadInitialPromptAsync(dynamic viewModel) async {
+  final initialPrompt = await GeminiService.instance.generateEmotionSelectionPrompt();
+  print('AI 응답: $initialPrompt');  // 출력만 하고 끝
+}
+```
+
+### 3) 해결
+
+**파일 재작성**: `diary_chat_write_page.dart`를 UTF-8로 완전히 새로 작성하여 인코딩 오류 해소.
+
+**API 응답 반영 로직 추가**:
+```dart
+// ✅ 수정 코드 — fallback → API 응답으로 교체
+void _loadInitialPromptAsync(dynamic viewModel) async {
+  try {
+    final initialPrompt = await GeminiService.instance.generateEmotionSelectionPrompt();
+    if (!mounted) return;
+    if (_initMsgId != null) {
+      viewModel.removeChatMessage(_initMsgId!);  // fallback 제거
+      viewModel.addChatMessage(ChatMessage(       // 실제 응답 추가
+        id: 'init_api_...',
+        content: initialPrompt,
+        isFromAI: true,
+        timestamp: DateTime.now(),
+      ));
+    }
+  } catch (e) {
+    // 에러 시 fallback 유지
+  }
+}
+```
+
+### 4) 예방책
+- PowerShell에서 Dart 파일을 `Set-Content`로 수정하면 인코딩이 파괴됨 → **반드시 StrReplace 도구 사용**
+- `03-known-mistakes.mdc`의 M-013으로 등록
+- 파일 인코딩 확인: `file -i diary_chat_write_page.dart` 또는 VS Code 우하단 인코딩 표시 확인
+
+### 5) 결과
+- ✅ AI 채팅 일기 첫 메시지 정상 표시
+- ✅ Gemini API 응답이 화면에 반영됨
+- ✅ 파일 전체 UTF-8 재저장
+
+---
