@@ -11,6 +11,7 @@
 |------|------|--------|------|
 | **배너** | AI 페이지 하단 | 페이지 진입 시 자동 | 항상 표시 |
 | **배너** | 음성 AI 대화 페이지 하단 | 페이지 진입 시 자동 | 항상 표시 |
+| **네이티브(Small)** | 일기 목록 중간 | 5번째 아이템마다 | 5개마다 1회 |
 | **전면(Interstitial)** | 일기 저장 직후 | 5회 저장마다 1회 | 5회에 1회 |
 | **보상형(Rewarded)** | 사용량 소진 시 버튼 | 사용자 자발적 탭 | 무제한 (사용자 선택) |
 
@@ -41,7 +42,20 @@ USAGE_REWARD_GEMINI=5
 
 ---
 
-## 4. 광고 ID 교체 절차
+## 4. 실제 광고 단위 ID (Android 발급 완료)
+
+| 유형 | 광고 단위 ID |
+|------|-------------|
+| 앱 ID | `ca-app-pub-8918591811866398~1324086928` |
+| 배너 | `ca-app-pub-8918591811866398/5201195716` |
+| 보상형 | `ca-app-pub-8918591811866398/1872639429` |
+| 네이티브 | `ca-app-pub-8918591811866398/1245864174` |
+
+> iOS는 별도 앱 등록 후 `ADMOB_*_IOS` 키 교체 필요.
+
+---
+
+## 5. 광고 ID 교체 절차
 
 1. Google AdMob 콘솔(https://apps.admob.com)에서 앱 등록
 2. 앱 ID 발급 → `AndroidManifest.xml` `GADApplicationIdentifier` 교체
@@ -65,10 +79,11 @@ USAGE_REWARD_GEMINI=5
 
 | 파일 | 역할 |
 |------|------|
-| `lib/core/services/ad_service.dart` | AdMob 초기화, 배너/전면/보상형 광고 관리 |
+| `lib/core/services/ad_service.dart` | AdMob 초기화, 배너/전면/보상형/네이티브 광고 관리 |
 | `lib/core/services/usage_limit_service.dart` | 티어별 사용량 제한 및 보너스 추적 |
 | `lib/shared/widgets/ads/banner_ad_widget.dart` | 배너 광고 위젯 |
 | `lib/shared/widgets/ads/reward_ad_button.dart` | 보상형 광고 버튼 위젯 |
+| `lib/shared/widgets/ads/native_ad_widget.dart` | 네이티브 광고 위젯 (Small 템플릿) |
 
 ---
 

@@ -48,6 +48,15 @@ class AdService {
         'ca-app-pub-3940256099942544/4411468910';
   }
 
+  String get _nativeUnitId {
+    if (Platform.isAndroid) {
+      return dotenv.env['ADMOB_NATIVE_ANDROID'] ??
+          'ca-app-pub-3940256099942544/2247696110';
+    }
+    return dotenv.env['ADMOB_NATIVE_IOS'] ??
+        'ca-app-pub-3940256099942544/3986624511';
+  }
+
   // ── 초기화 ────────────────────────────────────────
 
   Future<void> initialize() async {
@@ -133,6 +142,31 @@ class AdService {
   }
 
   bool get isRewardedAdReady => _rewardedAd != null;
+
+  // ── 네이티브 광고 ─────────────────────────────────
+
+  /// 네이티브 광고 로드 (일기 목록 중간 삽입용)
+  Future<NativeAd?> loadNativeAd({
+    required void Function(NativeAd) onLoaded,
+  }) async {
+    NativeAd? ad;
+    ad = NativeAd(
+      adUnitId: _nativeUnitId,
+      listener: NativeAdListener(
+        onAdLoaded: (_) => onLoaded(ad!),
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          debugPrint('네이티브 광고 로드 실패: ${error.message}');
+        },
+      ),
+      request: const AdRequest(),
+      nativeTemplateStyle: NativeTemplateStyle(
+        templateType: TemplateType.small,
+      ),
+    );
+    await ad.load();
+    return ad;
+  }
 
   /// 보상형 광고 표시
   /// [usageType] : 보상받을 사용량 유형
