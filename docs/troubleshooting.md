@@ -565,3 +565,58 @@ darkTextPrimary: 0xFFF5F5F5, // 더 밝은 텍스트
 - ✅ 전 페이지 다크모드 완벽 지원
 
 ---
+
+## [T-012] record_android Gradle 빌드 오류 (2026-04-29)
+
+### 1) 증상 (What)
+```
+FAILURE: Build completed with 2 failures.
+
+1: Could not get unknown property 'flutter' for extension 'android'
+   Build file '...record_android-1.5.1\android\build.gradle' line: 32
+
+2: compileSdkVersion is not specified. Cannot invoke method substring() on null object
+```
+에뮬레이터 실행 불가 (Gradle task assembleDebug failed).
+
+### 2) 원인 (Why)
+`record_android 1.5.1`의 `build.gradle` line 32:
+```groovy
+compileSdk = flutter.compileSdkVersion
+```
+Flutter Gradle 플러그인(`dev.flutter.flutter-gradle-plugin`)이 앱(`:app`) 프로젝트에만 적용되고 라이브러리/플러그인 프로젝트에는 `flutter` 확장 객체가 주입되지 않음.  
+→ `flutter.compileSdkVersion`을 찾지 못해 null 오류 발생.
+
+추가로 `record_android 1.5.x`는 `minSdkVersion 23` 이상을 요구하는데 앱이 21로 설정되어 있어 Manifest 병합 오류도 발생.
+
+### 3) 해결 (How)
+
+**① `android/build.gradle` — `flutter` ext 주입**
+```groovy
+// 모든 서브프로젝트(플러그인)에 flutter 확장 수동 정의
+subprojects {
+    project.ext {
+        flutter = [
+            compileSdkVersion: 35,
+            targetSdkVersion : 35,
+            minSdkVersion    : 23,
+        ]
+    }
+}
+```
+
+**② `android/app/build.gradle` — minSdk 상향**
+```groovy
+defaultConfig {
+    minSdk = 23  // 21 → 23 (record_android 1.5.x 요구)
+}
+```
+
+**※ 주의**: `record 5.x`로 다운그레이드 시 `record_linux 0.7.2` vs `record_platform_interface 1.5.0` 버전 불일치로 Dart 컴파일 오류 추가 발생 → `record ^6.2.0` 유지 필요.
+
+### 4) 결과
+- ✅ `flutter build apk --debug` 성공
+- ✅ `record_android`의 `flutter.compileSdkVersion` 정상 해결
+- ✅ minSdk 23 → Android 6.0+ 기기 지원 (점유율 영향 < 0.5%)
+
+---

@@ -116,3 +116,13 @@ return data;
 ## [M-011] print() 대신 debugPrint() 미사용
 **증상**: iOS 시뮬레이터에서 emoji/한글 print가 버퍼 overflow 유발 가능, release 빌드에서 출력 무한 루프  
 **해결**: `print()` 전면 금지, 반드시 `debugPrint()` 사용 (import 'package:flutter/foundation.dart' 필요)
+
+---
+
+## [M-012] record_android Gradle — `flutter.compileSdkVersion` 미인식
+**증상**: `Could not get unknown property 'flutter'` Gradle 빌드 실패, 에뮬레이터 실행 불가  
+**원인**: `record_android 1.5.x`가 `flutter.compileSdkVersion`을 참조하나 라이브러리 프로젝트에는 Flutter Gradle 확장이 주입되지 않음  
+**해결**:
+1. `android/build.gradle` subprojects에 `ext.flutter = [compileSdkVersion:35, ...]` 추가
+2. `android/app/build.gradle` `minSdk = 23`으로 상향 (record_android 1.5.x 요구)
+3. `record 5.x`로 다운그레이드 금지 — record_linux 버전 불일치 Dart 컴파일 오류 추가 발생
