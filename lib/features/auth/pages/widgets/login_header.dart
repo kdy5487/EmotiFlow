@@ -12,42 +12,41 @@ class LoginHeader extends StatelessWidget {
       children: [
         // 로고
         Container(
-          width: 100,
-          height: 100,
+          width: 88,
+          height: 88,
           decoration: BoxDecoration(
             color: AppColors.primary,
-            borderRadius: BorderRadius.circular(25),
+            borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+                color: AppColors.primary.withOpacity(0.25),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: const Icon(
-            Icons.psychology,
-            size: 50,
+            Icons.auto_stories_rounded,
+            size: 44,
             color: Colors.white,
           ),
         ),
-        
-        const SizedBox(height: 24),
-        
-        // 제목
+
+        const SizedBox(height: 20),
+
         Text(
           'EmotiFlow',
           style: AppTypography.displayLarge.copyWith(
             color: AppColors.primary,
             fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
           ),
         ),
-        
-        const SizedBox(height: 8),
-        
-        // 부제목
+
+        const SizedBox(height: 6),
+
         Text(
-          'AI와 함께하는 감정 일기',
+          '감정을 기록하는 나만의 일기',
           style: AppTypography.titleMedium.copyWith(
             color: AppColors.textSecondary,
           ),

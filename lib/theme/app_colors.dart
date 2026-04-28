@@ -6,17 +6,15 @@ class AppColors {
   // Private constructor to prevent instantiation
   AppColors._();
 
-  // Primary Brand Colors (주요 브랜드 색상)
-  // 연보라 컨셉 (라일락 톤)
-  static const Color primary = Color(0xFF8B7FF6);      // 라일락 퍼플
-  static const Color primaryLight = Color(0xFFA899FA); // 밝은 라일락
-  static const Color primaryDark = Color(0xFF6E61E0);  // 딥 라일락
+  // Primary Brand Colors — 세이지 그린 (자연, 성장, 안정)
+  static const Color primary = Color(0xFF6B8F71);
+  static const Color primaryLight = Color(0xFF8FAF95);
+  static const Color primaryDark = Color(0xFF4A6B50);
 
-  // Secondary Brand Colors (보조 브랜드 색상)
-  // 보조색도 연보라와 자연스럽게 어울리도록 재조정 (보랏빛 핑크)
-  static const Color secondary = Color(0xFFDA77F2);
-  static const Color secondaryLight = Color(0xFFE7A6F7);
-  static const Color secondaryDark = Color(0xFFBE5BDD);
+  // Secondary Brand Colors — 웜 클레이 (따뜻함, 손으로 쓴 일기)
+  static const Color secondary = Color(0xFFAB8B6B);
+  static const Color secondaryLight = Color(0xFFC9A98A);
+  static const Color secondaryDark = Color(0xFF8A6A4E);
 
   // Semantic Colors (의미론적 색상)
   static const Color success = Color(0xFF10B981);      // 에메랄드 - 성장과 긍정
@@ -35,30 +33,30 @@ class AppColors {
   static const Color infoLight = Color(0xFF60A5FA);    // 밝은 블루
   static const Color infoDark = Color(0xFF2563EB);     // 어두운 블루
 
-  // Neutral Colors (중성 색상)
-  static const Color background = Color(0xFFF8FAFC);   // 슬레이트 - 깔끔함
-  static const Color backgroundSecondary = Color(0xFFF1F5F9); // 보조 배경
-  static const Color backgroundTertiary = Color(0xFFE2E8F0);  // 3차 배경
+  // Neutral Colors — 따뜻한 파피루스 계열 (차가운 슬레이트 대신)
+  static const Color background = Color(0xFFFAF8F5);
+  static const Color backgroundSecondary = Color(0xFFF2EDE8);
+  static const Color backgroundTertiary = Color(0xFFE8E0D8);
 
-  static const Color surface = Color(0xFFFFFFFF);      // 화이트 - 순수함
-  static const Color surfaceSecondary = Color(0xFFF8FAFC);    // 보조 표면
-  static const Color surfaceTertiary = Color(0xFFF1F5F9);    // 3차 표면
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceSecondary = Color(0xFFFAF8F5);
+  static const Color surfaceTertiary = Color(0xFFF2EDE8);
 
-  static const Color textPrimary = Color(0xFF0F172A);  // 진한 슬레이트 - 가독성 개선
-  static const Color textSecondary = Color(0xFF475569); // 슬레이트 - 부가 정보 (약간 진하게)
-  static const Color textTertiary = Color(0xFF64748B);  // 3차 텍스트
-  static const Color textInverse = Color(0xFFFFFFFF);   // 반전 텍스트
+  static const Color textPrimary = Color(0xFF1C1917);   // 따뜻한 거의 검정
+  static const Color textSecondary = Color(0xFF57534E);  // 따뜻한 중간 회색
+  static const Color textTertiary = Color(0xFF78716C);   // 3차 텍스트
+  static const Color textInverse = Color(0xFFFFFFFF);
 
-  static const Color border = Color(0xFFE2E8F0);       // 테두리 기본
-  static const Color borderSecondary = Color(0xFFCBD5E1); // 보조 테두리
-  static const Color borderFocus = primary;   // 포커스 테두리
+  static const Color border = Color(0xFFE7E0D8);
+  static const Color borderSecondary = Color(0xFFD6CEC4);
+  static const Color borderFocus = primary;
 
-  // Dark Theme Colors (다크 테마 색상)
-  static const Color darkBackground = Color(0xFF0F172A); // 다크 배경
-  static const Color darkSurface = Color(0xFF1E293B);   // 다크 표면
-  static const Color darkTextPrimary = Color(0xFFF8FAFC); // 다크 텍스트
-  static const Color darkTextSecondary = Color(0xFFCBD5E1); // 다크 보조 텍스트
-  static const Color darkBorder = Color(0xFF334155);    // 다크 테두리
+  // Dark Theme Colors — 따뜻한 다크 (차가운 슬레이트 대신)
+  static const Color darkBackground = Color(0xFF1A1C18);  // 따뜻한 다크 그린-블랙
+  static const Color darkSurface = Color(0xFF22261F);
+  static const Color darkTextPrimary = Color(0xFFE8E6E0);
+  static const Color darkTextSecondary = Color(0xFFB5B0A8);
+  static const Color darkBorder = Color(0xFF3A3F35);
 
   // Emotion Colors (감정별 색상)
   static const Map<String, Map<String, Color>> emotions = {
