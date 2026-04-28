@@ -153,7 +153,78 @@ class AuthService {
     }
   }
 
-  // 이메일/비밀번호 로그인 기능 제거 - Google 로그인만 사용
+  /// 이메일/비밀번호 회원가입
+  Future<UserCredential?> signUpWithEmail({
+    required String email,
+    required String password,
+    required String displayName,
+  }) async {
+    try {
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      await credential.user?.updateDisplayName(displayName);
+      await credential.user?.sendEmailVerification();
+      if (credential.user != null) {
+        await _saveUserToFirestore(credential.user!);
+      }
+      return credential;
+    } on FirebaseAuthException catch (e) {
+      throw _convertFirebaseError(e);
+    }
+  }
+
+  /// 이메일/비밀번호 로그인
+  Future<UserCredential?> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      if (credential.user != null) {
+        await _saveUserToFirestore(credential.user!);
+      }
+      return credential;
+    } on FirebaseAuthException catch (e) {
+      throw _convertFirebaseError(e);
+    }
+  }
+
+  /// 비밀번호 재설정 이메일 전송
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      throw _convertFirebaseError(e);
+    }
+  }
+
+  /// FirebaseAuthException → 사용자 친화적 메시지 변환
+  Exception _convertFirebaseError(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return Exception('이미 사용 중인 이메일입니다.');
+      case 'weak-password':
+        return Exception('비밀번호는 6자 이상이어야 합니다.');
+      case 'invalid-email':
+        return Exception('유효하지 않은 이메일 형식입니다.');
+      case 'user-not-found':
+        return Exception('등록되지 않은 이메일입니다.');
+      case 'wrong-password':
+      case 'invalid-credential':
+        return Exception('이메일 또는 비밀번호가 올바르지 않습니다.');
+      case 'too-many-requests':
+        return Exception('잠시 후 다시 시도해주세요.');
+      case 'user-disabled':
+        return Exception('비활성화된 계정입니다.');
+      default:
+        return Exception('오류가 발생했습니다: ${e.message}');
+    }
+  }
 
   /// 완전 로그아웃 (Google + Firebase)
   Future<void> signOut() async {
