@@ -60,8 +60,10 @@
 - [x] UI 자연스럽게 개선 (세이지 그린 테마, M3 NavigationBar) — 1차 완료
 
 ### 🟡 중기 (P2 - 고도화)
-- [x] **VoiceChatPage UI** — 음성 AI 대화 페이지 기본 UI 완성 (STT/TTS 연동 준비)
-- [ ] **TTS 음성 대화형 일기** — Soniox API
+- [x] **VoiceChatPage + Soniox STT** — 실시간 음성 인식 AI 대화 구현 완료 (`docs/specs/soniox_voice_ai.md`)
+- [x] **AI 비용 최소화 / 사용량 제한** — `UsageLimitService` 구현 (test/free/premium 티어, `.env` 기반 한도)
+- [x] **Google AdMob 연동** — 배너(AI/음성 페이지), 전면(일기 저장), 보상형(사용량 쿠폰) 구현 (`docs/specs/admob_plan.md`)
+- [ ] **TTS 음성 재생** — AI 응답을 음성으로 재생 (Soniox TTS WebSocket)
   - 다국어 음성 인식 지원
   - 일부 유료화 (프리미엄 기능)
   - 추후 다국어 UI 연동
@@ -104,6 +106,7 @@
 
 | 코드 | 이슈 | 상태 |
 |------|------|------|
+| M-010/011 | async setState mounted 미체크, print() 사용 | ✅ 수정 완료 (2026-04-29) |
 | M-003 | AI 채팅 일기 → 상세 페이지 라우팅 | ✅ 수정 완료 (2026-04-29) |
 | - | Provider → Firebase 직접 접근 잔존 | 진행 중 |
 | - | 도메인 UseCase 테스트 부재 | 미착수 |
@@ -115,6 +118,7 @@
 
 | 날짜 | 변경 내용 |
 |------|-----------|
+| 2026-04-29 | AdMob 연동, 사용량 제한(UsageLimitService), 보상형 광고, Soniox API 키 적용 |
 | 2026-04-29 | M-003 수정, 이메일 로그인 추가, 테마 세이지 그린 전환, VoiceChatPage 추가, M3 NavigationBar 전환 |
 | 2026-04-29 | 앱 이름 변경 예정 추가, TTS(Soniox)/카카오 로그인/보안/알림/UI개선/로고 변경 계획 추가, docs 재분류 |
 | 2026-04-28 | PLAN.md 최초 생성 (하네스 엔지니어링 도입) |

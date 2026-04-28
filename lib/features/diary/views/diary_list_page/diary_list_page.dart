@@ -17,6 +17,7 @@ import 'widgets/diary_fab.dart';
 import 'widgets/diary_list_card.dart';
 import 'widgets/diary_list_app_bar.dart';
 import 'widgets/write_options_dialog.dart';
+import '../../../../shared/widgets/ads/native_ad_widget.dart';
 
 /// 일기 목록 페이지
 class DiaryListPage extends ConsumerStatefulWidget {
@@ -259,12 +260,27 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 
     final ui = ref.watch(diaryListUiProvider);
 
+    // 5번째 일기마다 네이티브 광고 1개 삽입
+    // 실제 아이템 수 = entries.length + (entries.length ~/ 5)
+    const adInterval = 5;
+    final totalCount = entries.length + (entries.length ~/ adInterval);
+
     return ListView.builder(
       controller: _listScrollController,
       padding: const EdgeInsets.all(20),
-      itemCount: entries.length,
+      itemCount: totalCount,
       itemBuilder: (context, index) {
-        final entry = entries[index];
+        // adInterval+1 간격으로 광고 슬롯 (index 5, 11, 17 ...)
+        final adEvery = adInterval + 1;
+        if (index % adEvery == adInterval) {
+          return const NativeAdWidget();
+        }
+        // 광고 슬롯 수만큼 실제 인덱스 보정
+        final adsBefore = index ~/ adEvery;
+        final entryIndex = index - adsBefore;
+        if (entryIndex >= entries.length) return const SizedBox.shrink();
+
+        final entry = entries[entryIndex];
         return DiaryListCard(
           entry: entry,
           isSelected: ui.selectedEntryIds.contains(entry.id),

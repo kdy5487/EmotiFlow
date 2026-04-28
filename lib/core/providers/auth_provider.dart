@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
@@ -80,13 +81,13 @@ class AuthProvider extends StateNotifier<AuthState> {
       if (isAutoLoggedIn) {
         final currentUser = _authService.currentUser;
         state = state.copyWith(user: currentUser);
-        print('✅ 자동 로그인 성공');
+        debugPrint('✅ 자동 로그인 성공');
       } else {
         state = state.copyWith(user: null);
-        print('❌ 자동 로그인 실패 - 수동 로그인 필요');
+        debugPrint('❌ 자동 로그인 실패 - 수동 로그인 필요');
       }
     } catch (e) {
-      print('❌ 자동 로그인 체크 중 오류: $e');
+      debugPrint('❌ 자동 로그인 체크 중 오류: $e');
       state = state.copyWith(user: null);
     } finally {
       _setLoading(false);

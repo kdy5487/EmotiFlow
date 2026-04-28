@@ -39,16 +39,39 @@ lib/
 | PLAN.md 우선순위 충돌 | "현재 P0 작업이 남아 있습니다. 먼저 진행할까요, 아니면 새 작업을 시작할까요?" |
 | 알려진 실수 패턴 (M-001~) | "이 방식은 [M-00X] 실수 패턴과 동일합니다. 올바른 방식으로 진행할까요?" |
 | Gemini 프롬프트 규칙 위반 | "Gemini 규칙(이모지 금지, 과한 표현 금지, 3-4문장 제한)에 위반됩니다. 수정할까요?" |
+| main 브랜치에서 코드 작업 | "현재 main 브랜치입니다. feature/fix 브랜치를 생성하고 작업할까요?" |
 
 > 사용자가 "규칙 override" 또는 "알고 있어" 등 의도적 bypass를 명시하면 그대로 진행.
 
+## 브랜치 규칙 (코드 작업 전 필수)
+
+```
+작업 시작 전: git branch --show-current 로 현재 브랜치 확인
+
+브랜치 전략:
+  main          → 배포 가능 안정 버전 (직접 커밋 금지)
+  develop       → 기능 통합 브랜치
+  feature/<기능> → 새 기능 개발  예) feature/kakao-login
+  fix/<버그명>   → 버그 수정      예) fix/ai-chat-routing
+  refactor/<명>  → 리팩토링      예) refactor/clean-architecture
+  docs/<명>      → 문서 작업     예) docs/harness-setup
+
+작업 전 체크:
+1. 현재 브랜치가 main/develop이면 → 적절한 브랜치 생성 후 이동
+2. 해당 기능 브랜치가 이미 있으면 → 그 브랜치로 switch
+3. 작업 완료 후 → develop으로 PR (또는 merge)
+```
+
+**규칙 위반 예시**: main에서 직접 기능 코드 수정 → 즉시 알림 후 브랜치 생성 제안
+
 ## AI 협업 순서 (매 작업 필수)
-1. `docs/plan/PLAN.md` 읽기 → 현재 기획/우선순위 확인
-2. `docs/dev/EMOTI_FLOW_DEVELOPMENT_PLAN.md` → 진행 상태 확인
-3. 중복 코드 검색
-4. Clean Architecture 계층 결정 후 설계 공유
-5. 코드 작성 → 린트 확인
-6. **관련 문서 자동 업데이트** (아래 표)
+1. **브랜치 확인** → 작업에 맞는 브랜치로 이동/생성
+2. `docs/plan/PLAN.md` 읽기 → 현재 기획/우선순위 확인
+3. `docs/dev/EMOTI_FLOW_DEVELOPMENT_PLAN.md` → 진행 상태 확인
+4. 중복 코드 검색
+5. Clean Architecture 계층 결정 후 설계 공유
+6. 코드 작성 → 린트 확인
+7. **관련 문서 자동 업데이트** (아래 표)
 
 ## 명령 → 자동 문서 업데이트 규칙
 
