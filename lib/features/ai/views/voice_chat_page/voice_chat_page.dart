@@ -5,7 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/ai/gemini/gemini_service.dart';
+import '../../../../core/services/ad_service.dart';
 import '../../../../core/services/soniox_service.dart';
+import '../../../../core/services/usage_limit_service.dart';
+import '../../../../shared/widgets/ads/banner_ad_widget.dart';
+import '../../../../shared/widgets/ads/reward_ad_button.dart';
 
 // ── 상태 모델 ──────────────────────────────────────────
 
@@ -34,6 +38,7 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
   String _draftText = '';
   String _statusText = '마이크 버튼을 눌러 시작하세요';
   String? _errorMessage;
+  int _remainingVoice = 0;
 
   // Soniox 구독
   StreamSubscription<String>? _transcriptSub;
@@ -64,6 +69,15 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
     );
 
     _subscribeToSoniox();
+    _loadUsageCount();
+    AdService.instance.loadRewardedAd();
+  }
+
+  Future<void> _loadUsageCount() async {
+    final r = await UsageLimitService.instance
+        .remainingWithBonus(UsageType.sonioxSession);
+    if (!mounted) return;
+    setState(() => _remainingVoice = r);
   }
 
   void _subscribeToSoniox() {
@@ -213,6 +227,31 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
         elevation: 0,
         backgroundColor: Colors.transparent,
         actions: [
+          // 남은 사용량 배지
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: _remainingVoice > 0
+                      ? cs.primaryContainer
+                      : cs.errorContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '남은 횟수 $_remainingVoice',
+                  style: t.labelSmall?.copyWith(
+                    color: _remainingVoice > 0
+                        ? cs.onPrimaryContainer
+                        : cs.onErrorContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
           if (_turns.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.restart_alt_rounded),
@@ -258,11 +297,24 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
             ),
           ),
 
+          // 사용량 소진 시 보상형 광고 버튼
+          if (_remainingVoice <= 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: RewardAdButton(
+                usageType: UsageType.sonioxSession,
+                onRewarded: _loadUsageCount,
+              ),
+            ),
+
           // 마이크 버튼
           Padding(
-            padding: const EdgeInsets.only(bottom: 40),
+            padding: const EdgeInsets.only(bottom: 32),
             child: _buildMicButton(cs),
           ),
+
+          // 배너 광고
+          const BannerAdWidget(),
         ],
       ),
     );

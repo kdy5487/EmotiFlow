@@ -9,6 +9,7 @@ import 'package:emoti_flow/features/diary/domain/entities/diary_entry.dart';
 import 'package:emoti_flow/shared/widgets/charts/dot_chart_painter.dart';
 import 'package:emoti_flow/core/ai/gemini/gemini_service.dart';
 import 'package:emoti_flow/core/providers/scroll_provider.dart';
+import 'package:emoti_flow/shared/widgets/ads/banner_ad_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
@@ -173,24 +174,32 @@ class _AIPageState extends ConsumerState<AIPage> {
                 }
               });
             }
-            
-            return ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 16),
-              itemCount: 3,
-              itemBuilder: (context, index) {
-                switch (index) {
-                  case 0:
-                    return _buildVoiceChatBanner();
-                  case 1:
-                    return _buildEmotionTrendsChart();
-                  case 2:
-                    return _buildAdviceCardSection();
-                  default:
-                    return const SizedBox.shrink();
-                }
-              },
+
+            return Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 16),
+                    itemCount: 3,
+                    itemBuilder: (context, index) {
+                      switch (index) {
+                        case 0:
+                          return _buildVoiceChatBanner();
+                        case 1:
+                          return _buildEmotionTrendsChart();
+                        case 2:
+                          return _buildAdviceCardSection();
+                        default:
+                          return const SizedBox.shrink();
+                      }
+                    },
+                  ),
+                ),
+                // 배너 광고 (하단 고정)
+                const BannerAdWidget(),
+              ],
             );
           },
         ),

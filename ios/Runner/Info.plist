@@ -47,5 +47,15 @@
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>AI와 음성으로 대화하기 위해 마이크 접근이 필요합니다.</string>
+	<!-- AdMob App ID (개발 중 테스트 ID, 배포 시 실제 ID로 교체) -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
 </dict>
 </plist>

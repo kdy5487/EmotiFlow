@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:record/record.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'usage_limit_service.dart';
 
 /// Soniox STT WebSocket 연결 상태
 enum SonioxState { idle, connecting, recording, stopping, error }
@@ -55,6 +56,15 @@ class SonioxService {
     if (_state != SonioxState.idle) return false;
     if (_apiKey.isEmpty || _apiKey == 'YOUR_SONIOX_API_KEY_HERE') {
       _emitError('Soniox API 키가 설정되지 않았습니다. .env 파일에 SONIOX_API_KEY를 입력해주세요.');
+      return false;
+    }
+
+    // 사용량 한도 체크
+    final usageOk = await UsageLimitService.instance
+        .canUseWithBonus(UsageType.sonioxSession);
+    if (!usageOk) {
+      _emitError('오늘 음성 AI 사용량이 초과됐습니다. '
+          '광고를 시청하면 추가 사용이 가능합니다.');
       return false;
     }
 
@@ -108,6 +118,8 @@ class SonioxService {
       );
 
       _setState(SonioxState.recording);
+      // 세션 시작 시 사용량 카운터 증가
+      await UsageLimitService.instance.increment(UsageType.sonioxSession);
       return true;
     } catch (e) {
       _emitError('STT 시작 실패: $e');

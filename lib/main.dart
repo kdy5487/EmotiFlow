@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:emoti_flow/routes/app_router.dart';
 import 'package:emoti_flow/theme/theme_provider.dart';
 import 'package:emoti_flow/theme/app_theme.dart';
+import 'core/services/ad_service.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -24,6 +25,11 @@ void main() async {
         options: DefaultFirebaseOptions.currentPlatform,
       );
     }
+
+    // 3. AdMob 초기화
+    await AdService.instance.initialize();
+    AdService.instance.preloadInterstitial();
+    AdService.instance.loadRewardedAd();
 
     runApp(
       const ProviderScope(
