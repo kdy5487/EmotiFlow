@@ -87,3 +87,32 @@ if (diary.writeType == DiaryWriteType.chat) {
 ## [M-009] lint 에러 무시
 **증상**: `debugPrint` 미import, `final` 누락, unused import  
 **해결**: 코드 작성 후 반드시 ReadLints 실행, 에러 즉시 수정
+
+---
+
+## [M-010] async 함수에서 mounted 체크 없이 setState
+**증상**: 페이지 이탈 후 앱이 갑자기 멈추고 꺼짐  
+**원인**: `await` 이후 위젯이 dispose됐는데 `setState()` 호출 → `setState() called after dispose()` 예외  
+**해결**: `await` 이후 모든 `setState` 앞에 `if (!mounted) return;` 또는 `if (mounted) setState(...)` 추가
+
+```dart
+// ❌ 금지
+final data = await someAsyncCall();
+setState(() { _data = data; });
+
+// ✅ 올바른 방법
+final data = await someAsyncCall();
+if (!mounted) return;
+setState(() { _data = data; });
+
+// ✅ 값을 반환해야 할 경우
+final data = await someAsyncCall();
+if (mounted) setState(() { _data = data; });
+return data;
+```
+
+---
+
+## [M-011] print() 대신 debugPrint() 미사용
+**증상**: iOS 시뮬레이터에서 emoji/한글 print가 버퍼 overflow 유발 가능, release 빌드에서 출력 무한 루프  
+**해결**: `print()` 전면 금지, 반드시 `debugPrint()` 사용 (import 'package:flutter/foundation.dart' 필요)

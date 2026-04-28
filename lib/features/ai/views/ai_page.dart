@@ -91,6 +91,7 @@ class _AIPageState extends ConsumerState<AIPage> {
 
   Future<void> _loadCachedAdvice() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final weekKey = _getCurrentWeekRange();
     final cachedAdvice = prefs.getString('weekly_advice_$weekKey');
     if (cachedAdvice != null) {
@@ -102,18 +103,19 @@ class _AIPageState extends ConsumerState<AIPage> {
 
   Future<void> _loadCachedAnalysis() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final weekKey = _getCurrentWeekRange();
     final monthKey = '${DateTime.now().year}-${DateTime.now().month}';
-    
+
     final cachedWeekly = prefs.getString('weekly_analysis_$weekKey');
     final cachedMonthly = prefs.getString('monthly_analysis_$monthKey');
-    
+
     if (cachedWeekly != null) {
       setState(() {
         _cachedWeeklyAnalysis = cachedWeekly;
       });
     }
-    
+
     if (cachedMonthly != null) {
       setState(() {
         _cachedMonthlyAnalysis = cachedMonthly;
@@ -665,27 +667,21 @@ class _AIPageState extends ConsumerState<AIPage> {
       final weekKey = _getCurrentWeekRange();
       final cached = prefs.getString('weekly_analysis_$weekKey');
       if (cached != null) {
-        setState(() {
-          _cachedWeeklyAnalysis = cached;
-        });
+        if (mounted) setState(() { _cachedWeeklyAnalysis = cached; });
         return cached;
       }
-      
-      // 캐시가 없으면 생성하지 않고 안내 메시지 반환
+
       return '분석 결과가 없습니다. 새로고침 버튼을 눌러 분석을 시작하세요.';
     } else {
       if (_cachedMonthlyAnalysis != null) {
         return _cachedMonthlyAnalysis!;
       }
-      
-      // SharedPreferences에서 캐시 확인
+
       final now = DateTime.now();
       final monthKey = '${now.year}-${now.month}';
       final cached = prefs.getString('monthly_analysis_$monthKey');
       if (cached != null) {
-        setState(() {
-          _cachedMonthlyAnalysis = cached;
-        });
+        if (mounted) setState(() { _cachedMonthlyAnalysis = cached; });
         return cached;
       }
       
@@ -747,13 +743,11 @@ $diaryContents
         final weekKey = _getCurrentWeekRange();
         await prefs.setString('weekly_analysis_$weekKey', aiResponse);
         await prefs.setString('weekly_analysis_time_$weekKey', DateTime.now().toIso8601String());
-        setState(() {
-          _cachedWeeklyAnalysis = aiResponse;
-        });
+        if (mounted) setState(() { _cachedWeeklyAnalysis = aiResponse; });
         return aiResponse;
       }
     } catch (e) {
-      print('주간 분석 생성 실패: $e');
+      debugPrint('주간 분석 생성 실패: $e');
     }
 
     // Fallback: 기존 로직 사용
@@ -835,13 +829,11 @@ $diaryContents
         final monthKey = '${now.year}-${now.month}';
         await prefs.setString('monthly_analysis_$monthKey', aiResponse);
         await prefs.setString('monthly_analysis_time_$monthKey', now.toIso8601String());
-        setState(() {
-          _cachedMonthlyAnalysis = aiResponse;
-        });
+        if (mounted) setState(() { _cachedMonthlyAnalysis = aiResponse; });
         return aiResponse;
       }
     } catch (e) {
-      print('월간 분석 생성 실패: $e');
+      debugPrint('월간 분석 생성 실패: $e');
     }
 
     // Fallback: 기존 로직 사용
@@ -1038,13 +1030,11 @@ $diaryContents
         // 캐시에 저장
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('monthly_feedback_$monthKey', aiResponse);
-        setState(() {
-          _cachedMonthlyAdvice = aiResponse;
-        });
+        if (mounted) setState(() { _cachedMonthlyAdvice = aiResponse; });
         return aiResponse;
       }
     } catch (e) {
-      print('월간 조언 생성 실패: $e');
+      debugPrint('월간 조언 생성 실패: $e');
     }
 
     return '이번 달 감정 패턴을 분석하여 조언을 생성할 수 없습니다.';
@@ -1197,13 +1187,11 @@ $diaryContents
         // 캐시에 저장
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('weekly_feedback_$weekKey', aiResponse);
-        setState(() {
-          _cachedWeeklyAdvice = aiResponse;
-        });
+        if (mounted) setState(() { _cachedWeeklyAdvice = aiResponse; });
         return aiResponse;
       }
     } catch (e) {
-      print('주간 조언 생성 실패: $e');
+      debugPrint('주간 조언 생성 실패: $e');
     }
 
     // Fallback
@@ -2027,21 +2015,16 @@ $diaryContents
     
     await prefs.setString(timeKey, now.toIso8601String());
     
-    // 분석 재생성 (통합)
     if (_selectedPeriod == 'weekly') {
       final analysis = await _generateWeeklyAnalysisText(entries);
       final weekKey = _getCurrentWeekRange();
       await prefs.setString('weekly_analysis_$weekKey', analysis);
-      setState(() {
-        _cachedWeeklyAnalysis = analysis;
-      });
+      if (mounted) setState(() { _cachedWeeklyAnalysis = analysis; });
     } else {
       final analysis = await _generateMonthlyAnalysisText(entries);
       final monthKey = '${now.year}-${now.month}';
       await prefs.setString('monthly_analysis_$monthKey', analysis);
-      setState(() {
-        _cachedMonthlyAnalysis = analysis;
-      });
+      if (mounted) setState(() { _cachedMonthlyAnalysis = analysis; });
     }
   }
 
