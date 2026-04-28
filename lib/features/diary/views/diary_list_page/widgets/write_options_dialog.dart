@@ -6,11 +6,17 @@ import 'package:emoti_flow/theme/app_typography.dart';
 class WriteOptionsDialog extends StatelessWidget {
   const WriteOptionsDialog({super.key});
 
+  Future<void> _openVoiceChat(BuildContext context) async {
+    context.pop();
+    context.push('/voice-chat');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
@@ -20,24 +26,21 @@ class WriteOptionsDialog extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 드래그 핸들
               Container(
                 width: 40,
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: cs.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '어떻게 작성할까요?',
-                    style: AppTypography.titleLarge
-                        .copyWith(fontWeight: FontWeight.bold),
-                  ),
+                  Text('어떻게 작성할까요?',
+                      style: AppTypography.titleLarge
+                          .copyWith(fontWeight: FontWeight.bold)),
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => context.pop(),
@@ -58,7 +61,17 @@ class WriteOptionsDialog extends StatelessWidget {
                   context.push('/diaries/chat');
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              _buildOption(
+                context,
+                icon: Icons.mic_rounded,
+                title: '음성으로 AI와 대화',
+                subtitle: '말로 감정을 털어놓고 AI가 답해줘요 (STT)',
+                color: Colors.deepPurple,
+                badge: 'BETA',
+                onTap: () => _openVoiceChat(context),
+              ),
+              const SizedBox(height: 12),
               _buildOption(
                 context,
                 icon: Icons.edit_outlined,
@@ -85,6 +98,7 @@ class WriteOptionsDialog extends StatelessWidget {
     required String subtitle,
     required Color color,
     required VoidCallback onTap,
+    String? badge,
   }) {
     return InkWell(
       onTap: onTap,
@@ -110,16 +124,30 @@ class WriteOptionsDialog extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: AppTypography.bodyLarge
-                        .copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    subtitle,
-                    style: AppTypography.bodySmall
-                        .copyWith(color: Colors.grey[600]),
-                  ),
+                  Row(children: [
+                    Text(title,
+                        style: AppTypography.bodyLarge
+                            .copyWith(fontWeight: FontWeight.bold)),
+                    if (badge != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(badge,
+                            style: TextStyle(
+                                color: color,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ]),
+                  Text(subtitle,
+                      style: AppTypography.bodySmall
+                          .copyWith(color: Colors.grey[600])),
                 ],
               ),
             ),

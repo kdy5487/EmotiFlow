@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/ai/gemini/gemini_service.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/services/usage_limit_service.dart';
 import '../../../../shared/constants/emotion_character_map.dart';
 import '../../../../shared/widgets/keyboard_dismissible_scaffold.dart';
 import '../../domain/entities/diary_entry.dart';
@@ -81,7 +82,15 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
 
     print('?? [??] ?? ??? ?? ?? - ${DateTime.now()}');
 
-    // API ??? ???? ??? ???? (???)
+    // API ?? ? ?? ?? ?? (?? 1?)
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) {
+        await UsageLimitService.instance.showPolicyIfNeeded(
+          context,
+          UsageType.geminiCall,
+        );
+      }
+    });
     _loadInitialPromptAsync(viewModel);
   }
 

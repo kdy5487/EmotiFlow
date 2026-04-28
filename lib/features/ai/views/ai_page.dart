@@ -24,9 +24,18 @@ class _AIPageState extends ConsumerState<AIPage> {
   String _selectedPeriod = 'weekly'; // 'weekly' or 'monthly'
   String? _cachedWeeklyAnalysis;
   String? _cachedMonthlyAnalysis;
-  String? _cachedWeeklyAdvice; // 주간 조언 캐싱
-  String? _cachedMonthlyAdvice; // 월간 조언 캐싱
+  String? _cachedWeeklyAdvice;
+  String? _cachedMonthlyAdvice;
   final ScrollController _scrollController = ScrollController();
+
+  // Future를 state로 보관 → build() 재호출 시 재생성 방지
+  // null = 아직 분석 없음, non-null = 표시할 결과 있음
+  Future<String>? _analysisFuture;
+  Future<String>? _weeklyAdviceFuture;
+  Future<String>? _monthlyAdviceFuture;
+
+  // 마지막으로 분석된 시점의 일기 수 (새 일기 감지용)
+  int _lastAnalyzedDiaryCount = -1;
 
   final List<Map<String, dynamic>> _adviceCards = [
     {
@@ -78,6 +87,60 @@ class _AIPageState extends ConsumerState<AIPage> {
     super.initState();
     _loadCachedAnalysis();
     _loadCachedAdvice();
+  }
+
+  /// 캐시가 존재하면 future를 즉시 resolved 값으로 설정.
+  /// entries가 바뀌거나 새로고침 버튼을 누를 때만 재생성.
+  void _initFuturesIfNeeded(List<DiaryEntry> entries) {
+    final currentCount = entries.length;
+
+    if (_analysisFuture == null) {
+      final cached = _selectedPeriod == 'weekly'
+          ? _cachedWeeklyAnalysis
+          : _cachedMonthlyAnalysis;
+      _analysisFuture = cached != null
+          ? Future.value(cached)
+          : Future.value('분석 결과가 없습니다. 새로고침 버튼을 눌러 분석을 시작하세요.');
+    }
+
+    if (_weeklyAdviceFuture == null && _selectedPeriod == 'weekly') {
+      _weeklyAdviceFuture = _cachedWeeklyAdvice != null
+          ? Future.value(_cachedWeeklyAdvice)
+          : Future.value('조언을 불러오려면 새로고침 버튼을 눌러주세요.');
+    }
+
+    if (_monthlyAdviceFuture == null && _selectedPeriod == 'monthly') {
+      _monthlyAdviceFuture = _cachedMonthlyAdvice != null
+          ? Future.value(_cachedMonthlyAdvice)
+          : Future.value('조언을 불러오려면 새로고침 버튼을 눌러주세요.');
+    }
+
+    // 새 일기가 추가됐을 때만 자동 재분석 유도 (API 호출 아님, 새로고침 유도)
+    if (_lastAnalyzedDiaryCount != -1 &&
+        currentCount > _lastAnalyzedDiaryCount) {
+      // 캐시 무효화 → 사용자에게 새로고침 유도 (자동 API 호출 X)
+      if (_selectedPeriod == 'weekly') {
+        _cachedWeeklyAnalysis = null;
+        _cachedWeeklyAdvice = null;
+      } else {
+        _cachedMonthlyAnalysis = null;
+        _cachedMonthlyAdvice = null;
+      }
+      _analysisFuture = Future.value('새 일기가 추가됐어요. 새로고침 버튼을 눌러 분석을 업데이트하세요.');
+    }
+    _lastAnalyzedDiaryCount = currentCount;
+  }
+
+  void _onPeriodChange(String period, List<DiaryEntry> entries) {
+    setState(() {
+      _selectedPeriod = period;
+      // 기간이 바뀌면 해당 기간의 future 재설정
+      final cached =
+          period == 'weekly' ? _cachedWeeklyAnalysis : _cachedMonthlyAnalysis;
+      _analysisFuture = cached != null
+          ? Future.value(cached)
+          : Future.value('분석 결과가 없습니다. 새로고침 버튼을 눌러 분석을 시작하세요.');
+    });
   }
 
   @override
@@ -324,6 +387,11 @@ class _AIPageState extends ConsumerState<AIPage> {
         final diaryState = ref.watch(diaryProvider);
         final entries = diaryState.diaryEntries;
 
+        // build() 재호출 시 future 재생성 방지 — 처음 한 번만 초기화
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _initFuturesIfNeeded(entries);
+        });
+
         return EmotiCard(
           child: Padding(
             padding: const EdgeInsets.all(24), // 패딩 증가로 더 넓게
@@ -353,13 +421,7 @@ class _AIPageState extends ConsumerState<AIPage> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedPeriod = 'weekly';
-                        });
-                        _loadCachedAnalysis();
-                        _loadCachedAdvice();
-                      },
+                      onTap: () => _onPeriodChange('weekly', entries),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
@@ -382,13 +444,7 @@ class _AIPageState extends ConsumerState<AIPage> {
                     ),
                     const SizedBox(width: 8),
                     GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedPeriod = 'monthly';
-                        });
-                        _loadCachedAnalysis();
-                        _loadCachedAdvice();
-                      },
+                      onTap: () => _onPeriodChange('monthly', entries),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
@@ -1055,9 +1111,6 @@ $diaryContents
   Widget _buildPersonalizedAdviceSection() {
     return Consumer(
       builder: (context, ref, child) {
-        final diaryState = ref.watch(diaryProvider);
-        final entries = diaryState.diaryEntries;
-
         return EmotiCard(
           child: Padding(
             padding: const EdgeInsets.all(24), // 패딩 증가로 더 넓게
@@ -1105,7 +1158,7 @@ $diaryContents
                       ),
                       const SizedBox(height: 12),
                       FutureBuilder<String>(
-                        future: _generateWeeklyAdviceText(entries),
+                        future: _weeklyAdviceFuture,
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting) {
                             return const Center(
@@ -1974,7 +2027,7 @@ $diaryContents
       ),
       child: SingleChildScrollView(
         child: FutureBuilder<String>(
-          future: _getAnalysisText(entries),
+          future: _analysisFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
@@ -2062,36 +2115,50 @@ $diaryContents
     return false;
   }
 
-  // 분석 새로고침
+  // 분석 새로고침 (사용자 명시적 요청 시에만 API 호출)
   Future<void> _refreshAnalysis(List<DiaryEntry> entries) async {
-    setState(() {
-      if (_selectedPeriod == 'weekly') {
-        _cachedWeeklyAnalysis = null;
-        _cachedWeeklyAdvice = null;
-      } else {
-        _cachedMonthlyAnalysis = null;
-        _cachedMonthlyAdvice = null;
-      }
-    });
-
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    final timeKey = _selectedPeriod == 'weekly' 
-        ? 'weekly_analysis_time_${_getCurrentWeekRange()}'
-        : 'monthly_analysis_time_${now.year}-${now.month}';
-    
-    await prefs.setString(timeKey, now.toIso8601String());
-    
+
     if (_selectedPeriod == 'weekly') {
-      final analysis = await _generateWeeklyAnalysisText(entries);
+      // 로딩 future로 교체
+      final loadingFuture = _generateWeeklyAnalysisText(entries);
+      final adviceFuture = _generateWeeklyAdviceText(entries);
+      if (mounted) setState(() { _analysisFuture = loadingFuture; _weeklyAdviceFuture = adviceFuture; });
+
+      final analysis = await loadingFuture;
+      final advice = await adviceFuture;
       final weekKey = _getCurrentWeekRange();
       await prefs.setString('weekly_analysis_$weekKey', analysis);
-      if (mounted) setState(() { _cachedWeeklyAnalysis = analysis; });
+      await prefs.setString('weekly_advice_$weekKey', advice);
+      if (mounted) {
+        setState(() {
+          _cachedWeeklyAnalysis = analysis;
+          _cachedWeeklyAdvice = advice;
+          _analysisFuture = Future.value(analysis);
+          _weeklyAdviceFuture = Future.value(advice);
+          _lastAnalyzedDiaryCount = entries.length;
+        });
+      }
     } else {
-      final analysis = await _generateMonthlyAnalysisText(entries);
+      final loadingFuture = _generateMonthlyAnalysisText(entries);
+      final adviceFuture = _generateMonthlyAdviceText(entries);
+      if (mounted) setState(() { _analysisFuture = loadingFuture; _monthlyAdviceFuture = adviceFuture; });
+
+      final analysis = await loadingFuture;
+      final advice = await adviceFuture;
       final monthKey = '${now.year}-${now.month}';
       await prefs.setString('monthly_analysis_$monthKey', analysis);
-      if (mounted) setState(() { _cachedMonthlyAnalysis = analysis; });
+      await prefs.setString('monthly_advice_$monthKey', advice);
+      if (mounted) {
+        setState(() {
+          _cachedMonthlyAnalysis = analysis;
+          _cachedMonthlyAdvice = advice;
+          _analysisFuture = Future.value(analysis);
+          _monthlyAdviceFuture = Future.value(advice);
+          _lastAnalyzedDiaryCount = entries.length;
+        });
+      }
     }
   }
 
