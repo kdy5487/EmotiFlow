@@ -1,0 +1,90 @@
+---
+description: Flutter/Dart 코딩 표준 - EmotiFlow 프로젝트 규칙
+globs: **/*.dart
+alwaysApply: false
+---
+
+# Flutter/Dart 코딩 규칙
+
+## 아키텍처 패턴
+
+```dart
+// ✅ 올바른 계층 흐름
+// View → ViewModel(Riverpod Notifier) → UseCase → Repository(interface) → DataSource
+
+// ❌ 금지: UI/Provider에서 직접 Firebase 접근
+final snapshot = await FirebaseFirestore.instance.collection('diaries').get();
+
+// ✅ Repository 인터페이스 경유
+final diaries = await _getDiariesUseCase.execute(userId);
+```
+
+## 상태 관리 (Riverpod)
+
+```dart
+// ✅ AsyncNotifier 패턴 사용
+class DiaryViewModel extends AsyncNotifier<List<DiaryEntry>> {
+  @override
+  Future<List<DiaryEntry>> build() async => _fetchDiaries();
+}
+
+// ❌ 구식 StateNotifier 신규 사용 지양
+```
+
+## 파일 크기 & 위젯 분리
+
+- View 파일: **300줄 이하** (초과 시 즉시 위젯 분리)
+- 분리 위치: `features/<기능>/presentation/widgets/`
+- 공통 위젯: `shared/widgets/`
+
+```dart
+// ✅ 분리 예시
+// diary_write_page.dart → emotion_selector_section.dart, title_input_card.dart 등
+```
+
+## 성능
+
+```dart
+// ✅ const 생성자 최대 활용
+const Text('감정 일기', style: TextStyle(fontSize: 18));
+const EdgeInsets.symmetric(horizontal: 16);
+
+// ✅ 이미지 캐싱 (네트워크 이미지)
+CachedNetworkImage(imageUrl: url, placeholder: (_, __) => const CircularProgressIndicator());
+```
+
+## 에러 핸들링
+
+```dart
+// ✅ 구체적 에러 처리
+try {
+  await repository.saveDiary(entry);
+} catch (e, stack) {
+  debugPrint('일기 저장 실패: $e\n$stack');
+  state = AsyncError(e, stack);
+}
+
+// ❌ 빈 catch 금지
+try { ... } catch (e) {}
+```
+
+## 에셋 참조
+
+```dart
+// ✅ 상수로 관리
+// lib/shared/constants/emotion_character_map.dart
+EmotionCharacterMap.getCharacterAsset('기쁨');
+
+// ❌ 하드코딩 경로 직접 사용 지양
+Image.asset('assets/images/characters/Emoti3.png');
+```
+
+## GoRouter 라우팅
+
+```dart
+// ✅ 경로 상수 사용
+GoRouter.of(context).go(AppRoutes.diaryDetail);
+
+// ❌ 문자열 직접 입력 금지
+GoRouter.of(context).go('/diary/detail');
+```

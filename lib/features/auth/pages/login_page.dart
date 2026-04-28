@@ -7,15 +7,16 @@ import 'widgets/login_welcome_message.dart';
 import 'widgets/login_google_button.dart';
 import 'widgets/login_terms_privacy.dart';
 import 'widgets/login_error_message.dart';
+import 'widgets/login_email_form.dart';
+import 'signup_page.dart';
 
-/// Google 로그인 전용 페이지
 class LoginPage extends ConsumerWidget {
   const LoginPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -23,42 +24,69 @@ class LoginPage extends ConsumerWidget {
           padding: const EdgeInsets.all(24.0),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height - 
-                         MediaQuery.of(context).padding.top - 
-                         MediaQuery.of(context).padding.bottom - 48,
+              minHeight: MediaQuery.of(context).size.height -
+                  MediaQuery.of(context).padding.top -
+                  MediaQuery.of(context).padding.bottom -
+                  48,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 로고 및 앱 제목
                 const LoginHeader(),
-              
-                const SizedBox(height: 60),
-                
-                // 환영 메시지
+                const SizedBox(height: 48),
                 const LoginWelcomeMessage(),
-                
-                const SizedBox(height: 40),
-                
+                const SizedBox(height: 32),
+
+                // 이메일 로그인 폼
+                LoginEmailForm(
+                  isLoading: authState.isLoading,
+                  onLogin: ({required email, required password}) =>
+                      _handleEmailSignIn(context, ref,
+                          email: email, password: password),
+                  onSignUp: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const SignUpPage()),
+                  ),
+                  onForgotPassword: () =>
+                      _showForgotPasswordDialog(context, ref),
+                ),
+
+                const SizedBox(height: 20),
+
+                // 구분선
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        '또는',
+                        style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.5),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
                 // Google 로그인 버튼
                 LoginGoogleButton(
                   onPressed: () => _handleGoogleSignIn(context, ref),
                   isLoading: authState.isLoading,
                 ),
-                
+
                 const SizedBox(height: 24),
-                
-                // 이용약관 및 개인정보처리방침
                 const LoginTermsPrivacy(),
-                
-                // 로딩 표시
-                if (authState.isLoading) ...[
-                  const SizedBox(height: 24),
-                  const Center(child: CircularProgressIndicator()),
-                ],
-                
-                // 에러 메시지
+
                 if (authState.error != null) ...[
                   const SizedBox(height: 16),
                   LoginErrorMessage(errorMessage: authState.error!),
@@ -71,6 +99,69 @@ class LoginPage extends ConsumerWidget {
     );
   }
   
+  /// 이메일 로그인 처리
+  Future<void> _handleEmailSignIn(
+    BuildContext context,
+    WidgetRef ref, {
+    required String email,
+    required String password,
+  }) async {
+    final success = await ref
+        .read(authProvider.notifier)
+        .signInWithEmail(email: email, password: password);
+    if (success && context.mounted) {
+      _showSuccessMessage(context, '로그인이 완료됐습니다!');
+    }
+  }
+
+  /// 비밀번호 찾기 다이얼로그
+  void _showForgotPasswordDialog(BuildContext context, WidgetRef ref) {
+    final emailController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('비밀번호 재설정'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('가입한 이메일 주소를 입력하면\n재설정 링크를 보내드립니다.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                labelText: '이메일',
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('취소')),
+          FilledButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+              if (email.isEmpty) return;
+              final success = await ref
+                  .read(authProvider.notifier)
+                  .sendPasswordResetEmail(email);
+              if (ctx.mounted) {
+                Navigator.pop(ctx);
+                if (success && context.mounted) {
+                  _showSuccessMessage(context, '재설정 이메일을 전송했습니다.');
+                }
+              }
+            },
+            child: const Text('전송'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Google 로그인 처리
   Future<void> _handleGoogleSignIn(BuildContext context, WidgetRef ref) async {
     final authNotifier = ref.read(authProvider.notifier);

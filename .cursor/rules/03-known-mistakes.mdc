@@ -1,0 +1,89 @@
+---
+description: 과거 실수 목록 - 반복하지 말 것
+alwaysApply: true
+---
+
+# 반복 금지 실수 목록
+
+## [M-001] Google 로그인 첫 시도 실패
+**증상**: 첫 로그인 실패, 두 번째부터 성공  
+**원인**: `signInWithGoogle()`에서 무조건 `signOut()` 호출  
+**해결**: 로그인 상태 확인 후 조건부 `signOut()`
+
+```dart
+// ❌ 금지
+await _googleSignIn.signOut();
+await _googleSignIn.signIn();
+
+// ✅ 올바른 방식
+if (await _googleSignIn.isSignedIn()) {
+  await _googleSignIn.signOut();
+}
+await _googleSignIn.signIn();
+```
+
+---
+
+## [M-002] UI 오버플로우 (RenderOverflow)
+**증상**: 바텀 오버플로우, "RenderBox was not laid out" 에러  
+**해결**: `Flexible`, `Expanded`, `SingleChildScrollView`, `LayoutBuilder` 활용
+
+```dart
+// ❌ 고정 높이에 콘텐츠 억지로 넣기
+SizedBox(height: 200, child: Column(children: [...]));
+
+// ✅ 반응형 레이아웃
+Expanded(child: SingleChildScrollView(child: Column(children: [...])));
+```
+
+---
+
+## [M-003] AI 채팅 일기 → 상세 페이지 라우팅 이슈
+**증상**: AI 채팅으로 작성한 일기가 상세 페이지로 잘못 라우팅  
+**해결**: GoRouter 경로 상수화, 일기 타입별 라우팅 분기 명확히
+
+```dart
+// ✅ 일기 타입별 분기
+if (diary.writeType == DiaryWriteType.chat) {
+  context.go(AppRoutes.diaryChatDetail(diary.id));
+} else {
+  context.go(AppRoutes.diaryDetail(diary.id));
+}
+```
+
+---
+
+## [M-004] Firebase 이중 초기화
+**증상**: `[core/duplicate-app]` 에러  
+**해결**: `Firebase.initializeApp()`은 `main.dart`에서 단 1회만 호출
+
+---
+
+## [M-005] 에셋 pubspec.yaml 미등록
+**증상**: 런타임에 이미지 로딩 실패  
+**해결**: 새 에셋 폴더/파일 추가 시 `pubspec.yaml` assets 섹션 즉시 업데이트 후 `flutter pub get`
+
+---
+
+## [M-006] Google 로그인 ApiException: 10
+**증상**: SHA-1 불일치로 로그인 실패  
+**해결**: 개발 환경 변경 시 `./gradlew signingReport`로 SHA-1 확인 후 Firebase 콘솔 등록  
+**참조**: `docs/troubleshooting.md` → "구글 로그인 트러블슈팅 (ApiException: 10)"
+
+---
+
+## [M-007] 파일 비대화 (300줄 초과)
+**증상**: 단일 파일에 너무 많은 책임  
+**해결**: 200~300줄 초과 시 즉시 위젯/클래스 분리
+
+---
+
+## [M-008] Provider에서 직접 Firebase 접근
+**증상**: 테스트 불가, 계층 경계 위반  
+**해결**: Repository 인터페이스 경유 필수
+
+---
+
+## [M-009] lint 에러 무시
+**증상**: `debugPrint` 미import, `final` 누락, unused import  
+**해결**: 코드 작성 후 반드시 ReadLints 실행, 에러 즉시 수정

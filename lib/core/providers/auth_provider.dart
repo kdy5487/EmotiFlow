@@ -126,8 +126,75 @@ class AuthProvider extends StateNotifier<AuthState> {
     }
   }
   
-  // 이메일/비밀번호 로그인 기능 제거 - Google 로그인만 사용
-  
+  /// 이메일/비밀번호 로그인
+  Future<bool> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      _setLoading(true);
+      _setError(null);
+      final credential = await _authService.signInWithEmail(
+        email: email,
+        password: password,
+      );
+      if (credential != null) {
+        state = state.copyWith(user: credential.user);
+        _setLoading(false);
+        return true;
+      }
+      _setLoading(false);
+      return false;
+    } catch (e) {
+      _setError(e.toString().replaceAll('Exception: ', ''));
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// 이메일/비밀번호 회원가입
+  Future<bool> signUpWithEmail({
+    required String email,
+    required String password,
+    required String displayName,
+  }) async {
+    try {
+      _setLoading(true);
+      _setError(null);
+      final credential = await _authService.signUpWithEmail(
+        email: email,
+        password: password,
+        displayName: displayName,
+      );
+      if (credential != null) {
+        state = state.copyWith(user: credential.user);
+        _setLoading(false);
+        return true;
+      }
+      _setLoading(false);
+      return false;
+    } catch (e) {
+      _setError(e.toString().replaceAll('Exception: ', ''));
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// 비밀번호 재설정 이메일 전송
+  Future<bool> sendPasswordResetEmail(String email) async {
+    try {
+      _setLoading(true);
+      _setError(null);
+      await _authService.sendPasswordResetEmail(email);
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setError(e.toString().replaceAll('Exception: ', ''));
+      _setLoading(false);
+      return false;
+    }
+  }
+
   /// 로그아웃
   Future<void> signOut() async {
     try {

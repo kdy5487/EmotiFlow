@@ -15,6 +15,8 @@ import 'package:emoti_flow/features/ai/views/ai_page.dart';
 import 'package:emoti_flow/features/ai/views/advice_card_selection_page.dart';
 import 'package:emoti_flow/features/my/views/my_page.dart';
 import 'package:emoti_flow/features/my/views/profile_edit_page.dart';
+import 'package:emoti_flow/features/auth/pages/signup_page.dart';
+import 'package:emoti_flow/features/ai/views/voice_chat_page/voice_chat_page.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -29,6 +31,8 @@ class AppRoutes {
   static const String adviceCards = '/ai/advice-cards';
   static const String myPage = '/my';
   static const String profileEdit = '/profile/edit';
+  static const String signUp = '/signup';
+  static const String voiceChat = '/ai/voice';
 }
 
 class AppRouter {
@@ -55,6 +59,11 @@ class AppRouter {
         GoRoute(
           path: AppRoutes.login,
           builder: (context, state) => const LoginPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.signUp,
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) => const SignUpPage(),
         ),
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) {
@@ -127,6 +136,11 @@ class AppRouter {
           path: AppRoutes.adviceCards,
           parentNavigatorKey: _rootNavigatorKey,
           builder: (context, state) => const AdviceCardSelectionPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.voiceChat,
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) => const VoiceChatPage(),
         ),
         GoRoute(
           path: AppRoutes.profileEdit,

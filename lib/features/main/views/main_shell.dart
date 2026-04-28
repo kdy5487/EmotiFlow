@@ -29,46 +29,43 @@ class MainShell extends ConsumerWidget {
         body: SafeArea(
           child: navigationShell,
         ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: navigationShell.currentIndex,
-        onTap: (index) {
-          // 일기, AI, MY 탭 클릭 시 로그인 여부 확인
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: navigationShell.currentIndex,
+        onDestinationSelected: (index) {
           if (index != 0 && !isLoggedIn) {
             _showLoginRequiredDialog(context);
             return;
           }
-          
-          // 같은 탭을 클릭하면 맨 위로 스크롤
           if (index == navigationShell.currentIndex) {
-            final scrollNotifier = ref.read(scrollControllerProvider(index).notifier);
+            final scrollNotifier =
+                ref.read(scrollControllerProvider(index).notifier);
             scrollNotifier.scrollToTop();
           }
-          
           navigationShell.goBranch(
             index,
             initialLocation: index == navigationShell.currentIndex,
           );
         },
-        items: const [
-          BottomNavigationBarItem(
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+            selectedIcon: Icon(Icons.home_rounded),
             label: '홈',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book_outlined),
-            activeIcon: Icon(Icons.book),
+          NavigationDestination(
+            icon: Icon(Icons.edit_note_outlined),
+            selectedIcon: Icon(Icons.edit_note_rounded),
             label: '일기',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.psychology_outlined),
-            activeIcon: Icon(Icons.psychology),
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline_rounded),
+            selectedIcon: Icon(Icons.chat_bubble_rounded),
             label: 'AI',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
+          NavigationDestination(
+            icon: Icon(Icons.account_circle_outlined),
+            selectedIcon: Icon(Icons.account_circle_rounded),
             label: 'MY',
           ),
         ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/ai/gemini/gemini_service.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../shared/constants/emotion_character_map.dart';
@@ -13,7 +14,7 @@ import 'widgets/chat_message_bubble.dart';
 import 'widgets/typing_indicator.dart';
 import 'widgets/chat_message_input.dart';
 
-/// AI 대화형 일기 작성 페이지
+/// AI ??? ?? ?? ???
 class DiaryChatWritePage extends ConsumerStatefulWidget {
   final String? initialEmotion;
 
@@ -37,7 +38,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   @override
   void initState() {
     super.initState();
-    // 초기 감정이 있으면 설정
+    // ?? ??? ??? ??
     if (widget.initialEmotion != null) {
       _selectedEmotion = widget.initialEmotion;
     }
@@ -53,23 +54,23 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   }
 
   void _startNewConversation() async {
-    print('⏱️ [성능] 대화 시작 - ${DateTime.now()}');
+    print('?? [??] ?? ?? - ${DateTime.now()}');
 
     final viewModel = ref.read(diaryWriteProvider.notifier);
     viewModel.resetForm();
     viewModel.setIsChatMode(true);
     setState(() {
       _conversationHistory.clear();
-      // 초기 감정이 있으면 유지, 없으면 리셋
+      // ?? ??? ??? ??, ??? ??
       if (widget.initialEmotion == null) {
         _selectedEmotion = null;
       }
     });
 
-    print('⏱️ [성능] ViewModel 초기화 완료 - ${DateTime.now()}');
+    print('?? [??] ViewModel ??? ?? - ${DateTime.now()}');
 
-    // Fallback 메시지를 먼저 표시 (즉시 표시)
-    const fallbackMessage = '안녕하세요! 오늘 하루는 어떠셨나요?';
+    // Fallback ???? ?? ?? (?? ??)
+    const fallbackMessage = '?????! ?? ??? ??????';
     viewModel.addChatMessage(ChatMessage(
       id: 'init_${DateTime.now().millisecondsSinceEpoch}',
       content: fallbackMessage,
@@ -78,25 +79,25 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     ));
     _conversationHistory.add('AI: $fallbackMessage');
 
-    print('⏱️ [성능] 초기 메시지 표시 완료 - ${DateTime.now()}');
+    print('?? [??] ?? ??? ?? ?? - ${DateTime.now()}');
 
-    // API 응답을 비동기로 받아서 업데이트 (선택적)
+    // API ??? ???? ??? ???? (???)
     _loadInitialPromptAsync(viewModel);
   }
 
   void _loadInitialPromptAsync(dynamic viewModel) async {
     try {
-      print('⏱️ [성능] Gemini API 호출 시작 - ${DateTime.now()}');
+      print('?? [??] Gemini API ?? ?? - ${DateTime.now()}');
       final initialPrompt =
           await GeminiService.instance.generateEmotionSelectionPrompt();
-      print('⏱️ [성능] Gemini API 응답 완료 - ${DateTime.now()}');
+      print('?? [??] Gemini API ?? ?? - ${DateTime.now()}');
 
-      // API 응답이 Fallback과 다르면 추가 (간단한 구현)
-      // 실제로는 첫 메시지를 교체하는 것이 좋지만, 간단하게 유지
-      print('✅ [성능] AI 초기 인사: $initialPrompt');
+      // API ??? Fallback? ??? ?? (??? ??)
+      // ???? ? ???? ???? ?? ???, ???? ??
+      print('? [??] AI ?? ??: $initialPrompt');
     } catch (e) {
-      print('⏱️ [성능] Gemini API 오류 (Fallback 유지) - $e');
-      // Fallback 메시지 유지
+      print('?? [??] Gemini API ?? (Fallback ??) - $e');
+      // Fallback ??? ??
     }
   }
 
@@ -111,14 +112,14 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       isFromAI: false,
       timestamp: DateTime.now(),
     ));
-    _conversationHistory.add('사용자: $message');
+    _conversationHistory.add('???: $message');
     _messageController.clear();
 
     setState(() => _isTyping = true);
     try {
       final aiResponse =
           await GeminiService.instance.generateEmotionBasedQuestion(
-        _selectedEmotion ?? '자연스러운',
+        _selectedEmotion ?? '?????',
         message,
         _conversationHistory,
       );
@@ -141,7 +142,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
 
     try {
       final summary = await GeminiService.instance
-          .generateDiarySummary(_conversationHistory, _selectedEmotion ?? '평온');
+          .generateDiarySummary(_conversationHistory, _selectedEmotion ?? '??');
       _showResultDialog(summary);
     } finally {
       setState(() => _isTyping = false);
@@ -152,33 +153,33 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('오늘의 일기 완성'),
+        title: const Text('??? ?? ??'),
         content: SingleChildScrollView(child: Text(summary)),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context), child: const Text('취소')),
+              onPressed: () => Navigator.pop(context), child: const Text('??')),
           ElevatedButton(
             onPressed: () async {
-              await _saveDiary(summary);
+              final diaryId = await _saveDiary(summary);
               if (mounted) {
                 Navigator.pop(context);
-                Navigator.pop(context);
+                context.go('/diaries/$diaryId');
               }
             },
-            child: const Text('저장하기'),
+            child: const Text('????'),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _saveDiary(String content) async {
+  Future<String> _saveDiary(String content) async {
     final auth = ref.read(authProvider);
-    
-    // AI 조언 및 상세 분석 생성
     final geminiService = GeminiService.instance;
+    final entryId = 'chat_${DateTime.now().millisecondsSinceEpoch}';
+
     final tempEntry = DiaryEntry(
-      id: '',
+      id: entryId,
       userId: auth.user?.uid ?? 'unknown',
       title: content.length > 20 ? '${content.substring(0, 20)}...' : content,
       content: content,
@@ -188,11 +189,10 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       diaryType: DiaryType.aiChat,
       chatHistory: ref.read(diaryWriteProvider).chatHistory,
     );
-    
+
     final detailedAdvice = await geminiService.generateDetailedAdvice(tempEntry);
     final detailedSummary = await geminiService.generateDetailedDiarySummary(tempEntry);
-    
-    // AIAnalysis 생성
+
     final aiAnalysis = AIAnalysis(
       id: 'analysis_${DateTime.now().millisecondsSinceEpoch}',
       summary: detailedSummary,
@@ -203,21 +203,21 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
       moodTrend: '',
       analyzedAt: DateTime.now(),
     );
-    
+
     final entry = DiaryEntry(
-      id: 'chat_${DateTime.now().millisecondsSinceEpoch}',
+      id: entryId,
       userId: auth.user?.uid ?? 'unknown',
-      title: content.length > 20 ? '${content.substring(0, 20)}...' : content,
+      title: tempEntry.title,
       content: content,
-      emotions: _selectedEmotion != null ? [_selectedEmotion!] : [],
-      emotionIntensities:
-          _selectedEmotion != null ? {_selectedEmotion!: 8} : {},
-      createdAt: DateTime.now(),
+      emotions: tempEntry.emotions,
+      emotionIntensities: tempEntry.emotionIntensities,
+      createdAt: tempEntry.createdAt,
       diaryType: DiaryType.aiChat,
-      chatHistory: ref.read(diaryWriteProvider).chatHistory,
+      chatHistory: tempEntry.chatHistory,
       aiAnalysis: aiAnalysis,
     );
     await ref.read(diaryProvider.notifier).createDiaryEntry(entry);
+    return entryId;
   }
 
   void _scrollToBottom() {
@@ -267,18 +267,18 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
         backgroundColor: backgroundColor,
         elevation: 0,
         iconTheme: const IconThemeData(
-          color: Color(0xFF0F172A), // 아이콘 진하게
+          color: Color(0xFF0F172A), // ??? ???
         ),
         actions: [
           IconButton(
             onPressed: _startNewConversation,
             icon: const Icon(Icons.refresh),
-            tooltip: '대화 다시 시작',
+            tooltip: '?? ?? ??',
           ),
           IconButton(
             onPressed: _completeDiary,
             icon: const Icon(Icons.check_circle_outline),
-            tooltip: '일기 완성',
+            tooltip: '?? ??',
           ),
         ],
       ),
