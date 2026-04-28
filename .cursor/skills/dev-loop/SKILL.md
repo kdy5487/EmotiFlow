@@ -9,6 +9,28 @@ description: 자동 개발 루프. PLAN.md의 다음 미완료 작업을 순서�
 
 ---
 
+## Step 0: 브랜치 준비 (항상 먼저)
+
+```bash
+git branch --show-current   # 현재 브랜치 확인
+
+# 작업 유형별 브랜치 규칙
+feat  → feature/<기능명-영문-소문자-하이픈>  예) feature/kakao-login
+fix   → fix/<버그명>                        예) fix/ai-chat-routing
+refactor → refactor/<대상>                  예) refactor/clean-architecture
+docs  → docs/<명>                           예) docs/plan-update
+
+# main 또는 develop이면 → 즉시 브랜치 생성
+git checkout -b feature/<기능명>
+
+# 이미 해당 브랜치 있으면 → switch만
+git switch feature/<기능명>
+```
+
+**main에 직접 커밋 금지. 감지 시 즉시 알리고 브랜치 생성.**
+
+---
+
 ## Step 1: 컨텍스트 로드 (토큰 최소)
 
 ```
@@ -64,17 +86,19 @@ UI 작업인 경우:
 
 ---
 
-## Step 5: 문서 업데이트 (자동)
+## Step 5: 커밋 + 문서 업데이트 (자동)
 
 ```
 완료 시 반드시:
 1. docs/plan/PLAN.md → 해당 항목 [ ] → [x] 체크
-2. docs/logs/YYYY-MM-DD.md → 작업 요약 1~3줄 추가
-   (파일 없으면 생성)
+2. docs/logs/YYYY-MM-DD.md → 작업 요약 1~3줄 추가 (없으면 생성)
+3. git add . → git commit (컨벤션 형식으로 자동 커밋)
+   커밋: <type>(<scope>): <한글 제목>
+   ※ git push는 절대 하지 않음 — 사용자가 직접 실행
 
-버그 수정 시:
-3. docs/troubleshooting.md → 증상/원인/해결 추가
-4. 새 실수 패턴 → .cursor/rules/03-known-mistakes.mdc M-번호 추가
+버그 수정 시 추가:
+4. docs/troubleshooting.md → 증상/원인/해결 추가
+5. 새 실수 패턴 → .cursor/rules/03-known-mistakes.mdc M-번호 추가
 ```
 
 ---

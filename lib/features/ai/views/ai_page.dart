@@ -178,12 +178,14 @@ class _AIPageState extends ConsumerState<AIPage> {
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(
                   horizontal: 8, vertical: 16),
-              itemCount: 2,
+              itemCount: 3,
               itemBuilder: (context, index) {
                 switch (index) {
                   case 0:
-                    return _buildEmotionTrendsChart();
+                    return _buildVoiceChatBanner();
                   case 1:
+                    return _buildEmotionTrendsChart();
+                  case 2:
                     return _buildAdviceCardSection();
                   default:
                     return const SizedBox.shrink();
@@ -1273,6 +1275,62 @@ $diaryContents
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // 음성 AI 대화 배너
+  Widget _buildVoiceChatBanner() {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: InkWell(
+        onTap: () => context.go('/ai/voice'),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [cs.primary, cs.primary.withOpacity(0.75)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.mic_rounded,
+                    color: Colors.white, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('음성 AI 대화',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text('말로 감정을 털어놓아 보세요',
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(
+                                color: Colors.white.withOpacity(0.85))),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios_rounded,
+                  color: Colors.white.withOpacity(0.7), size: 18),
+            ],
+          ),
+        ),
       ),
     );
   }

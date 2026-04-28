@@ -60,8 +60,8 @@
 - [x] UI 자연스럽게 개선 (세이지 그린 테마, M3 NavigationBar) — 1차 완료
 
 ### 🟡 중기 (P2 - 고도화)
-- [x] **VoiceChatPage UI** — 음성 AI 대화 페이지 기본 UI 완성 (STT/TTS 연동 준비)
-- [ ] **TTS 음성 대화형 일기** — Soniox API
+- [x] **VoiceChatPage + Soniox STT** — 실시간 음성 인식 AI 대화 구현 완료 (`docs/specs/soniox_voice_ai.md`)
+- [ ] **TTS 음성 재생** — AI 응답을 음성으로 재생 (Soniox TTS WebSocket)
   - 다국어 음성 인식 지원
   - 일부 유료화 (프리미엄 기능)
   - 추후 다국어 UI 연동
@@ -104,6 +104,7 @@
 
 | 코드 | 이슈 | 상태 |
 |------|------|------|
+| M-010/011 | async setState mounted 미체크, print() 사용 | ✅ 수정 완료 (2026-04-29) |
 | M-003 | AI 채팅 일기 → 상세 페이지 라우팅 | ✅ 수정 완료 (2026-04-29) |
 | - | Provider → Firebase 직접 접근 잔존 | 진행 중 |
 | - | 도메인 UseCase 테스트 부재 | 미착수 |

@@ -75,6 +75,11 @@ dependencies:
   # shimmer: ^3.0.0
   just_audio: ^0.9.36
   audio_session: ^0.1.18
+
+  # 음성 AI 대화 (Soniox STT)
+  record: ^6.2.0               # 마이크 오디오 스트리밍
+  web_socket_channel: ^3.0.0   # Soniox WebSocket 연결
+  permission_handler: ^11.3.0  # 마이크 권한 요청
   
   # 차트 및 데이터 시각화 (나중에 추가)
   # fl_chart: ^0.66.0
