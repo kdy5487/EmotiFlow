@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -149,6 +150,34 @@ class UsageLimitService {
     return await remainingWithBonus(type) > 0;
   }
 
+  // ── 사용 정책 안내 ─────────────────────────────────
+
+  static const _shownKey = 'usage_policy_shown_v1';
+
+  /// AI 기능 최초 사용 전 정책 안내 다이얼로그를 표시.
+  /// 이미 동의한 경우(SharedPreferences에 플래그 존재)는 표시하지 않음.
+  /// 반환값: true = 계속 진행, false = 취소
+  Future<bool> showPolicyIfNeeded(BuildContext context, UsageType type) async {
+    final prefs = await SharedPreferences.getInstance();
+    final alreadyShown = prefs.getBool(_shownKey) ?? false;
+    if (alreadyShown) return true;
+
+    // Build 사이클 외부에서 dialog 열기
+    if (!context.mounted) return false;
+
+    final agreed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _UsagePolicyDialog(type: type),
+    );
+
+    if (agreed == true) {
+      await prefs.setBool(_shownKey, true);
+      return true;
+    }
+    return false;
+  }
+
   // ── 사용량 요약 (디버그/UI용) ─────────────────────
 
   Future<Map<String, dynamic>> summary() async {
@@ -168,5 +197,94 @@ class UsageLimitService {
         'period': '오늘',
       },
     };
+  }
+}
+
+// ── 정책 안내 다이얼로그 ─────────────────────────────
+
+class _UsagePolicyDialog extends StatelessWidget {
+  const _UsagePolicyDialog({required this.type});
+  final UsageType type;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    final isVoice = type == UsageType.sonioxSession;
+    final title = isVoice ? '음성 AI 대화 안내' : 'AI 분석 안내';
+    final icon = isVoice ? Icons.mic_rounded : Icons.psychology_outlined;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 40, color: cs.primary),
+            const SizedBox(height: 12),
+            Text(title,
+                style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _policyRow(cs, tt, Icons.info_outline_rounded,
+                      'AI 기능은 외부 API(Gemini, Soniox)를 사용해 비용이 발생합니다.'),
+                  const SizedBox(height: 8),
+                  _policyRow(cs, tt, Icons.lock_clock_outlined,
+                      '무료 버전: ${isVoice ? "음성 대화 월 10회" : "AI 분석 하루 20회"} 제한'),
+                  const SizedBox(height: 8),
+                  _policyRow(cs, tt, Icons.ondemand_video_rounded,
+                      '광고 시청으로 추가 횟수를 얻을 수 있어요.'),
+                  const SizedBox(height: 8),
+                  _policyRow(cs, tt, Icons.science_outlined,
+                      '테스트 환경에서는 하루 횟수가 더 낮게 설정됩니다.'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('취소'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('확인했어요'),
+                ),
+              ),
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _policyRow(
+      ColorScheme cs, TextTheme tt, IconData icon, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: cs.primary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(text,
+              style: tt.bodySmall
+                  ?.copyWith(color: cs.onSurface.withOpacity(0.75))),
+        ),
+      ],
+    );
   }
 }

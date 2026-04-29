@@ -53,6 +53,9 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
   final _soniox = SonioxService.instance;
   final _scrollCtrl = ScrollController();
 
+  // 더미 데이터 모드 (UI 테스트용)
+  bool _isDummyMode = false;
+
   @override
   void initState() {
     super.initState();
@@ -71,6 +74,58 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
     _subscribeToSoniox();
     _loadUsageCount();
     AdService.instance.loadRewardedAd();
+    // 최초 진입 시 사용량 정책 안내
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) {
+        await UsageLimitService.instance.showPolicyIfNeeded(
+          context,
+          UsageType.sonioxSession,
+        );
+      }
+    });
+  }
+
+  /// 더미 데이터로 UI 시뮬레이션 (테스트용 — 언제든 삭제 가능)
+  Future<void> _runDummySession() async {
+    setState(() {
+      _isDummyMode = true;
+      _turns.clear();
+      _pageState = VoicePageState.listening;
+      _statusText = '더미 세션 실행 중...';
+    });
+
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
+    setState(() {
+      _turns.add(_ChatTurn(text: '오늘 발표가 잘 됐어. 팀장님이 칭찬해 주셨어.', isUser: true));
+      _pageState = VoicePageState.processing;
+      _statusText = 'AI가 생각하는 중...';
+    });
+
+    await Future.delayed(const Duration(milliseconds: 1200));
+    if (!mounted) return;
+
+    final ai = await GeminiService.instance.generateEmotionBasedQuestion(
+      '기쁨',
+      '오늘 발표가 잘 됐어. 팀장님이 칭찬해 주셨어.',
+      [],
+    );
+    setState(() {
+      _turns.add(_ChatTurn(text: ai, isUser: false));
+      _pageState = VoicePageState.idle;
+      _statusText = '더미 세션 완료 (삭제 버튼으로 초기화)';
+      _isDummyMode = true;
+    });
+    _scrollToBottom();
+  }
+
+  void _clearDummySession() {
+    setState(() {
+      _turns.clear();
+      _isDummyMode = false;
+      _pageState = VoicePageState.idle;
+      _statusText = '마이크 버튼을 눌러 시작하세요';
+    });
   }
 
   Future<void> _loadUsageCount() async {
@@ -252,7 +307,17 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
               ),
             ),
           ),
-          if (_turns.isNotEmpty)
+          // 더미 데이터 테스트 버튼 (개발용 — 삭제 가능)
+          IconButton(
+            icon: Icon(
+              _isDummyMode
+                  ? Icons.delete_outline_rounded
+                  : Icons.science_outlined,
+            ),
+            tooltip: _isDummyMode ? '더미 세션 초기화' : '더미 세션 실행 (테스트용)',
+            onPressed: _isDummyMode ? _clearDummySession : _runDummySession,
+          ),
+          if (_turns.isNotEmpty && !_isDummyMode)
             IconButton(
               icon: const Icon(Icons.restart_alt_rounded),
               tooltip: '대화 초기화',

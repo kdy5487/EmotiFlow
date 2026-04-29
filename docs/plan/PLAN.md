@@ -20,16 +20,23 @@
 ## 현재 구현 상태 (2026-04-29 기준)
 
 ### ✅ 완료된 기능
-- Firebase Auth (Google 로그인)
-- 일기 작성 (자유형 + AI 대화형)
-- 일기 목록/상세/삭제
-- AI 감정 분석 (Gemini API)
-- AI 주간/월간 조언 + 캐싱
+- Firebase Auth (Google 로그인 + 이메일/비밀번호)
+- 일기 작성 (자유형 + AI 대화형 + 음성 AI)
+- 일기 목록 (월별 그룹핑 + 미니멀 카드 + 검색/필터)
+- 일기 상세/삭제
+- AI 감정 분석 (Gemini API, build() 재호출 시 재분석 방지)
+- AI 주간/월간 조언 + 캐싱 + 명시적 새로고침 버튼
+- AI 프롬프트: 친구 대화 톤 / 감정 분석 톤 분리 + 사용자 성격 커스텀
 - 감정 캐릭터 시스템 (`EmotionCharacterMap`)
-- 홈 화면 (오늘의 일기, AI 조언 카드)
+- 홈 화면 (간결한 레이아웃, 불필요한 버튼 제거)
 - AI 페이지 (주간/월간 탭, 감정 트렌드)
-- MY 페이지 (프로필, 대시보드, 캐릭터 선택)
+- MY 페이지 (GitHub 잔디 스타일 히트맵 + 타임라인 + AI 성격 설정)
 - 설정 페이지 (로그아웃, 계정 삭제, 다크모드)
+- Soniox STT 음성 AI 대화
+- Google AdMob (배너/전면/보상형/네이티브)
+- AI 사용량 관리 (`UsageLimitService`, test/free/premium 티어)
+- AI 기능 최초 사용 전 사용량 정책 안내 팝업
+- 음성 AI 더미 테스트 버튼
 - 다크모드 완성
 - 뒤로가기 → 홈 이동, 같은 탭 클릭 → 맨 위 스크롤
 
@@ -63,6 +70,7 @@
 - [x] **VoiceChatPage + Soniox STT** — 실시간 음성 인식 AI 대화 구현 완료 (`docs/specs/soniox_voice_ai.md`)
 - [x] **AI 비용 최소화 / 사용량 제한** — `UsageLimitService` 구현 (test/free/premium 티어, `.env` 기반 한도)
 - [x] **Google AdMob 연동** — 배너(AI/음성 페이지), 전면(일기 저장), 보상형(사용량 쿠폰) 구현 (`docs/specs/admob_plan.md`)
+- [ ] **AI 분석 페이지 그래프 개선** — 현재 바 차트 디자인 개선, 간격/폰트 최적화
 - [ ] **TTS 음성 재생** — AI 응답을 음성으로 재생 (Soniox TTS WebSocket)
   - 다국어 음성 인식 지원
   - 일부 유료화 (프리미엄 기능)

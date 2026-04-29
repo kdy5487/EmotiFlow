@@ -260,27 +260,56 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
 
     final ui = ref.watch(diaryListUiProvider);
 
-    // 5번째 일기마다 네이티브 광고 1개 삽입
-    // 실제 아이템 수 = entries.length + (entries.length ~/ 5)
+    // ── 월별 그룹핑 + 광고 슬롯 계산 ──────────────────
+    // items: DiaryEntry 또는 String(월 헤더) 또는 null(광고)
+    final items = <Object>[];
+    String? lastMonthKey;
+    int entryCounter = 0;
     const adInterval = 5;
-    final totalCount = entries.length + (entries.length ~/ adInterval);
+
+    for (final entry in entries) {
+      final mk = '${entry.createdAt.year}년 ${entry.createdAt.month}월';
+      if (mk != lastMonthKey) {
+        items.add(mk); // 월 헤더
+        lastMonthKey = mk;
+      }
+      items.add(entry);
+      entryCounter++;
+      // 5개 일기마다 광고 삽입 (헤더 제외)
+      if (entryCounter % adInterval == 0) {
+        items.add(_AdSlot());
+      }
+    }
 
     return ListView.builder(
       controller: _listScrollController,
-      padding: const EdgeInsets.all(20),
-      itemCount: totalCount,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      itemCount: items.length,
       itemBuilder: (context, index) {
-        // adInterval+1 간격으로 광고 슬롯 (index 5, 11, 17 ...)
-        final adEvery = adInterval + 1;
-        if (index % adEvery == adInterval) {
-          return const NativeAdWidget();
-        }
-        // 광고 슬롯 수만큼 실제 인덱스 보정
-        final adsBefore = index ~/ adEvery;
-        final entryIndex = index - adsBefore;
-        if (entryIndex >= entries.length) return const SizedBox.shrink();
+        final item = items[index];
 
-        final entry = entries[entryIndex];
+        // 월 헤더
+        if (item is String) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 16, bottom: 8),
+            child: Text(
+              item,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.5),
+                  ),
+            ),
+          );
+        }
+
+        // 광고 슬롯
+        if (item is _AdSlot) return const NativeAdWidget();
+
+        // 일기 카드
+        final entry = item as DiaryEntry;
         return DiaryListCard(
           entry: entry,
           isSelected: ui.selectedEntryIds.contains(entry.id),
@@ -586,3 +615,6 @@ class _DiaryListPageState extends ConsumerState<DiaryListPage> {
     );
   }
 }
+
+/// 광고 슬롯 마커 (type 구분용)
+class _AdSlot {}

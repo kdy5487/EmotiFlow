@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/ai/gemini/gemini_service.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/services/usage_limit_service.dart';
 import '../../../../shared/constants/emotion_character_map.dart';
 import '../../../../shared/widgets/keyboard_dismissible_scaffold.dart';
 import '../../domain/entities/diary_entry.dart';
@@ -35,10 +37,12 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   final List<String> _conversationHistory = [];
   String? _selectedEmotion;
 
+  // ?? fallback ??? ID ? API ?? ?? ? ??
+  String? _initMsgId;
+
   @override
   void initState() {
     super.initState();
-    // ?? ??? ??? ??
     if (widget.initialEmotion != null) {
       _selectedEmotion = widget.initialEmotion;
     }
@@ -54,50 +58,62 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   }
 
   void _startNewConversation() async {
-    print('?? [??] ?? ?? - ${DateTime.now()}');
-
     final viewModel = ref.read(diaryWriteProvider.notifier);
     viewModel.resetForm();
     viewModel.setIsChatMode(true);
     setState(() {
       _conversationHistory.clear();
-      // ?? ??? ??? ??, ??? ??
       if (widget.initialEmotion == null) {
         _selectedEmotion = null;
       }
     });
 
-    print('?? [??] ViewModel ??? ?? - ${DateTime.now()}');
-
-    // Fallback ???? ?? ?? (?? ??)
-    const fallbackMessage = '?????! ?? ??? ??????';
+    // Gemini API ?? ??? ??? ?? ???
+    _initMsgId = 'init_${DateTime.now().millisecondsSinceEpoch}';
+    const fallbackMessage = '?????! ?? ?? ??????';
     viewModel.addChatMessage(ChatMessage(
-      id: 'init_${DateTime.now().millisecondsSinceEpoch}',
+      id: _initMsgId!,
       content: fallbackMessage,
       isFromAI: true,
       timestamp: DateTime.now(),
     ));
     _conversationHistory.add('AI: $fallbackMessage');
 
-    print('?? [??] ?? ??? ?? ?? - ${DateTime.now()}');
+    // ?? ?? ? ??? ?? ?? (1?)
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) {
+        await UsageLimitService.instance.showPolicyIfNeeded(
+          context,
+          UsageType.geminiCall,
+        );
+      }
+    });
 
-    // API ??? ???? ??? ???? (???)
     _loadInitialPromptAsync(viewModel);
   }
 
   void _loadInitialPromptAsync(dynamic viewModel) async {
     try {
-      print('?? [??] Gemini API ?? ?? - ${DateTime.now()}');
       final initialPrompt =
           await GeminiService.instance.generateEmotionSelectionPrompt();
-      print('?? [??] Gemini API ?? ?? - ${DateTime.now()}');
 
-      // API ??? Fallback? ??? ?? (??? ??)
-      // ???? ? ???? ???? ?? ???, ???? ??
-      print('? [??] AI ?? ??: $initialPrompt');
+      if (!mounted) return;
+
+      // fallback ???? ?? Gemini API ???? ??
+      if (_initMsgId != null) {
+        viewModel.removeChatMessage(_initMsgId!);
+        viewModel.addChatMessage(ChatMessage(
+          id: 'init_api_${DateTime.now().millisecondsSinceEpoch}',
+          content: initialPrompt,
+          isFromAI: true,
+          timestamp: DateTime.now(),
+        ));
+        _conversationHistory.removeWhere((m) => m.startsWith('AI:'));
+        _conversationHistory.insert(0, 'AI: $initialPrompt');
+      }
     } catch (e) {
-      print('?? [??] Gemini API ?? (Fallback ??) - $e');
-      // Fallback ??? ??
+      // ?? ? fallback ??? ??
+      debugPrint('?? AI ???? ?? ?? (fallback ??): $e');
     }
   }
 
@@ -119,7 +135,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     try {
       final aiResponse =
           await GeminiService.instance.generateEmotionBasedQuestion(
-        _selectedEmotion ?? '?????',
+        _selectedEmotion ?? '??',
         message,
         _conversationHistory,
       );
@@ -157,7 +173,8 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
         content: SingleChildScrollView(child: Text(summary)),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context), child: const Text('??')),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('??')),
           ElevatedButton(
             onPressed: () async {
               final diaryId = await _saveDiary(summary);
@@ -191,7 +208,8 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
     );
 
     final detailedAdvice = await geminiService.generateDetailedAdvice(tempEntry);
-    final detailedSummary = await geminiService.generateDetailedDiarySummary(tempEntry);
+    final detailedSummary =
+        await geminiService.generateDetailedDiarySummary(tempEntry);
 
     final aiAnalysis = AIAnalysis(
       id: 'analysis_${DateTime.now().millisecondsSinceEpoch}',
@@ -223,8 +241,11 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(_scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
       }
     });
   }
@@ -267,7 +288,7 @@ class _DiaryChatWritePageState extends ConsumerState<DiaryChatWritePage> {
         backgroundColor: backgroundColor,
         elevation: 0,
         iconTheme: const IconThemeData(
-          color: Color(0xFF0F172A), // ??? ???
+          color: Color(0xFF0F172A),
         ),
         actions: [
           IconButton(

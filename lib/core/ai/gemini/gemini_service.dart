@@ -1,12 +1,35 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../features/diary/domain/entities/diary_entry.dart';
 
 /// Gemini AI 연동 서비스
 class GeminiService {
   GeminiService._();
   static final GeminiService instance = GeminiService._();
+
+  // ── AI 페르소나 ────────────────────────────────────
+
+  static const _personaKey = 'ai_persona';
+
+  Future<String> getPersona() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_personaKey) ?? '';
+  }
+
+  Future<void> savePersona(String persona) async {
+    final prefs = await SharedPreferences.getInstance();
+    persona.trim().isEmpty
+        ? await prefs.remove(_personaKey)
+        : await prefs.setString(_personaKey, persona.trim());
+  }
+
+  String _buildPersonaInstruction(String persona) {
+    if (persona.trim().isEmpty) return '';
+    return '\n**사용자가 지정한 AI 성격:** $persona\n위 성격을 반영하되 과한 표현·이모지 금지 원칙은 유지하세요.\n';
+  }
 
   // API 키를 가져올 때 따옴표와 공백을 확실히 제거
   String get _apiKey => (dotenv.env['GEMINI_API_KEY'] ?? '')
@@ -27,63 +50,59 @@ class GeminiService {
   /// 현재 API 키로 사용 가능한 모델 리스트를 조회하여 로그에 출력 (디버깅용)
   Future<void> listAvailableModels() async {
     if (!_hasKey) {
-      print('❌ API 키가 설정되지 않아 모델 리스트를 조회할 수 없습니다.');
+      debugPrint('API 키가 설정되지 않아 모델 리스트를 조회할 수 없습니다.');
       return;
     }
 
     final url =
         'https://generativelanguage.googleapis.com/v1beta/models?key=$_apiKey';
     try {
-      print('🔍 지원 모델 리스트 조회 중...');
+      debugPrint('지원 모델 리스트 조회 중...');
       final response = await http.get(Uri.parse(url));
-      print('📡 ListModels 응답 코드: ${response.statusCode}');
+      debugPrint('ListModels 응답 코드: ${response.statusCode}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final models = data['models'] as List?;
-        print('✅ 사용 가능한 모델 목록:');
-        models?.forEach((m) => print(
+        debugPrint('사용 가능한 모델 목록:');
+        models?.forEach((m) => debugPrint(
             '  - ${m['name']} (지원 기능: ${m['supportedGenerationMethods']})'));
       } else {
-        print('❌ 모델 리스트 조회 실패: ${response.statusCode} - ${response.body}');
+        debugPrint('모델 리스트 조회 실패: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('❌ 모델 리스트 조회 중 오류: $e');
+      debugPrint('모델 리스트 조회 중 오류: $e');
     }
   }
 
   /// 자연스러운 대화 시작을 위한 초기 질문 생성
   Future<String> generateEmotionSelectionPrompt() async {
-    print('🔑 Gemini API 키 확인: ${_hasKey ? "있음" : "없음"}');
-
     if (!_hasKey) {
-      print('❌ API 키가 없어서 fallback 응답 사용');
       return _getFallbackEmotionPrompt();
     }
 
     try {
-      print('🚀 Gemini API 호출 시작...');
-      const prompt = '''
-사용자가 오늘 하루를 기록하기 위해 들어왔습니다. 첫 인사를 간단하게 해주세요.
-
+      final persona = await getPersona();
+      final personaHint = _buildPersonaInstruction(persona);
+      final prompt = '''
+사용자가 오늘 하루를 기록하기 위해 들어왔습니다. 친구처럼 자연스럽게 첫 인사를 건네주세요.
+$personaHint
 **규칙:**
-1. 1-2문장으로 짧게 (최대 2문장)
+1. 1-2문장으로 짧게
 2. 과한 표현 금지 ("소중한", "마음이 전해지는" 등)
-3. 감정 선택이나 자유롭게 이야기할 수 있다고 간단히 안내
+3. 자유롭게 이야기해도 된다고 편안하게 안내
 4. 이모지 사용 금지
 
 **예시:**
-- "안녕하세요. 오늘 하루는 어떠셨나요?"
-- "오늘 특별히 기억에 남는 일이 있었나요?"
+- "안녕, 오늘 하루 어땠어?"
+- "오늘 뭔가 기억에 남는 일 있었어?"
 
 한국어로 답변해주세요.
 ''';
 
       final response = await _callGeminiAPI(prompt);
-      print(
-          '📡 API 응답: ${response?.substring(0, response.length.clamp(0, 50)) ?? "null"}...');
       return response ?? _getFallbackEmotionPrompt();
     } catch (e) {
-      print('❌ 초기 프롬프트 생성 실패: $e');
+      debugPrint('초기 프롬프트 생성 실패: $e');
       return _getFallbackEmotionPrompt();
     }
   }
@@ -92,14 +111,11 @@ class GeminiService {
   Future<String> generateEmotionBasedQuestion(String selectedEmotion,
       String userResponse, List<String> conversationHistory) async {
     if (!_hasKey) {
-      print('⚠️ GEMINI_API_KEY가 없어 Fallback 질문을 사용합니다.');
       return _getFallbackEmotionQuestion(
           selectedEmotion, userResponse, conversationHistory);
     }
 
-    // 입력 검증: 의미 없는 답변 감지
     if (_isInvalidUserResponse(userResponse)) {
-      print('⚠️ 이해할 수 없는 사용자 답변 감지: "$userResponse"');
       return _getInvalidResponseMessage();
     }
 
@@ -161,13 +177,12 @@ class GeminiService {
 
       final response = await _callGeminiAPI(prompt);
       if (response == null || response.trim().isEmpty) {
-        print('⚠️ Gemini 응답이 비어있어 Fallback 질문을 사용합니다.');
         return _getFallbackEmotionQuestion(
             selectedEmotion, userResponse, conversationHistory);
       }
       return response;
     } catch (e) {
-      print('상담 질문 생성 실패: $e');
+      debugPrint('상담 질문 생성 실패: $e');
       return _getFallbackEmotionQuestion(
           selectedEmotion, userResponse, conversationHistory);
     }
@@ -232,7 +247,7 @@ class GeminiService {
       final response = await _callGeminiAPI(prompt);
       return response ?? _getFallbackAnalysis(diaryText, selectedEmotion);
     } catch (e) {
-      print('감정 분석 및 위로 생성 실패: $e');
+      debugPrint('감정 분석 및 위로 생성 실패: $e');
       return _getFallbackAnalysis(diaryText, selectedEmotion);
     }
   }
@@ -249,7 +264,7 @@ class GeminiService {
       final response = await _callGeminiImageAPI(detailedPrompt);
       return response;
     } catch (e) {
-      print('AI 이미지 생성 실패: $e');
+      debugPrint('AI 이미지 생성 실패: $e');
       return null;
     }
   }
@@ -335,7 +350,7 @@ $emotionDescription
   Future<String?> _callGeminiImageAPI(String prompt) async {
     final apiKey = _apiKey;
     if (apiKey.isEmpty) {
-      print('❌ Gemini API 키가 없습니다.');
+      debugPrint('Gemini API 키가 없습니다.');
       return null;
     }
 
@@ -412,7 +427,7 @@ ${entry.diaryType == DiaryType.aiChat && entry.chatHistory.isNotEmpty ? '- 대�
       final response = await _callGeminiAPI(prompt);
       return response ?? _getFallbackDetailedSummary(entry);
     } catch (e) {
-      print('일기 요약 생성 실패: $e');
+      debugPrint('일기 요약 생성 실패: $e');
       return _getFallbackDetailedSummary(entry);
     }
   }
@@ -426,10 +441,6 @@ ${entry.diaryType == DiaryType.aiChat && entry.chatHistory.isNotEmpty ? '- 대�
     try {
       final primaryEmotion =
           entry.emotions.isNotEmpty ? entry.emotions.first : '평온';
-      final emotionIntensity = entry.emotionIntensities[primaryEmotion] ?? 5;
-      final allEmotions = entry.emotions.isNotEmpty
-          ? entry.emotions.join(', ')
-          : '감정 없음';
 
       final prompt = '''
 당신은 전문적인 심리 상담가이자 감정 코치입니다. 다음 일기를 깊이 있게 분석하여 구체적이고 실용적인 조언을 제공해주세요.
@@ -508,7 +519,7 @@ ${entry.diaryType == DiaryType.aiChat && entry.chatHistory.isNotEmpty ? '- 대�
       final response = await _callGeminiAPI(prompt);
       return response ?? _getFallbackDetailedAdvice(entry);
     } catch (e) {
-      print('상세 조언 생성 실패: $e');
+      debugPrint('상세 조언 생성 실패: $e');
       return _getFallbackDetailedAdvice(entry);
     }
   }
@@ -559,7 +570,7 @@ ${isShortConversation ? '- 짧은 대화 → 4-6문장 (간결하게)\n- 무리�
       return response ??
           _getFallbackSummary(conversationHistory, selectedEmotion);
     } catch (e) {
-      print('일기 요약 생성 실패: $e');
+      debugPrint('일기 요약 생성 실패: $e');
       return _getFallbackSummary(conversationHistory, selectedEmotion);
     }
   }
@@ -567,30 +578,23 @@ ${isShortConversation ? '- 짧은 대화 → 4-6문장 (간결하게)\n- 무리�
   /// Gemini API 실제 호출
   Future<String?> _callGeminiAPI(String prompt) async {
     try {
-      print('🌐 Gemini API 호출 시작...');
-      print('📝 프롬프트 길이: ${prompt.length}');
-
       return await _callGeminiWithFallbackModels(prompt);
     } catch (e) {
-      print('❌ Gemini API 호출 중 오류: $e');
+      debugPrint('Gemini API 호출 중 오류: $e');
       return null;
     }
   }
 
   Future<String?> _callGeminiWithFallbackModels(String prompt) async {
-    // ListModels 결과에서 확인된 실제 사용 가능한 모델들
     final models = <String>[
       _model,
-      'gemini-3-flash-preview',
       'gemini-2.5-flash',
       'gemini-2.0-flash',
-      'gemini-flash-latest',
-      'gemini-pro-latest',
     ].toSet().where((m) => m.isNotEmpty).toList();
 
     for (final model in models) {
       final endpoint = _buildEndpoint(model);
-      print('🧪 모델 시도: $model');
+      debugPrint('Gemini 모델 시도: $model');
       final response = await http.post(
         Uri.parse('$endpoint?key=$_apiKey'),
         headers: {
@@ -613,7 +617,6 @@ ${isShortConversation ? '- 짧은 대화 → 4-6문장 (간결하게)\n- 무리�
         }),
       );
 
-      print('📡 HTTP 상태 코드($model): ${response.statusCode}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final candidates = data['candidates'] as List?;
@@ -623,15 +626,13 @@ ${isShortConversation ? '- 짧은 대화 → 4-6문장 (간결하게)\n- 무리�
           if (parts != null && parts.isNotEmpty) {
             final text = parts[0]['text'] as String?;
             if (text != null && text.trim().isNotEmpty) {
-              final preview = text.substring(0, text.length.clamp(0, 50));
-              print('✅ API 응답 성공($model): $preview...');
               return text;
             }
           }
         }
-        print('❌ 응답 데이터 구조 문제($model)');
+        debugPrint('Gemini 응답 데이터 구조 문제($model)');
       } else {
-        print('❌ HTTP 오류($model): ${response.statusCode} - ${response.body}');
+        debugPrint('Gemini HTTP 오류($model): ${response.statusCode}');
       }
     }
     return null;
@@ -854,7 +855,6 @@ ${isShortConversation ? '- 짧은 대화 → 4-6문장 (간결하게)\n- 무리�
     try {
       final primaryEmotion =
           entry.emotions.isNotEmpty ? entry.emotions.first : '평온';
-      final emotionIntensity = entry.emotionIntensities[primaryEmotion] ?? 5;
 
       final prompt = '''
 다음 일기를 바탕으로 간단하고 따뜻한 조언을 한 문장으로 제공해주세요.
@@ -884,7 +884,7 @@ ${isShortConversation ? '- 짧은 대화 → 4-6문장 (간결하게)\n- 무리�
       final response = await _callGeminiAPI(prompt);
       return response ?? _getFallbackSimpleAdvice(entry);
     } catch (e) {
-      print('간단 조언 생성 실패: $e');
+      debugPrint('간단 조언 생성 실패: $e');
       return _getFallbackSimpleAdvice(entry);
     }
   }

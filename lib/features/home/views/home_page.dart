@@ -207,56 +207,17 @@ class _HomePageState extends ConsumerState<HomePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          // 다크모드 토글 (테스트용)
           Consumer(
             builder: (context, ref, _) {
-              final themeState = ref.watch(themeProvider);
-              final isDark = themeState.themeMode == ThemeMode.dark;
-
+              final isDark = ref.watch(themeProvider).themeMode == ThemeMode.dark;
               return IconButton(
-                icon: Icon(
-                  isDark ? Icons.light_mode : Icons.dark_mode,
-                  color: isDark
-                      ? Colors.amber
-                      : Theme.of(context).colorScheme.primary,
-                ),
-                onPressed: () {
-                  ref.read(themeProvider.notifier).setThemeMode(
-                        isDark ? ThemeMode.light : ThemeMode.dark,
-                      );
-                },
+                icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+                onPressed: () => ref.read(themeProvider.notifier).setThemeMode(
+                      isDark ? ThemeMode.light : ThemeMode.dark,
+                    ),
                 tooltip: isDark ? '라이트 모드' : '다크 모드',
               );
             },
-          ),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Row(
-                      children: [
-                        Icon(Icons.construction, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Text('알림'),
-                      ],
-                    ),
-                    content: const Text(
-                      '이 기능은 현재 개발 중입니다.\n\n추후 업데이트를 통해 제공될 예정이니\n잠시만 기다려주세요!',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('확인'),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-            tooltip: '알림',
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
